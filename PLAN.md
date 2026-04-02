@@ -16,13 +16,22 @@ Develop a cross-platform Java application (`qtr-qth`) that reads NMEA 0183 data 
 3.  **Repo Setup:** Initialized Git and pushed to GitHub (`origin`) and local bare backup (`local-backup`).
 4.  **Dependencies:** Added `jSerialComm` and `Apache Commons Net`.
 
-### Phase 2: Serial Communication & NMEA Parsing
-1.  **Serial Port Discovery:** Implement a utility to list and select available serial ports across OSs.
-2.  **Raw NMEA Stream:** Read raw ASCII strings from the selected GPS device.
-3.  **Parsing Engine:**
+### Phase 2: Serial Communication & NMEA Parsing (BRANCH: feat/nmea-nibbles)
+1.  **Configuration Bootstrapping**:
+    *   Implement `ConfigManager` to handle `qtr-qth.properties`.
+    *   Support basic settings: Port, Baud, NTP Server, and Sync Thresholds.
+2.  **Serial Port Discovery & Connection**:
+    *   Utility to list all available hardware ports.
+    *   Implement "Smart Connect" logic to open the configured port with standard GPS settings (9600 baud, 8N1).
+3.  **The "NMEA Nibbler" (Data Ingestion)**:
+    *   Implement an asynchronous `SerialPortDataListener`.
+    *   Use a `StringBuilder` to accumulate raw bytes into complete NMEA sentences.
+4.  **Parsing Engine (Basic)**:
     *   Extract UTC time and date from `$GPRMC` or `$GPZDA`.
     *   Extract Latitude, Longitude, and Altitude from `$GPGGA`.
-    *   Calculate Maidenhead Grid Square (6-character precision).
+    *   Checksum validation for each sentence.
+5.  **Grid Square Calculation**:
+    *   Convert Latitude/Longitude to 6-character Maidenhead Grid Square.
 
 ### Phase 3: Network & Timing Logic
 1.  **NTP Client:** Implement `NTPUDPClient` to fetch time from `pool.ntp.org`.
