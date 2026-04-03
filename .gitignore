@@ -36,5 +36,7 @@ bin/
 ### VS Code ###
 .vscode/
 
-### Mac OS ###
+### Project Artifacts ###
+*.log
+*.properties
 .DS_Store
