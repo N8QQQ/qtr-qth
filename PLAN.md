@@ -27,45 +27,49 @@ A task or phase is considered "Done" only when:
 - [x] Baseline dependency management (Gradle).
 - [x] **CI/CD Pipeline:** Automated GitHub Actions for builds, tests, and coverage.
 
-### Phase 2: Serial Comms & NMEA Engine (COMPLETED)
-- [x] **Config Bootstrapping:** Support for `qtr-qth.properties` with smart defaults.
+### Phase 2: Serial Comms & NMEA Engine (COMPLETED - v0.1.0)
+- [x] **Config Bootstrapping:** Support for `qtr-qth.properties` with smart defaults and self-healing.
 - [x] **Port Discovery:** Automated hardware detection with configurable metadata keywords.
 - [x] **NMEA Nibbler:** Asynchronous byte-stream ingestion into validated sentences.
 - [x] **Parsing Engine:** Stateful extraction of UTC time, date, Lat/Lon, altitude, and satellite counts ($GPRMC, $GPGGA, $GPZDA).
 - [x] **QTH Utility:** Maidenhead Grid Square calculation (6-character precision).
 - [x] **GPS Simulator:** Virtual serial provider for lab-testing without hardware.
-- [x] **Telemetry Diagnostics:** Configurable raw data logging toggle.
+- [x] **Telemetry Diagnostics:** Configurable raw data logging toggle and XOR checksum validation.
 
-### Phase 3: Logging, Network & Timing Logic (IN PROGRESS)
-- [ ] **Logging Infrastructure:** Implement commercial-grade structured logging (SLF4J + Logback) with rolling file support for 24/7 shack operation.
-- [ ] **Tracing & Observability:** Integrate tracing for asynchronous NMEA ingestion and NTP sync events.
-- [ ] Implement NTP client for secondary time reference.
-- [ ] Develop "Drift Analysis" logic to compare GPS time vs. NTP time.
-- [ ] Create Clock Synchronization interfaces.
+### Phase 3: Observability Foundation (IN PROGRESS)
+- [ ] **Structured Logging:** Implement SLF4J + Logback.
+- [ ] **Shack Logs:** Daily rolling file support for 24/7 logging.
+- [ ] **Traceability:** Trace-ID injection for tracking NMEA sentences from ingestion to calculation.
 
-### Phase 4: System Clock Synchronization (PLANNED)
+### Phase 4: Network Time Reference (PLANNED)
+- [ ] Implement robust NTP client for secondary time reference.
+- [ ] Multi-server pooling and latency monitoring.
+
+### Phase 5: Drift & Offset Analysis (PLANNED)
+- [ ] Compare GPS precision time against NTP baseline.
+- [ ] Calculate system clock drift and jitter scores.
+
+### Phase 6: Precision Clock Synchronization (PLANNED)
 - [ ] OS-specific implementation for updating system time (Windows/Linux).
 - [ ] Precision scheduling (synchronizing on the top of the second).
-- [ ] Stability monitoring (handling "leaps" and jitter).
 
-### Phase 5: The "QTH Hub" (PLANNED)
-- [ ] Implement UDP broadcast engine for live location sharing.
-- [ ] Support for JSON or XML telemetry output for 3rd party shack tools.
-- [ ] API for querying current Grid Square status.
+### Phase 7: The "QTH Hub" (PLANNED)
+- [ ] Implement UDP broadcast engine for live telemetry sharing.
+- [ ] Support for JSON/XML output for 3rd party shack tools.
 
-### Phase 6: UI & Visual Dashboard (PLANNED)
-- [ ] Development of a local dashboard (Swing or JavaFX).
-- [ ] Real-time satellite health and SNR visualization.
-- [ ] Map integration for current QTH visualization.
+### Phase 8: Dashboard & Visualization (PLANNED)
+- [ ] Real-time local dashboard (Swing or JavaFX).
+- [ ] Satellite health and SNR visualization.
+
+---
+## 🧪 Current Quality Status
+- **Current Baseline:** v0.1.0 (Phase 2 Deployed)
+- **Business Logic Coverage:** 99.1%
+- **System Integrity:** Verified via BDD Fixtures and System Integration Tests.
 
 ## ⚖️ Legal & Identity
 - **Developer:** Nicholas R. Ustick (N8QQQ)
 - **Organization:** StoicProgrammer.com
 - **Assistant:** JARVIS (AI-Integrated Engineering)
 - **Copyright:** (c) 2026 Nicholas R. Ustick
-- **License:** GNU General Public License v3.0 (Copyleft)
-
----
-## 🧪 Current Quality Status
-- **Business Logic Coverage:** 99.1%
-- **System Integrity:** Verified via BDD Fixtures and System Integration Tests.
+- **License:** GNU GPL v3.0 (Copyleft)
