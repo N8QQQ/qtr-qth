@@ -1,47 +1,123 @@
 package com.stoicprogrammer.qtrqth;
 
-import com.fazecast.jSerialComm.SerialPort;
+import com.stoicprogrammer.qtrqth.config.ConfigManager;
+import com.stoicprogrammer.qtrqth.nmea.GpsData;
+import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
+import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
+import com.stoicprogrammer.qtrqth.serial.PortDiscovery;
+import com.stoicprogrammer.qtrqth.serial.SerialConnector;
+import com.stoicprogrammer.qtrqth.util.GridSquareCalculator;
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
 
 import java.net.InetAddress;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * qtr-qth: GPS Time & Location Sync for Amateur Radio.
  * 
- * Provides:
- * - QTR: Accurate Time Synchronization via GPS and NTP.
- * - QTH: Precise Location and Maidenhead Grid Square calculation.
+ * Developed by Nicholas R. Ustick (N8QQQ)
+ * StoicProgrammer.com
+ * 
+ * Copyright (c) 2026 Nicholas R. Ustick.
+ * Licensed under the GNU General Public License v3.0.
  */
 public class Main {
     public static void main(String[] args) {
-        System.out.println("========================================");
-        System.out.println("  qtr-qth : GPS Time & Location Hub     ");
-        System.out.println("========================================");
-        System.out.println("Initializing shack infrastructure...");
+        System.out.println("==========================================");
+        System.out.println("  qtr-qth : GPS Time & Location Hub       ");
+        System.out.println("==========================================");
+        
+        // 1. Load Configuration
+        ConfigManager config = new ConfigManager("qtr-qth.properties");
+        String ntpServer = config.getProperty("ntp.server");
+        boolean simulationMode = Boolean.parseBoolean(config.getProperty("simulation.mode"));
+        boolean showRaw = Boolean.parseBoolean(config.getProperty("display.raw.telemetry"));
+        
+        System.out.println("[CONFIG] NTP Server: " + ntpServer);
+        System.out.println("[CONFIG] Simulation Mode: " + simulationMode);
+        System.out.println("[CONFIG] Raw Telemetry: " + showRaw);
 
-        // Placeholder for Serial Discovery
-        SerialPort[] ports = SerialPort.getCommPorts();
-        System.out.println("Scanning for GPS devices... Found " + ports.length + " ports.");
-        for (SerialPort port : ports) {
-            System.out.println(" - " + port.getSystemPortName() + " (" + port.getDescriptivePortName() + ")");
+        // 2. Serial Discovery
+        com.stoicprogrammer.qtrqth.serial.api.ISerialProvider provider;
+        if (simulationMode) {
+            provider = new com.stoicprogrammer.qtrqth.serial.simulation.SimulationSerialProvider();
+        } else {
+            provider = new com.stoicprogrammer.qtrqth.serial.jserialcomm.JSerialCommProvider();
+        }
+        
+        PortDiscovery discovery = new PortDiscovery(provider, config);
+        List<String> availablePorts = discovery.getAvailablePorts();
+        System.out.println("[SERIAL] Scanning for devices... Found " + availablePorts.size() + " ports.");
+        
+        String likelyGps = discovery.findLikelyGpsPort();
+        if (likelyGps != null) {
+            System.out.println("[SERIAL] Likely GPS found on: " + likelyGps);
+        } else {
+            System.out.println("[SERIAL] No obvious GPS device detected.");
+            if (!availablePorts.isEmpty()) {
+                likelyGps = availablePorts.get(0);
+                System.out.println("[SERIAL] Defaulting to first port: " + likelyGps);
+            }
         }
 
-        // Placeholder for NTP check
+        // 3. NTP Health Check
         try {
             NTPUDPClient client = new NTPUDPClient();
             client.setDefaultTimeout(5000);
             client.open();
-            InetAddress hostAddr = InetAddress.getByName("pool.ntp.org");
+            InetAddress hostAddr = InetAddress.getByName(ntpServer);
             TimeInfo info = client.getTime(hostAddr);
             long returnTime = info.getMessage().getTransmitTimeStamp().getTime();
-            System.out.println("Network Time (NTP): " + Instant.ofEpochMilli(returnTime));
+            System.out.println("[NTP] Network Time Status: OK (" + Instant.ofEpochMilli(returnTime) + ")");
             client.close();
         } catch (Exception e) {
-            System.out.println("NTP check failed: " + e.getMessage());
+            System.out.println("[NTP] Check failed: " + e.getMessage());
         }
 
-        System.out.println("\nStatus: Waiting for GPS lock...");
+        // 4. Start Serial Ingestion
+        if (likelyGps != null) {
+            NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
+            NmeaParser parser = new NmeaParser();
+            SerialConnector connector = new SerialConnector(config, accumulator, provider);
+            
+            // Graceful Shutdown Hook
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("\n[SYSTEM] Shutdown signal received. Closing resources...");
+                connector.disconnect();
+            }));
+
+            System.out.println("[STATUS] Connecting to " + likelyGps + "...");
+            if (connector.connect(likelyGps, sentence -> {
+                if (showRaw) {
+                    System.out.println("[RAW] " + sentence);
+                }
+                
+                GpsData data = parser.parse(sentence);
+                if (data != null && data.getUtcTime() != null) {
+                    String grid = com.stoicprogrammer.qtrqth.util.GridSquareCalculator.calculate(data.getLatitude(), data.getLongitude());
+                    System.out.println("[GPS] " + data + " | Grid: " + grid);
+                }
+            })) {
+                System.out.println("[STATUS] Connection established. Listening for NMEA stream...");
+            } else {
+                System.out.println("[ERROR] Failed to open port " + likelyGps);
+            }
+
+            // Keep alive for observation
+            try {
+                System.out.println("\n(Press Ctrl+C to terminate application)");
+                while (true) {
+                    Thread.sleep(1000);
+                }
+            } catch (InterruptedException e) {
+                connector.disconnect();
+            }
+        } else {
+            System.out.println("[ERROR] No serial ports available to connect.");
+        }
     }
 }
+
+
