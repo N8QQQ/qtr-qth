@@ -7,11 +7,17 @@ import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Stream;
 
+/**
+ * Manages the connection to physical or virtual serial hardware.
+ */
 public class SerialConnector {
+    private static final Logger logger = LoggerFactory.getLogger(SerialConnector.class);
     private final ConfigManager config;
     private final NmeaSentenceAccumulator accumulator;
     private final ISerialProvider provider;
@@ -32,6 +38,7 @@ public class SerialConnector {
     public Stream<String> connect(String portName) {
         int baudRate = Integer.parseInt(config.getProperty("serial.baud"));
         
+        logger.debug("Attempting to open port {} at {} baud...", portName, baudRate);
         activePort = provider.getPort(portName);
         activePort.setBaudRate(baudRate);
         activePort.setNumDataBits(8);
@@ -39,6 +46,7 @@ public class SerialConnector {
         activePort.setParity(SerialPort.NO_PARITY);
 
         if (activePort.openPort()) {
+            logger.info("Serial port {} opened successfully.", portName);
             activePort.addDataListener(new SerialPortDataListener() {
                 @Override
                 public int getListeningEvents() {
@@ -53,7 +61,10 @@ public class SerialConnector {
                     int numRead = activePort.readBytes(newData, newData.length);
                     
                     for (int i = 0; i < numRead; i++) {
-                        accumulator.process(newData[i]).ifPresent(queue::offer);
+                        accumulator.process(newData[i]).ifPresent(s -> {
+                            logger.trace("Sentence accumulated: {}", s);
+                            queue.offer(s);
+                        });
                     }
                 }
             });
@@ -62,19 +73,23 @@ public class SerialConnector {
                 try {
                     return queue.take();
                 } catch (InterruptedException e) {
+                    logger.warn("Telemetry stream interrupted.");
                     Thread.currentThread().interrupt();
                     return null;
                 }
             }).takeWhile(s -> s != null);
+        } else {
+            logger.error("Failed to open serial port: {}", portName);
         }
         return Stream.empty();
     }
 
     public void disconnect() {
         if (activePort != null && activePort.isOpen()) {
+            logger.debug("Closing serial port...");
             activePort.removeDataListener();
             activePort.closePort();
+            logger.info("Serial port closed.");
         }
     }
 }
-

@@ -58,6 +58,10 @@ Developed by **Nicholas R. Ustick (N8QQQ)** - [StoicProgrammer.com](https://Stoi
 
 Copyright (c) 2026 Nicholas R. Ustick. This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for full details.
 
+## 📝 Scientific Citation
+
+If you use this software for research, technical papers, or formal radio experiment reports, please cite it using the metadata in the [CITATION.cff](CITATION.cff) file. This project is indexed for archival preservation on **Zenodo**.
+
 *Engineered in collaboration with JARVIS (via Gemini CLI).*
 
 ---

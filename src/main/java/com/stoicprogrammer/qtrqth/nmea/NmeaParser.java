@@ -1,5 +1,8 @@
 package com.stoicprogrammer.qtrqth.nmea;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -8,6 +11,7 @@ import java.time.format.DateTimeFormatter;
  * Pure functional parser for NMEA 0183 sentences.
  */
 public class NmeaParser {
+    private static final Logger logger = LoggerFactory.getLogger(NmeaParser.class);
 
     // NMEA Field Indices
     private static final int GPRMC_TIME = 1;
@@ -36,7 +40,7 @@ public class NmeaParser {
         // Verify Checksum if present
         if (sentence.contains("*")) {
             if (!isValidChecksum(sentence)) {
-                System.err.println("[PARSER] Warning: Invalid checksum for sentence: " + sentence);
+                logger.warn("Invalid NMEA checksum detected. Sentence ignored: {}", sentence);
                 return previous;
             }
         }

@@ -6,16 +6,20 @@
 - **Hardware Abstraction Layer (HAL):** Decouples business logic from physical serial ports, enabling simulation and automated testing.
 - **BDD/TDD Mandate:** All features are developed using Test-Driven Development and documented via Behavior-Driven Development fixtures.
 - **LTS Stability:** Built on Java 21 LTS for long-term support and framework compatibility.
+- **Observability:** Structured logging via SLF4J + Logback with dedicated "Shack" (Operation) and "Lab" (Trace) rolling files.
 
 ## 🏁 Definition of Done (DoD)
 A task or phase is considered "Done" only when:
 1.  **Functionality:** All requirements specified in the step are implemented and verified.
 2.  **Test Coverage:** "Business Logic" (NMEA, Config, Timing) must maintain a minimum of **90% instruction coverage**.
-3.  **Security & Integrity:** Data ingestion must include integrity checks (e.g., Checksums). Code must be reviewed against OWASP Top 10 principles (Injection, Data Integrity, etc.).
+3.  **Security & Integrity:** Data ingestion must include integrity checks (e.g., Checksums).
 4.  **Operational Resilience:** Systems must handle abrupt shutdowns gracefully (Shutdown Hooks) and provide self-healing configurations.
 5.  **Documentation:** Documentation must be bifurcated into user-focused (README.md) and technical-focused (DEVELOPER.md) guides.
-6.  **Standards:** BDD/TDD and HAL standards are strictly followed.
-7.  **Review:** Every feature must pass a final comprehensive code review (AI-assisted or peer).
+6.  **Review:** Every feature must pass a final comprehensive code review (AI-assisted or peer).
+7.  **Heritage Stability:** 
+    - No business logic may be modified during a logging refactor.
+    - Coverage percentage must remain stable or increase during refactoring.
+    - Test failures during refactoring must be resolved without altering BDD semantics.
 
 ---
 
@@ -37,9 +41,12 @@ A task or phase is considered "Done" only when:
 - [x] **Telemetry Diagnostics:** Configurable raw data logging toggle and XOR checksum validation.
 
 ### Phase 3: Observability Foundation (IN PROGRESS)
-- [ ] **Structured Logging:** Implement SLF4J + Logback.
-- [ ] **Shack Logs:** Daily rolling file support for 24/7 logging.
-- [ ] **Traceability:** Trace-ID injection for tracking NMEA sentences from ingestion to calculation.
+- [ ] **Structured Logging:** Implement SLF4J + Logback dependencies.
+- [ ] **Dual-Log Strategy:** Implement split appenders for `qtr-qth.log` (INFO) and `trace.log` (DEBUG/TRACE).
+- [ ] **Asynchronous Scribe:** Wrap all file appenders in `AsyncAppender` for non-blocking I/O.
+- [ ] **Dynamic Logging:** Enable Logback auto-scanning for runtime level updates.
+- [ ] **Surgical Refactor:** Replace `System.out` with semantic logging levels while preserving 99% coverage.
+- [ ] **Traceability:** Implement MDC-based Trace IDs for NMEA pulse tracking.
 
 ### Phase 4: Network Time Reference (PLANNED)
 - [ ] Implement robust NTP client for secondary time reference.
@@ -69,7 +76,6 @@ A task or phase is considered "Done" only when:
 
 ## ⚖️ Legal & Identity
 - **Developer:** Nicholas R. Ustick (N8QQQ)
-- **Organization:** StoicProgrammer.com
-- **Assistant:** JARVIS (AI-Integrated Engineering)
+- **ORCID iD:** [0009-0001-9211-8000](https://orcid.org/0009-0001-9211-8000)
 - **Copyright:** (c) 2026 Nicholas R. Ustick
-- **License:** GNU GPL v3.0 (Copyleft)
+- **License:** GNU General Public License v3.0 (Copyleft)
