@@ -8,13 +8,15 @@ import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 
-import java.util.function.Consumer;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Stream;
 
 public class SerialConnector {
     private final ConfigManager config;
     private final NmeaSentenceAccumulator accumulator;
     private final ISerialProvider provider;
     private ISerialPort activePort;
+    private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
 
     public SerialConnector(ConfigManager config, NmeaSentenceAccumulator accumulator, ISerialProvider provider) {
         this.config = config;
@@ -23,12 +25,11 @@ public class SerialConnector {
     }
 
     /**
-     * Connects to the specified serial port and starts listening for NMEA sentences.
+     * Connects to the specified serial port and returns a stream of NMEA sentences.
      * @param portName The system port name (e.g., COM3).
-     * @param sentenceHandler Callback function for completed NMEA sentences.
-     * @return true if connection was successful, false otherwise.
+     * @return A Stream of completed NMEA sentences.
      */
-    public boolean connect(String portName, Consumer<String> sentenceHandler) {
+    public Stream<String> connect(String portName) {
         int baudRate = Integer.parseInt(config.getProperty("serial.baud"));
         
         activePort = provider.getPort(portName);
@@ -52,16 +53,21 @@ public class SerialConnector {
                     int numRead = activePort.readBytes(newData, newData.length);
                     
                     for (int i = 0; i < numRead; i++) {
-                        String sentence = accumulator.addByte(newData[i]);
-                        if (sentence != null) {
-                            sentenceHandler.accept(sentence);
-                        }
+                        accumulator.process(newData[i]).ifPresent(queue::offer);
                     }
                 }
             });
-            return true;
+            
+            return Stream.generate(() -> {
+                try {
+                    return queue.take();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+            }).takeWhile(s -> s != null);
         }
-        return false;
+        return Stream.empty();
     }
 
     public void disconnect() {

@@ -13,6 +13,7 @@ import org.apache.commons.net.ntp.TimeInfo;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * qtr-qth: GPS Time & Location Sync for Amateur Radio.
@@ -82,6 +83,9 @@ public class Main {
             NmeaParser parser = new NmeaParser();
             SerialConnector connector = new SerialConnector(config, accumulator, provider);
             
+            // Functional State: Immutable record container
+            AtomicReference<GpsData> currentFix = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
+
             // Graceful Shutdown Hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("\n[SYSTEM] Shutdown signal received. Closing resources...");
@@ -89,35 +93,21 @@ public class Main {
             }));
 
             System.out.println("[STATUS] Connecting to " + likelyGps + "...");
-            if (connector.connect(likelyGps, sentence -> {
-                if (showRaw) {
-                    System.out.println("[RAW] " + sentence);
-                }
-                
-                GpsData data = parser.parse(sentence);
-                if (data != null && data.getUtcTime() != null) {
-                    String grid = com.stoicprogrammer.qtrqth.util.GridSquareCalculator.calculate(data.getLatitude(), data.getLongitude());
-                    System.out.println("[GPS] " + data + " | Grid: " + grid);
-                }
-            })) {
-                System.out.println("[STATUS] Connection established. Listening for NMEA stream...");
-            } else {
-                System.out.println("[ERROR] Failed to open port " + likelyGps);
-            }
+            
+            // The Assembly Line: Functional Telemetry Pipeline
+            connector.connect(likelyGps)
+                .peek(sentence -> {
+                    if (showRaw) System.out.println("[RAW] " + sentence);
+                })
+                .map(sentence -> currentFix.updateAndGet(fix -> parser.parse(sentence, fix)))
+                .filter(fix -> fix.utcTime() != null)
+                .forEach(fix -> {
+                    String grid = GridSquareCalculator.calculate(fix.latitude(), fix.longitude());
+                    System.out.println("[GPS] " + fix + " | Grid: " + grid);
+                });
 
-            // Keep alive for observation
-            try {
-                System.out.println("\n(Press Ctrl+C to terminate application)");
-                while (true) {
-                    Thread.sleep(1000);
-                }
-            } catch (InterruptedException e) {
-                connector.disconnect();
-            }
         } else {
             System.out.println("[ERROR] No serial ports available to connect.");
         }
     }
 }
-
-

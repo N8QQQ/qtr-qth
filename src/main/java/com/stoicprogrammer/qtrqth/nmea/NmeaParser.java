@@ -4,38 +4,52 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Pure functional parser for NMEA 0183 sentences.
+ */
 public class NmeaParser {
 
-    private LocalTime lastTime;
-    private LocalDate lastDate;
-    private double lastLat = 0.0;
-    private double lastLon = 0.0;
-    private double lastAlt = 0.0;
-    private int lastSats = 0;
+    // NMEA Field Indices
+    private static final int GPRMC_TIME = 1;
+    private static final int GPRMC_LAT = 3;
+    private static final int GPRMC_LAT_DIR = 4;
+    private static final int GPRMC_LON = 5;
+    private static final int GPRMC_LON_DIR = 6;
+    private static final int GPRMC_DATE = 9;
 
-    public GpsData parse(String sentence) {
-        if (sentence == null || !sentence.startsWith("$")) return null;
+    private static final int GPGGA_SATS = 7;
+    private static final int GPGGA_ALT = 9;
+
+    private static final int GPZDA_DAY = 2;
+    private static final int GPZDA_MONTH = 3;
+    private static final int GPZDA_YEAR = 4;
+
+    /**
+     * Pure function to parse an NMEA sentence and merge it with previous state.
+     * @param sentence The raw NMEA string.
+     * @param previous The previous GpsData state.
+     * @return A new GpsData record with updated fields.
+     */
+    public GpsData parse(String sentence, GpsData previous) {
+        if (sentence == null || !sentence.startsWith("$")) return previous;
 
         // Verify Checksum if present
         if (sentence.contains("*")) {
             if (!isValidChecksum(sentence)) {
                 System.err.println("[PARSER] Warning: Invalid checksum for sentence: " + sentence);
-                return null;
+                return previous;
             }
         }
 
         String[] parts = sentence.split(",", -1); 
         String type = parts[0];
 
-        if (type.equals("$GPRMC")) {
-            parseGprmc(parts);
-        } else if (type.equals("$GPGGA")) {
-            parseGpgga(parts);
-        } else if (type.equals("$GPZDA")) {
-            parseGpzda(parts);
-        }
-
-        return new GpsData(lastTime, lastDate, lastLat, lastLon, lastAlt, lastSats);
+        return switch (type) {
+            case "$GPRMC" -> parseGprmc(parts, previous);
+            case "$GPGGA" -> parseGpgga(parts, previous);
+            case "$GPZDA" -> parseGpzda(parts, previous);
+            default -> previous;
+        };
     }
 
     private boolean isValidChecksum(String sentence) {
@@ -58,47 +72,60 @@ public class NmeaParser {
         }
     }
 
-    private void parseGprmc(String[] parts) {
-        if (parts.length < 10) return;
+    private GpsData parseGprmc(String[] parts, GpsData prev) {
+        if (parts.length < 10) return prev;
 
-        if (parts[1] != null && parts[1].length() >= 6) {
-            lastTime = LocalTime.parse(parts[1].substring(0, 6), DateTimeFormatter.ofPattern("HHmmss"));
+        LocalTime time = prev.utcTime();
+        if (parts[GPRMC_TIME] != null && parts[GPRMC_TIME].length() >= 6) {
+            time = LocalTime.parse(parts[GPRMC_TIME].substring(0, 6), DateTimeFormatter.ofPattern("HHmmss"));
         }
 
-        if (!parts[3].isEmpty() && !parts[4].isEmpty()) {
-            lastLat = convertToDecimalDegrees(parts[3], parts[4]);
+        double lat = prev.latitude();
+        if (!parts[GPRMC_LAT].isEmpty() && !parts[GPRMC_LAT_DIR].isEmpty()) {
+            lat = convertToDecimalDegrees(parts[GPRMC_LAT], parts[GPRMC_LAT_DIR]);
         }
 
-        if (!parts[5].isEmpty() && !parts[6].isEmpty()) {
-            lastLon = convertToDecimalDegrees(parts[5], parts[6]);
+        double lon = prev.longitude();
+        if (!parts[GPRMC_LON].isEmpty() && !parts[GPRMC_LON_DIR].isEmpty()) {
+            lon = convertToDecimalDegrees(parts[GPRMC_LON], parts[GPRMC_LON_DIR]);
         }
         
-        if (!parts[9].isEmpty()) {
-            lastDate = LocalDate.parse(parts[9], DateTimeFormatter.ofPattern("ddMMyy"));
+        LocalDate date = prev.date();
+        if (!parts[GPRMC_DATE].isEmpty()) {
+            date = LocalDate.parse(parts[GPRMC_DATE], DateTimeFormatter.ofPattern("ddMMyy"));
         }
+
+        return new GpsData(time, date, lat, lon, prev.altitude(), prev.satelliteCount());
     }
 
-    private void parseGpgga(String[] parts) {
-        if (parts.length < 10) return;
+    private GpsData parseGpgga(String[] parts, GpsData prev) {
+        if (parts.length < 10) return prev;
 
-        if (!parts[7].isEmpty()) {
-            lastSats = Integer.parseInt(parts[7]);
+        int sats = prev.satelliteCount();
+        if (!parts[GPGGA_SATS].isEmpty()) {
+            sats = Integer.parseInt(parts[GPGGA_SATS]);
         }
 
-        if (!parts[9].isEmpty()) {
-            lastAlt = Double.parseDouble(parts[9]);
+        double alt = prev.altitude();
+        if (!parts[GPGGA_ALT].isEmpty()) {
+            alt = Double.parseDouble(parts[GPGGA_ALT]);
         }
+
+        return new GpsData(prev.utcTime(), prev.date(), prev.latitude(), prev.longitude(), alt, sats);
     }
 
-    private void parseGpzda(String[] parts) {
-        if (parts.length < 5) return;
+    private GpsData parseGpzda(String[] parts, GpsData prev) {
+        if (parts.length < 5) return prev;
 
-        if (!parts[2].isEmpty() && !parts[3].isEmpty() && !parts[4].isEmpty()) {
-            int day = Integer.parseInt(parts[2]);
-            int month = Integer.parseInt(parts[3]);
-            int year = Integer.parseInt(parts[4]);
-            lastDate = LocalDate.of(year, month, day);
+        LocalDate date = prev.date();
+        if (!parts[GPZDA_DAY].isEmpty() && !parts[GPZDA_MONTH].isEmpty() && !parts[GPZDA_YEAR].isEmpty()) {
+            int day = Integer.parseInt(parts[GPZDA_DAY]);
+            int month = Integer.parseInt(parts[GPZDA_MONTH]);
+            int year = Integer.parseInt(parts[GPZDA_YEAR]);
+            date = LocalDate.of(year, month, day);
         }
+
+        return new GpsData(prev.utcTime(), date, prev.latitude(), prev.longitude(), prev.altitude(), prev.satelliteCount());
     }
 
     private double convertToDecimalDegrees(String nmeaCoord, String direction) {
@@ -113,4 +140,3 @@ public class NmeaParser {
         return decimal;
     }
 }
-

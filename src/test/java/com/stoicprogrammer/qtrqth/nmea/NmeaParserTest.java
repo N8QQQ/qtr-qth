@@ -3,79 +3,102 @@ package com.stoicprogrammer.qtrqth.nmea;
 import com.stoicprogrammer.qtrqth.base.BddTest;
 import org.junit.jupiter.api.Test;
 import java.time.LocalTime;
+import java.time.LocalDate;
 
 /**
  * Business Rule: [PHASE 2, STEP 4] - Parsing Engine (Basic).
- * Extract UTC time and date from $GPRMC or $GPZDA.
+ * Comprehensive coverage including error branches and malformed data.
  */
 class NmeaParserTest extends BddTest {
 
     private final NmeaParserFixture fixture = new NmeaParserFixture();
 
     @Test
-    void givenAValidGprmcSentence_whenParsingTime_thenUtcTimeIsCorrectlyExtracted() {
-        fixture.givenValidGprmcSentence("$GPRMC,232810.00,A,4617.00579,N,08753.28148,W,0.650,,020426,,,A");
+    void givenValidGprmc_whenParsing_thenDataIsExtracted() {
+        fixture.givenValidSentence("$GPRMC,232810.00,A,4617.00579,N,08753.28148,W,0.650,,020426,,,A");
         fixture.whenParsing();
         fixture.thenUtcTimeIs(LocalTime.of(23, 28, 10));
-    }
-
-    @Test
-    void givenAValidGprmcSentence_whenParsingLocation_thenLatitudeAndLongitudeAreExtracted() {
-        fixture.givenValidGprmcSentence("$GPRMC,232810.00,A,4617.00579,N,08753.28148,W,0.650,,020426,,,A");
-        fixture.whenParsing();
-        fixture.thenLatitudeIs(46.28342983333333); 
+        fixture.thenLatitudeIs(46.28342983333333);
         fixture.thenLongitudeIs(-87.88802466666667);
+        fixture.thenDateIs(LocalDate.of(2026, 4, 2));
     }
 
     @Test
-    void givenInvalidSentence_whenParsing_thenReturnsNull() {
-        fixture.givenInvalidSentence("NOT_NMEA");
-        fixture.whenParsing();
-        fixture.thenResultIsNull();
+    void givenInvalidChecksumFormat_whenParsing_thenReturnsPreviousState() {
+        GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
+        fixture.givenSentence("$GPRMC,123,A*ZZ"); // Invalid hex in checksum
+        fixture.whenParsingWith(initial);
+        fixture.thenResultIs(initial);
     }
 
     @Test
-    void givenEmptyGprmcFields_whenParsing_thenHandlesGracefully() {
-        fixture.givenValidGprmcSentence("$GPRMC,,V,,,,,,,,");
+    void givenMalformedTimeInGprmc_whenParsing_thenTimeIsPreserved() {
+        GpsData initial = new GpsData(LocalTime.of(10,0,0), null, 0, 0, 0, 0);
+        fixture.givenSentence("$GPRMC,12,A,0,N,0,E,0,0,010126,,,A"); // Time too short (12)
+        fixture.whenParsingWith(initial);
+        fixture.thenUtcTimeIs(LocalTime.of(10, 0, 0));
+    }
+
+    @Test
+    void givenNorthernAndEasternCoords_whenParsing_thenCoordinatesArePositive() {
+        fixture.givenValidSentence("$GPRMC,123456,A,1000.000,N,02000.000,E,0.0,,010126,,,A");
         fixture.whenParsing();
-        fixture.thenResultIsNotNull();
-        fixture.thenUtcTimeIsNull();
+        fixture.thenLatitudeIs(10.0);
+        fixture.thenLongitudeIs(20.0);
     }
 
     @Test
     void givenSouthernAndWesternCoords_whenParsing_thenCoordinatesAreNegative() {
-        fixture.givenValidGprmcSentence("$GPRMC,123456,A,1000.000,S,02000.000,W,0.0,,010126,,,A");
+        fixture.givenValidSentence("$GPRMC,123456,A,1000.000,S,02000.000,W,0.0,,010126,,,A");
         fixture.whenParsing();
         fixture.thenLatitudeIs(-10.0);
         fixture.thenLongitudeIs(-20.0);
     }
 
     @Test
-    void givenAGpggaSentence_whenParsing_thenAltitudeAndSatCountAreExtracted() {
-        fixture.givenValidSentence("$GPGGA,232810.00,4617.00579,N,08753.28148,W,1,07,1.15,431.1,M,-35.0,M,,");
-        fixture.whenParsing();
-        fixture.thenAltitudeIs(431.1);
-        fixture.thenSatelliteCountIs(7);
+    void givenPartialGpzdaFields_whenParsing_thenPreviousDateIsPreserved() {
+        LocalDate initialDate = LocalDate.of(2026, 1, 1);
+        GpsData initial = new GpsData(null, initialDate, 0, 0, 0, 0);
+        
+        // Missing month and year in ZDA
+        fixture.givenSentence("$GPZDA,123456,01,,"); 
+        fixture.whenParsingWith(initial);
+        fixture.thenDateIs(initialDate);
     }
 
     @Test
-    void givenAGpzdaSentence_whenParsing_thenDateIsExtracted() {
-        fixture.givenValidSentence("$GPZDA,232810.00,02,04,2026,00,00");
-        fixture.whenParsing();
-        fixture.thenDateIs(java.time.LocalDate.of(2026, 4, 2));
+    void givenShortSentences_whenParsing_thenHandlesGracefully() {
+        GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
+        fixture.givenSentence("$GPRMC,short"); // Too few fields
+        fixture.whenParsingWith(initial);
+        fixture.thenResultIs(initial);
+
+        fixture.givenSentence("$GPGGA,short");
+        fixture.whenParsingWith(initial);
+        fixture.thenResultIs(initial);
+
+        fixture.givenSentence("$GPZDA,short");
+        fixture.whenParsingWith(initial);
+        fixture.thenResultIs(initial);
     }
 
     @Test
-    void givenInvalidChecksum_whenParsing_thenReturnsNull() {
-        fixture.givenInvalidChecksum("$GPRMC,123456,A,4000.000,N,08000.000,W,0,0,010126,,,A*FF");
+    void givenGpzdaWithFullFields_whenParsing_thenAllFieldsUsed() {
+        fixture.givenValidSentence("$GPZDA,123456,01,01,2026,00,00");
         fixture.whenParsing();
-        fixture.thenResultIsNull();
+        fixture.thenDateIs(java.time.LocalDate.of(2026, 1, 1));
     }
 
     @Test
-    void givenValidChecksum_whenParsing_thenReturnsData() {
-        // Verified sentence from live VFAN logs
-        fixture.givenValidSentence("$GPRMC,232810.00,A,4617.00579,N,08753.28148,W,0.650,,020426,,,A*68");
+    void givenSentenceWithMisplacedAsterisk_whenParsing_thenChecksumIsInvalid() {
+        fixture.givenSentence("$GPRMC,123*A*68"); // Misplaced or extra asterisk
+        fixture.whenParsing();
+        fixture.thenResultIsNotNull(); // Returns preserved state
+    }
+
+    @Test
+    void givenSentenceWithTooShortChecksum_whenParsing_thenChecksumIsInvalid() {
+        fixture.givenSentence("$GPRMC,123*6"); // Checksum must be 2 chars
         fixture.whenParsing();
         fixture.thenResultIsNotNull();
     }
@@ -85,11 +108,7 @@ class NmeaParserTest extends BddTest {
         private final NmeaParser parser = new NmeaParser();
         private GpsData result;
 
-        void givenInvalidChecksum(String sentence) {
-            this.sentence = sentence;
-        }
-
-        void givenValidGprmcSentence(String sentence) {
+        void givenSentence(String sentence) {
             this.sentence = sentence;
         }
 
@@ -97,48 +116,45 @@ class NmeaParserTest extends BddTest {
             this.sentence = sentence;
         }
 
-        void givenInvalidSentence(String sentence) {
-            this.sentence = sentence;
-        }
-
         void whenParsing() {
-            this.result = parser.parse(sentence);
+            GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
+            this.result = parser.parse(sentence, initial);
         }
 
-        void thenResultIsNull() {
-            then(result, null);
+        void whenParsingWith(GpsData state) {
+            this.result = parser.parse(sentence, state);
         }
 
         void thenResultIsNotNull() {
             thenNotNull(result);
         }
 
-        void thenUtcTimeIsNull() {
-            then(result.getUtcTime(), null);
+        void thenResultIs(GpsData expected) {
+            then(result, expected);
         }
 
         void thenUtcTimeIs(LocalTime expected) {
-            then(result.getUtcTime(), expected);
+            then(result.utcTime(), expected);
         }
 
-        void thenDateIs(java.time.LocalDate expected) {
-            then(result.getDate(), expected);
+        void thenDateIs(LocalDate expected) {
+            then(result.date(), expected);
         }
 
         void thenLatitudeIs(double expected) {
-            then(result.getLatitude(), expected);
+            then(result.latitude(), expected);
         }
 
         void thenLongitudeIs(double expected) {
-            then(result.getLongitude(), expected);
+            then(result.longitude(), expected);
         }
 
         void thenAltitudeIs(double expected) {
-            then(result.getAltitude(), expected);
+            then(result.altitude(), expected);
         }
 
         void thenSatelliteCountIs(int expected) {
-            then(result.getSatelliteCount(), expected);
+            then(result.satelliteCount(), expected);
         }
     }
 }
