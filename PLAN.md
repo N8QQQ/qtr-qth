@@ -6,14 +6,22 @@
 - **Hardware Abstraction Layer (HAL):** Decouples business logic from physical serial ports.
 - **Functional Pipeline:** Telemetry is processed as an immutable stream of state transformations.
 - **Observability:** Structured logging via SLF4J + Logback with Async rolling files and MDC-based Trace IDs.
-- **LTS Stability:** Java 21 LTS baseline.
+- **LTS Stability:** Built on Java 21 LTS baseline.
+
+## 🔄 Agile Governance: Session-Based Agile (SBA)
+The project follows a hybrid **SBA** methodology to maintain "Heritage Grade" quality in a hobbyist environment:
+- **Sprints:** 2-week strategic milestones.
+- **Sessions:** Tactical development blocks (typically 2-4 hours).
+- **Atomic Phases:** Roadmap phases are partitioned into units of **2-3 Story Points**, targeting completion of 1-2 units per session.
+- **Calibration:** We track **Story Points per Session Hour** ($SP / h$) to calibrate future capacity and project completion dates.
+- **Business Value (BV):** Priority assigned on a scale of **100 to 1000** (1000 = Critical Mission Impact).
 
 ## 🏁 Definition of Done (DoD)
 A task or phase is considered "Done" only when:
 1.  **Functionality:** Requirements implemented and verified via BDD suites.
 2.  **Test Coverage:** "Business Logic" must maintain **>90% instruction coverage**.
-3.  **Security (OWASP 2025):** Code must be hardened against the [OWASP Top 10 (2025)](https://owasp.org/Top10/2025/) standards, including input sanitization and secure data integrity.
-4.  **Static Analysis:** Perform manual or automated static code analysis to identify and mitigate security concerns and logic flaws.
+3.  **Security (OWASP 2025):** Code hardened against [OWASP Top 10 (2025)](https://owasp.org/Top10/2025/) standards.
+4.  **Static Analysis:** Mandatory review for security concerns (Injection, Exceptional Conditions) and logic flaws.
 5.  **Heritage Stability:** No business logic modified during logging/observability refactors.
 6.  **Operational Resilience:** Non-blocking async I/O and graceful shutdown hooks must be preserved.
 
@@ -21,40 +29,55 @@ A task or phase is considered "Done" only when:
 
 ## 🗺️ Project Roadmap
 
-### Phase 1: Infrastructure & Identity (COMPLETED)
-- [x] Repository initialization and standardizing package names.
-- [x] **CI/CD Pipeline:** Automated GitHub Actions and JaCoCo artifacts.
-
-### Phase 2: Serial Comms & NMEA Engine (COMPLETED - v0.1.0)
-- [x] **NMEA Nibbler:** Asynchronous byte-stream ingestion.
-- [x] **Parsing Engine:** Pure functional extraction of UTC time, date, Lat/Lon, and altitude.
-- [x] **GPS Simulator:** Virtual serial provider for lab-testing.
+### Phase 1 & 2: Foundations & Hardware (COMPLETED - v0.1.0)
+- [x] Repository structure, Gradle setup, and CI/CD.
+- [x] **NMEA Engine:** Asynchronous ingestion and functional parsing ($GPRMC, $GPGGA, $GPZDA).
+- [x] **GPS Simulator:** decoupling hardware via HAL.
 - [x] **QTH Utility:** Maidenhead Grid Square calculation.
 
-### Phase 3: Observability Foundation (COMPLETED - v0.2.0 Candidate)
-- [x] **Structured Logging:** SLF4J + Logback integration.
-- [x] **Dual-Log Strategy:** Split Shack (Info) and Lab (Debug) files.
-- [x] **Asynchronous Scribe:** Non-blocking file I/O using `AsyncAppender`.
-- [x] **Traceability:** MDC-based Trace IDs (Pulse IDs) for end-to-end telemetry tracking.
-- [x] **Dynamic Control:** XML auto-scanning for runtime level updates.
+### Phase 3: Observability Foundation (COMPLETED - v0.2.0)
+- [x] **Logging:** SLF4J + Logback with dual Async rolling files (Shack/Lab).
+- [x] **Traceability:** MDC-based Trace IDs for end-to-end pulse tracking.
+- [x] **Hardening:** OWASP 2025 compliant input sanitization and exception management.
 
-### Phase 4: Network Time Reference (PLANNED)
-- [ ] Implement robust NTP client for secondary time reference.
-- [ ] Multi-server pooling and latency monitoring.
+### Phase 4: Network Time Reference (v0.3.0)
+**Objective:** Establish a professional network-based time reference for drift comparison.
+- **Phase 4.1: Supply Chain Hardening** (SP: 2 | BV: 800)
+- **Phase 4.2: Baseline NTP Client** (SP: 2 | BV: 800)
+- **Phase 4.3: Precision Metadata** (SP: 3 | BV: 500)
+- **Phase 4.4: Pipeline Integration** (SP: 2 | BV: 500)
+- **Phase 4.5: Resilience & Multi-Pooling** (SP: 3 | BV: 300)
 
-### Phase 5: Drift & Offset Analysis (PLANNED)
-- [ ] Compare GPS precision time against NTP baseline.
-- [ ] Calculate system clock drift and jitter scores.
+### Phase 5: Drift & Offset Analysis (v0.4.0)
+**Objective:** Quantify the accuracy of the system clock.
+- **Phase 5.1: Clock Differential Logic** (SP: 3 | BV: 900)
+- **Phase 5.2: Jitter & Stability Scoring** (SP: 2 | BV: 400)
 
-### Phase 6+: Synchronization & Dashboard (PLANNED)
-- [ ] OS-specific clock updates (Windows/Linux).
-- [ ] Real-time local dashboard (Swing or JavaFX).
+### Phase 6: Precision Clock Synchronization (v1.0.0)
+**Objective:** Update the system clock with precision and authority.
+- **Phase 6.1: OS Permission HAL** (SP: 2 | BV: 700)
+- **Phase 6.2: Windows Time Service Provider** (SP: 3 | BV: 600)
+- **Phase 6.3: Linux/Pi Time Service Provider** (SP: 3 | BV: 600)
+- **Phase 6.4: Precision Sync Scheduling** (SP: 3 | BV: 800)
+
+### Phase 7: The "QTH Hub" (v2.0.0)
+**Objective:** Broadcast live telemetry to 3rd party shack tools.
+- **Phase 7.1: UDP Broadcast Engine** (SP: 3 | BV: 500)
+- **Phase 7.2: Serialization Logic (JSON/NMEA)** (SP: 2 | BV: 400)
+- **Phase 7.3: Broadcast Pipeline Integration** (SP: 2 | BV: 400)
+
+### Phase 8: Dashboard & Visualization (v3.0.0+)
+**Objective:** Real-time visual monitoring of shack time health.
+- **Phase 8.1: Embedded Web Scribe** (SP: 3 | BV: 300)
+- **Phase 8.2: RESTful Pulse API** (SP: 2 | BV: 300)
+- **Phase 8.3: "Shack-View" HTML Dashboard** (SP: 3 | BV: 400)
 
 ---
 ## 🧪 Current Quality Status
-- **Current Baseline:** Phase 3 Certified
-- **Instruction Coverage:** 93.5%
-- **System Integrity:** Verified via MDC-tracked bench tests.
+- **Baseline Velocity:** 1.25 SP/Hour
+- **Projected Work Remaining:** 38 Story Points.
+- **Estimated Completion Effort:** ~30 Session Hours.
+- **Instruction Coverage:** 92.6% | **Security:** OWASP 2025 compliant.
 
 ## ⚖️ Legal & Identity
 - **Developer:** Nicholas R. Ustick (N8QQQ) | **License:** GNU GPL v3.0
