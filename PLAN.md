@@ -42,19 +42,29 @@ A task or phase is considered "Done" only when:
 
 ### Phase 4: Network Time Reference (v0.3.0)
 **Objective:** Establish a professional network-based time reference for drift comparison.
-- **Phase 4.1: Supply Chain Hardening** (SP: 2 | BV: 800)
+**Branch:** `feat/ntp-nibbles`
+- **Phase 4.1: Supply Chain & Console UX** (SP: 2 | BV: 800)
+  - [ ] **SOW-01:** Implement Gradle Dependency Verification (SHA-256 signatures).
+  - [ ] **UX-01:** Simplify console log pattern to focus on raw GPS/Time telemetry for end-users.
 - **Phase 4.2: Baseline NTP Client** (SP: 2 | BV: 800)
+  - [ ] Implement robust NTP poll to `pool.ntp.org` returning raw epoch time.
 - **Phase 4.3: Precision Metadata** (SP: 3 | BV: 500)
+  - [ ] Capture RTT (Round-trip time), Stratum, and Root Dispersion.
 - **Phase 4.4: Pipeline Integration** (SP: 2 | BV: 500)
+  - [ ] Integrate NTP telemetry into the functional pipeline with MDC Trace IDs.
 - **Phase 4.5: Resilience & Multi-Pooling** (SP: 3 | BV: 300)
+  - [ ] Implement fallback pool manager for unreachable NTP hosts.
+  - [ ] Handle network timeouts and Jitter threshold filtering.
 
 ### Phase 5: Drift & Offset Analysis (v0.4.0)
 **Objective:** Quantify the accuracy of the system clock.
+**Branch:** `feat/jitter-bug`
 - **Phase 5.1: Clock Differential Logic** (SP: 3 | BV: 900)
 - **Phase 5.2: Jitter & Stability Scoring** (SP: 2 | BV: 400)
 
 ### Phase 6: Precision Clock Synchronization (v1.0.0)
 **Objective:** Update the system clock with precision and authority.
+**Branch:** `feat/chrono-trigger`
 - **Phase 6.1: OS Permission HAL** (SP: 2 | BV: 700)
 - **Phase 6.2: Windows Time Service Provider** (SP: 3 | BV: 600)
 - **Phase 6.3: Linux/Pi Time Service Provider** (SP: 3 | BV: 600)
@@ -62,12 +72,14 @@ A task or phase is considered "Done" only when:
 
 ### Phase 7: The "QTH Hub" (v2.0.0)
 **Objective:** Broadcast live telemetry to 3rd party shack tools.
+**Branch:** `feat/stratum-shack`
 - **Phase 7.1: UDP Broadcast Engine** (SP: 3 | BV: 500)
 - **Phase 7.2: Serialization Logic (JSON/NMEA)** (SP: 2 | BV: 400)
 - **Phase 7.3: Broadcast Pipeline Integration** (SP: 2 | BV: 400)
 
 ### Phase 8: Dashboard & Visualization (v3.0.0+)
 **Objective:** Real-time visual monitoring of shack time health.
+**Branch:** `feat/telemetry-tapestry`
 - **Phase 8.1: Embedded Web Scribe** (SP: 3 | BV: 300)
 - **Phase 8.2: RESTful Pulse API** (SP: 2 | BV: 300)
 - **Phase 8.3: "Shack-View" HTML Dashboard** (SP: 3 | BV: 400)
