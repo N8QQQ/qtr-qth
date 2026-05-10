@@ -10,10 +10,12 @@
 
 ## 🏁 Definition of Done (DoD)
 A task or phase is considered "Done" only when:
-1.  **Functionality:** Requirements implemented and verified.
+1.  **Functionality:** Requirements implemented and verified via BDD suites.
 2.  **Test Coverage:** "Business Logic" must maintain **>90% instruction coverage**.
-3.  **Heritage Stability:** No business logic modified during logging/observability refactors.
-4.  **Operational Resilience:** Non-blocking async I/O for all background tasks.
+3.  **Security (OWASP 2025):** Code must be hardened against the [OWASP Top 10 (2025)](https://owasp.org/Top10/2025/) standards, including input sanitization and secure data integrity.
+4.  **Static Analysis:** Perform manual or automated static code analysis to identify and mitigate security concerns and logic flaws.
+5.  **Heritage Stability:** No business logic modified during logging/observability refactors.
+6.  **Operational Resilience:** Non-blocking async I/O and graceful shutdown hooks must be preserved.
 
 ---
 

@@ -30,30 +30,46 @@ public class NmeaParser {
 
     /**
      * Pure function to parse an NMEA sentence and merge it with previous state.
-     * @param sentence The raw NMEA string.
+     * @param raw The raw NMEA string from the serial port.
      * @param previous The previous GpsData state.
      * @return A new GpsData record with updated fields.
      */
-    public GpsData parse(String sentence, GpsData previous) {
-        if (sentence == null || !sentence.startsWith("$")) return previous;
+    public GpsData parse(String raw, GpsData previous) {
+        if (raw == null) return previous;
+
+        // A05:2025 Injection & A10:2025 Resilience
+        // 1. Sanitize: Strip non-printable/control chars and trim
+        String sentence = raw.replaceAll("[^\\x20-\\x7E]", "").trim();
+        
+        // 2. Boundary Check: Max NMEA sentence length is ~82, we allow 128 for safety
+        if (sentence.isEmpty() || !sentence.startsWith("$") || sentence.length() > 128) {
+            return previous;
+        }
 
         // Verify Checksum if present
         if (sentence.contains("*")) {
             if (!isValidChecksum(sentence)) {
-                logger.warn("Invalid NMEA checksum detected. Sentence ignored: {}", sentence);
+                logger.warn("Security/Integrity Warning: Invalid NMEA checksum. Data discarded.");
                 return previous;
             }
         }
 
-        String[] parts = sentence.split(",", -1); 
+        // 3. Robust Tokenization: Split with limit to prevent runaway token counts
+        String[] parts = sentence.split(",", 20); 
         String type = parts[0];
 
-        return switch (type) {
-            case "$GPRMC" -> parseGprmc(parts, previous);
-            case "$GPGGA" -> parseGpgga(parts, previous);
-            case "$GPZDA" -> parseGpzda(parts, previous);
-            default -> previous;
-        };
+        try {
+            return switch (type) {
+                case "$GPRMC" -> parseGprmc(parts, previous);
+                case "$GPGGA" -> parseGpgga(parts, previous);
+                case "$GPZDA" -> parseGpzda(parts, previous);
+                default -> previous;
+            };
+        } catch (Exception e) {
+            // A10:2025 - Graceful handling of unexpected parser logic failures
+            logger.error("Mishandled exception during parsing of {}: {}", type, e.getMessage());
+            return previous;
+        }
     }
 
     private boolean isValidChecksum(String sentence) {
