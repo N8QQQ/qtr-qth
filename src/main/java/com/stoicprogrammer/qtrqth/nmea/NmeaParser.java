@@ -94,7 +94,8 @@ public class NmeaParser {
         try {
             int expected = Integer.parseInt(hexSum, 16);
             if (calculated != expected) {
-                logger.debug("Checksum Mismatch: Calculated {:02X}, Expected {:02X} for: {}", calculated, expected, content);
+                logger.debug("Checksum Mismatch: Calculated {}, Expected {} for content between $ and *", 
+                    String.format("%02X", calculated), String.format("%02X", expected));
             }
             return calculated == expected;
         } catch (NumberFormatException e) {

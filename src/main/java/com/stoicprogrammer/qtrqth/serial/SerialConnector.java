@@ -63,7 +63,9 @@ public class SerialConnector {
                     for (int i = 0; i < numRead; i++) {
                         accumulator.process(newData[i]).ifPresent(s -> {
                             logger.trace("Sentence accumulated: {}", s);
-                            queue.offer(s);
+                            if (!queue.offer(s)) {
+                                logger.warn("Telemetry buffer full. Dropping sentence: {}", s);
+                            }
                         });
                     }
                 }
