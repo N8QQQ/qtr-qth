@@ -1,10 +1,17 @@
 package com.stoicprogrammer.qtrqth.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * Manages application configuration and defaults.
+ */
 public class ConfigManager {
+    private static final Logger logger = LoggerFactory.getLogger(ConfigManager.class);
     private final Properties properties = new Properties();
 
     public ConfigManager(String configPath) {
@@ -20,16 +27,17 @@ public class ConfigManager {
         if (configFile.exists()) {
             try (FileInputStream fis = new FileInputStream(configFile)) {
                 properties.load(fis);
+                logger.info("Configuration loaded from file: {}", configPath);
             } catch (IOException e) {
-                System.out.println("[CONFIG] Error loading properties: " + e.getMessage());
+                logger.error("Error loading properties file: {}. Using defaults.", e.getMessage());
             }
         } else {
             // Self-heal: Create the file with defaults
             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(configFile)) {
                 properties.store(fos, "qtr-qth Configuration - StoicProgrammer.com");
-                System.out.println("[CONFIG] Created default configuration: " + configPath);
+                logger.info("Default configuration file created at: {}", configPath);
             } catch (IOException e) {
-                System.out.println("[CONFIG] Could not save default properties: " + e.getMessage());
+                logger.warn("Could not save default properties to {}: {}", configPath, e.getMessage());
             }
         }
     }

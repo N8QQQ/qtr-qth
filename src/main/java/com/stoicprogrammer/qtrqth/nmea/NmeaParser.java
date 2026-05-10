@@ -1,5 +1,8 @@
 package com.stoicprogrammer.qtrqth.nmea;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -8,6 +11,7 @@ import java.time.format.DateTimeFormatter;
  * Pure functional parser for NMEA 0183 sentences.
  */
 public class NmeaParser {
+    private static final Logger logger = LoggerFactory.getLogger(NmeaParser.class);
 
     // NMEA Field Indices
     private static final int GPRMC_TIME = 1;
@@ -26,48 +30,76 @@ public class NmeaParser {
 
     /**
      * Pure function to parse an NMEA sentence and merge it with previous state.
-     * @param sentence The raw NMEA string.
+     * @param raw The raw NMEA string from the serial port.
      * @param previous The previous GpsData state.
      * @return A new GpsData record with updated fields.
      */
-    public GpsData parse(String sentence, GpsData previous) {
-        if (sentence == null || !sentence.startsWith("$")) return previous;
+    public GpsData parse(String raw, GpsData previous) {
+        if (raw == null) return previous;
+
+        // A05:2025 Injection & A10:2025 Resilience
+        // 1. Sanitize: Strip non-printable/control chars and trim
+        String sentence = raw.replaceAll("[^\\x20-\\x7E]", "").trim();
+        
+        // 2. Boundary Check: Max NMEA sentence length is ~82, we allow 128 for safety
+        if (sentence.isEmpty() || !sentence.startsWith("$") || sentence.length() > 128) {
+            return previous;
+        }
 
         // Verify Checksum if present
         if (sentence.contains("*")) {
             if (!isValidChecksum(sentence)) {
-                System.err.println("[PARSER] Warning: Invalid checksum for sentence: " + sentence);
+                logger.warn("Security/Integrity Warning: Invalid NMEA checksum. Data discarded.");
                 return previous;
             }
         }
 
-        String[] parts = sentence.split(",", -1); 
+        // 3. Robust Tokenization: Split with limit to prevent runaway token counts
+        String[] parts = sentence.split(",", 20); 
         String type = parts[0];
 
-        return switch (type) {
-            case "$GPRMC" -> parseGprmc(parts, previous);
-            case "$GPGGA" -> parseGpgga(parts, previous);
-            case "$GPZDA" -> parseGpzda(parts, previous);
-            default -> previous;
-        };
+        try {
+            return switch (type) {
+                case "$GPRMC" -> parseGprmc(parts, previous);
+                case "$GPGGA" -> parseGpgga(parts, previous);
+                case "$GPZDA" -> parseGpzda(parts, previous);
+                default -> previous;
+            };
+        } catch (Exception e) {
+            // A10:2025 - Graceful handling of unexpected parser logic failures
+            logger.error("Mishandled exception during parsing of {}: {}", type, e.getMessage());
+            return previous;
+        }
     }
 
     private boolean isValidChecksum(String sentence) {
-        int starIndex = sentence.indexOf('*');
-        if (starIndex == -1 || starIndex + 3 > sentence.length()) return false;
+        int starIndex = sentence.lastIndexOf('*');
+        if (starIndex == -1 || starIndex + 1 >= sentence.length()) return false;
 
+        // Content is between $ and *
         String content = sentence.substring(1, starIndex);
-        String hexSum = sentence.substring(starIndex + 1, starIndex + 3);
+        String hexSum = sentence.substring(starIndex + 1).trim();
+        
+        // Only take the first 2 chars of the hex sum (ignore trailing CRLF)
+        if (hexSum.length() > 2) hexSum = hexSum.substring(0, 2);
 
-        int checksum = 0;
+        int calculated = 0;
         for (char c : content.toCharArray()) {
-            checksum ^= c;
+            calculated ^= c;
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("XOR Char: '%s' (0x%02X) -> Running Sum: 0x%02X", c, (int)c, calculated));
+            }
         }
 
         try {
             int expected = Integer.parseInt(hexSum, 16);
-            return checksum == expected;
+            if (calculated != expected) {
+                logger.debug("Checksum Mismatch: Calculated {}, Expected {} for content between $ and *", 
+                    String.format("%02X", calculated), String.format("%02X", expected));
+            }
+            return calculated == expected;
         } catch (NumberFormatException e) {
+            logger.debug("Checksum Format Error: '{}' is not valid hex", hexSum);
             return false;
         }
     }
