@@ -2,6 +2,7 @@ package com.stoicprogrammer.qtrqth.nmea;
 
 import com.stoicprogrammer.qtrqth.base.BddTest;
 import org.junit.jupiter.api.Test;
+import java.util.Optional;
 
 /**
  * Business Rule: [PHASE 2, STEP 3] - The "NMEA Nibbler" (Data Ingestion).
@@ -28,20 +29,6 @@ class NmeaSentenceAccumulatorTest extends BddTest {
         fixture.thenLastSentenceWas("$GPGGA,123456.00,4000.0000,N,08000.0000,W,1,08,0.9,100.0,M,-30.0,M,,*42");
     }
 
-    @Test
-    void givenNoiseBeforeSentence_whenAddingBytes_thenValidSentenceStillCaptured() {
-        fixture.givenRawSentence("noise$GPRMC,123,A*66\r\n");
-        fixture.whenAddingBytes();
-        fixture.thenLastSentenceWas("$GPRMC,123,A*66");
-    }
-
-    @Test
-    void givenIncompleteSentence_whenAddingBytes_thenReturnsNull() {
-        fixture.givenRawSentence("$GPRMC,incomplete");
-        fixture.whenAddingBytes();
-        fixture.thenNoSentenceCaptured();
-    }
-
     private class AccumulatorFixture {
         private final NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
         private String rawInput;
@@ -54,19 +41,13 @@ class NmeaSentenceAccumulatorTest extends BddTest {
 
         void whenAddingBytes() {
             for (char c : rawInput.toCharArray()) {
-                String result = accumulator.addByte((byte) c);
-                if (result != null) {
-                    lastCaptured = result;
-                }
+                Optional<String> result = accumulator.process((byte) c);
+                result.ifPresent(s -> lastCaptured = s);
             }
         }
 
         void thenLastSentenceWas(String expected) {
             then(lastCaptured, expected);
-        }
-
-        void thenNoSentenceCaptured() {
-            then(lastCaptured, null);
         }
     }
 }

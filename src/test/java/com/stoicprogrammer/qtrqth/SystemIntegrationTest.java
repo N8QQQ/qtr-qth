@@ -2,6 +2,7 @@ package com.stoicprogrammer.qtrqth;
 
 import com.stoicprogrammer.qtrqth.base.BddTest;
 import com.stoicprogrammer.qtrqth.config.ConfigManager;
+import com.stoicprogrammer.qtrqth.nmea.GpsData;
 import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.serial.SerialConnector;
@@ -12,6 +13,9 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -21,18 +25,24 @@ import static org.mockito.Mockito.verify;
 
 /**
  * Business Rule: [SYSTEM INTEGRITY] - End-to-End Operational Flow.
- * Verify that data flows from the Serial Provider through the Nibbler to the Parser correctly.
  */
 class SystemIntegrationTest extends BddTest {
 
     private final SystemFixture fixture = new SystemFixture();
 
     @Test
-    void givenSimulatedHardware_whenDataFlows_thenFinalGpsDataIsProduced() {
+    void givenSimulatedHardware_whenDataFlows_thenFinalGpsDataIsProduced() throws Exception {
         fixture.givenSimulatedHardwareReady();
+        
+        // Feed multiple sentences to build a full record
         fixture.whenSerialDataArrives("$GPRMC,123456,A,4000.000,N,08000.000,W,0,0,010126,,,A\r\n");
+        fixture.whenSerialDataArrives("$GPGGA,123456,4000.000,N,08000.000,W,1,08,1.0,100.0,M,,M,,\r\n");
+        
         fixture.thenCalculatedLatitudeIs(40.0);
         fixture.thenCalculatedLongitudeIs(-80.0);
+        fixture.thenCalculatedAltitudeIs(100.0);
+        fixture.thenSatelliteCountIs(8);
+        fixture.thenCalculatedTimeIs(java.time.LocalTime.of(12, 34, 56));
     }
 
     private class SystemFixture {
@@ -44,15 +54,21 @@ class SystemIntegrationTest extends BddTest {
         private final SerialConnector connector = new SerialConnector(mockConfig, accumulator, mockProvider);
         
         private com.fazecast.jSerialComm.SerialPortDataListener capturedListener;
-        private final List<com.stoicprogrammer.qtrqth.nmea.GpsData> results = new ArrayList<>();
+        private final List<GpsData> results = new ArrayList<>();
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
         void givenSimulatedHardwareReady() {
             given(mockConfig.getProperty("serial.baud")).willReturn("9600");
             given(mockProvider.getPort("SIM1")).willReturn(mockPort);
             given(mockPort.openPort()).willReturn(true);
             
-            connector.connect("SIM1", sentence -> {
-                results.add(parser.parse(sentence));
+            AtomicReference<GpsData> state = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
+            
+            // Connect and start pipeline in background thread
+            java.util.stream.Stream<String> stream = connector.connect("SIM1");
+            executor.submit(() -> {
+                stream.map(s -> state.updateAndGet(fix -> parser.parse(s, fix)))
+                      .forEach(results::add);
             });
 
             ArgumentCaptor<com.fazecast.jSerialComm.SerialPortDataListener> captor = ArgumentCaptor.forClass(com.fazecast.jSerialComm.SerialPortDataListener.class);
@@ -74,12 +90,37 @@ class SystemIntegrationTest extends BddTest {
             capturedListener.serialEvent(event);
         }
 
-        void thenCalculatedLatitudeIs(double expected) {
-            then(results.get(0).getLatitude(), expected);
+        void thenCalculatedLatitudeIs(double expected) throws Exception {
+            waitForResults();
+            then(results.get(results.size()-1).latitude(), expected);
         }
 
-        void thenCalculatedLongitudeIs(double expected) {
-            then(results.get(0).getLongitude(), expected);
+        void thenCalculatedLongitudeIs(double expected) throws Exception {
+            waitForResults();
+            then(results.get(results.size()-1).longitude(), expected);
+        }
+
+        void thenCalculatedAltitudeIs(double expected) throws Exception {
+            waitForResults();
+            then(results.get(results.size()-1).altitude(), expected);
+        }
+
+        void thenSatelliteCountIs(int expected) throws Exception {
+            waitForResults();
+            then(results.get(results.size()-1).satelliteCount(), expected);
+        }
+
+        void thenCalculatedTimeIs(java.time.LocalTime expected) throws Exception {
+            waitForResults();
+            then(results.get(results.size()-1).utcTime(), expected);
+        }
+
+        private void waitForResults() throws Exception {
+            long start = System.currentTimeMillis();
+            while (results.isEmpty() && System.currentTimeMillis() - start < 2000) {
+                Thread.sleep(10);
+            }
+            executor.shutdownNow();
         }
     }
 }

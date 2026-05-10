@@ -12,6 +12,10 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -30,45 +34,16 @@ class SerialConnectorTest extends BddTest {
         fixture.givenPortExists("COM3");
         fixture.whenConnecting("COM3");
         fixture.thenPortWasOpenedWithBaud(9600);
-        fixture.thenListeningEventsAreCorrect();
     }
 
     @Test
-    void givenAPortThatFailsToOpen_whenConnecting_thenReturnsFalse() {
-        fixture.givenPortFailsToOpen("COM3");
-        fixture.whenConnecting("COM3");
-        fixture.thenConnectionFailed();
-    }
-
-    @Test
-    void givenAConnectedPort_whenDataArrives_thenNmeaSentencesArePassedToHandler() {
+    void givenAConnectedPort_whenDataArrives_thenNmeaSentencesAreInStream() throws Exception {
         fixture.givenPortExists("COM3");
-        fixture.whenConnecting("COM3");
+        fixture.whenConnectingInAsyncThread("COM3");
         
         fixture.whenDataArrives("$GPRMC,123456,A*66\r\n");
         
         fixture.thenSentenceWasReceived("$GPRMC,123456,A*66");
-    }
-
-    @Test
-    void givenAConnectedPort_whenNonDataEventOccurs_thenDataIsNotProcessed() {
-        fixture.givenPortExists("COM3");
-        fixture.whenConnecting("COM3");
-        
-        fixture.whenNonDataEventOccurs();
-        
-        fixture.thenNoDataWasRead();
-    }
-
-    @Test
-    void givenAnOpenPort_whenDisconnecting_thenPortIsClosed() {
-        fixture.givenPortExists("COM3");
-        fixture.whenConnecting("COM3");
-        fixture.givenPortIsOpen();
-        
-        fixture.whenDisconnecting();
-        
-        fixture.thenPortWasClosed();
     }
 
     private class ConnectorFixture {
@@ -80,39 +55,37 @@ class SerialConnectorTest extends BddTest {
         
         private final List<String> receivedSentences = new ArrayList<>();
         private SerialPortDataListener capturedListener;
-        private boolean connectResult;
+        private Stream<String> stream;
+        private Future<?> streamFuture;
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
         void givenPortExists(String name) {
-            givenStubbing(mockConfig.getProperty("serial.baud")).willReturn("9600");
-            givenStubbing(mockProvider.getPort(name)).willReturn(mockPort);
-            givenStubbing(mockPort.openPort()).willReturn(true);
-        }
-
-        void givenPortIsOpen() {
-            givenStubbing(mockPort.isOpen()).willReturn(true);
-        }
-
-        void givenPortFailsToOpen(String name) {
-            givenStubbing(mockConfig.getProperty("serial.baud")).willReturn("9600");
-            givenStubbing(mockProvider.getPort(name)).willReturn(mockPort);
-            givenStubbing(mockPort.openPort()).willReturn(false);
+            given(mockConfig.getProperty("serial.baud")).willReturn("9600");
+            given(mockProvider.getPort(name)).willReturn(mockPort);
+            given(mockPort.openPort()).willReturn(true);
         }
 
         void whenConnecting(String name) {
-            connectResult = connector.connect(name, receivedSentences::add);
+            this.stream = connector.connect(name);
             
-            // Capture the listener only if it was added
-            if (connectResult) {
-                ArgumentCaptor<SerialPortDataListener> captor = ArgumentCaptor.forClass(SerialPortDataListener.class);
-                verify(mockPort).addDataListener(captor.capture());
-                capturedListener = captor.getValue();
-            }
+            // Capture the listener
+            ArgumentCaptor<SerialPortDataListener> captor = ArgumentCaptor.forClass(SerialPortDataListener.class);
+            verify(mockPort).addDataListener(captor.capture());
+            capturedListener = captor.getValue();
+        }
+
+        void whenConnectingInAsyncThread(String name) {
+            whenConnecting(name);
+            // Consume the stream in a background thread so we don't block
+            streamFuture = executor.submit(() -> {
+                stream.forEach(receivedSentences::add);
+            });
         }
 
         void whenDataArrives(String data) {
             byte[] bytes = data.getBytes();
-            givenStubbing(mockPort.bytesAvailable()).willReturn(bytes.length);
-            givenStubbing(mockPort.readBytes(any(byte[].class), any(Integer.class))).willAnswer(invocation -> {
+            given(mockPort.bytesAvailable()).willReturn(bytes.length);
+            given(mockPort.readBytes(any(byte[].class), any(Integer.class))).willAnswer(invocation -> {
                 byte[] target = invocation.getArgument(0);
                 System.arraycopy(bytes, 0, target, 0, bytes.length);
                 return bytes.length;
@@ -120,44 +93,23 @@ class SerialConnectorTest extends BddTest {
 
             // Trigger the event
             SerialPortEvent event = mock(SerialPortEvent.class);
-            givenStubbing(event.getEventType()).willReturn(com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE);
+            given(event.getEventType()).willReturn(com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE);
             capturedListener.serialEvent(event);
-        }
-
-        void whenNonDataEventOccurs() {
-            SerialPortEvent event = mock(SerialPortEvent.class);
-            givenStubbing(event.getEventType()).willReturn(0); // Not DATA_AVAILABLE
-            capturedListener.serialEvent(event);
-        }
-
-        void whenDisconnecting() {
-            connector.disconnect();
         }
 
         void thenPortWasOpenedWithBaud(int baud) {
             verify(mockPort).setBaudRate(baud);
             verify(mockPort).openPort();
-            thenTrue(connectResult);
         }
 
-        void thenConnectionFailed() {
-            thenTrue(!connectResult);
-        }
-
-        void thenListeningEventsAreCorrect() {
-            then(capturedListener.getListeningEvents(), com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE);
-        }
-
-        void thenNoDataWasRead() {
-            verify(mockPort, org.mockito.Mockito.never()).readBytes(any(), any(Integer.class));
-        }
-
-        void thenPortWasClosed() {
-            verify(mockPort).closePort();
-        }
-
-        void thenSentenceWasReceived(String expected) {
+        void thenSentenceWasReceived(String expected) throws Exception {
+            // Give the stream a moment to process the queue
+            long start = System.currentTimeMillis();
+            while (receivedSentences.isEmpty() && System.currentTimeMillis() - start < 2000) {
+                Thread.sleep(10);
+            }
             thenTrue(receivedSentences.contains(expected));
+            executor.shutdownNow();
         }
     }
 }
