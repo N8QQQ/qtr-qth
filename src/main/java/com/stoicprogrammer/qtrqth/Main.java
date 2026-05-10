@@ -11,6 +11,7 @@ import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.net.InetAddress;
 import java.time.Instant;
@@ -95,21 +96,59 @@ public class Main {
             }));
 
             logger.info("Connecting to {}...", likelyGps);
-            
-            // The Assembly Line: Functional Telemetry Pipeline
+
+            // The Assembly Line: Functional Telemetry Pipeline with MDC Tracking
             connector.connect(likelyGps)
-                .peek(sentence -> {
-                    if (showRaw) logger.debug("[RAW] {}", sentence);
-                })
-                .map(sentence -> currentFix.updateAndGet(fix -> parser.parse(sentence, fix)))
-                .filter(fix -> fix.utcTime() != null)
-                .forEach(fix -> {
-                    String grid = GridSquareCalculator.calculate(fix.latitude(), fix.longitude());
-                    logger.info("GPS Fix Acquired: {} | Grid: {}", fix, grid);
-                });
+                .map(TelemetryPulse::start)
+                .peek(p -> { if (showRaw) p.logRaw(logger); })
+                .map(p -> p.update(parser, currentFix))
+                .filter(TelemetryPulse::hasValidFix)
+                .forEach(p -> p.logFinal(logger));
 
         } else {
             logger.error("System Failure: No serial ports available for GPS connection.");
+        }
+    }
+
+    /**
+     * Contextual Wrapper for a single GPS Telemetry event.
+     * Manages MDC Trace IDs and logging context.
+     * Package-private for unit testing.
+     */
+    static record TelemetryPulse(String pulseId, String sentence, GpsData data) {
+        
+        static TelemetryPulse start(String sentence) {
+            String id = String.format("%04X", (sentence.hashCode() & 0xFFFF));
+            return new TelemetryPulse(id, sentence, null);
+        }
+
+        void logRaw(Logger log) {
+            runWithContext(() -> log.debug("[RAW] {}", sentence));
+        }
+
+        TelemetryPulse update(NmeaParser parser, AtomicReference<GpsData> state) {
+            GpsData next = state.updateAndGet(fix -> parser.parse(sentence, fix));
+            return new TelemetryPulse(pulseId, sentence, next);
+        }
+
+        boolean hasValidFix() {
+            return data != null && data.utcTime() != null;
+        }
+
+        void logFinal(Logger log) {
+            runWithContext(() -> {
+                String grid = GridSquareCalculator.calculate(data.latitude(), data.longitude());
+                log.info("GPS Fix Acquired: {} | Grid: {}", data, grid);
+            });
+        }
+
+        private void runWithContext(Runnable action) {
+            MDC.put("pulseId", pulseId);
+            try {
+                action.run();
+            } finally {
+                MDC.clear();
+            }
         }
     }
 }

@@ -57,21 +57,32 @@ public class NmeaParser {
     }
 
     private boolean isValidChecksum(String sentence) {
-        int starIndex = sentence.indexOf('*');
-        if (starIndex == -1 || starIndex + 3 > sentence.length()) return false;
+        int starIndex = sentence.lastIndexOf('*');
+        if (starIndex == -1 || starIndex + 1 >= sentence.length()) return false;
 
+        // Content is between $ and *
         String content = sentence.substring(1, starIndex);
-        String hexSum = sentence.substring(starIndex + 1, starIndex + 3);
+        String hexSum = sentence.substring(starIndex + 1).trim();
+        
+        // Only take the first 2 chars of the hex sum (ignore trailing CRLF)
+        if (hexSum.length() > 2) hexSum = hexSum.substring(0, 2);
 
-        int checksum = 0;
+        int calculated = 0;
         for (char c : content.toCharArray()) {
-            checksum ^= c;
+            calculated ^= c;
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("XOR Char: '%s' (0x%02X) -> Running Sum: 0x%02X", c, (int)c, calculated));
+            }
         }
 
         try {
             int expected = Integer.parseInt(hexSum, 16);
-            return checksum == expected;
+            if (calculated != expected) {
+                logger.debug("Checksum Mismatch: Calculated {:02X}, Expected {:02X} for: {}", calculated, expected, content);
+            }
+            return calculated == expected;
         } catch (NumberFormatException e) {
+            logger.debug("Checksum Format Error: '{}' is not valid hex", hexSum);
             return false;
         }
     }

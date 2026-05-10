@@ -103,6 +103,14 @@ class NmeaParserTest extends BddTest {
         fixture.thenResultIsNotNull();
     }
 
+    @Test
+    void givenSimulatorGpzda_whenParsing_thenChecksumIsValid() {
+        // This is the exact string from SimulationSerialPort (fixed)
+        fixture.givenValidSentence("$GPZDA,232810.00,02,04,2026,00,00*6C");
+        fixture.whenParsing();
+        fixture.thenDateIs(java.time.LocalDate.of(2026, 4, 2));
+    }
+
     private class NmeaParserFixture {
         private String sentence;
         private final NmeaParser parser = new NmeaParser();

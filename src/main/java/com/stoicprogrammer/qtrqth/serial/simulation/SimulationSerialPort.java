@@ -25,7 +25,7 @@ public class SimulationSerialPort implements ISerialPort {
         // Default simulation script (Live capture from VFAN UG-353)
         script.add("$GPRMC,232810.00,A,4617.00579,N,08753.28148,W,0.650,,020426,,,A*68\r\n");
         script.add("$GPGGA,232810.00,4617.00579,N,08753.28148,W,1,07,1.15,431.1,M,-35.0,M,,*6B\r\n");
-        script.add("$GPZDA,232810.00,02,04,2026,00,00*6D\r\n");
+        script.add("$GPZDA,232810.00,02,04,2026,00,00*6C\r\n");
     }
 
     @Override
