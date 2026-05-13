@@ -4,18 +4,17 @@ import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.nmea.GpsData;
 import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
+import com.stoicprogrammer.qtrqth.ntp.NtpClient;
 import com.stoicprogrammer.qtrqth.serial.PortDiscovery;
 import com.stoicprogrammer.qtrqth.serial.SerialConnector;
 import com.stoicprogrammer.qtrqth.util.GridSquareCalculator;
-import org.apache.commons.net.ntp.NTPUDPClient;
-import org.apache.commons.net.ntp.TimeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import java.net.InetAddress;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -66,18 +65,13 @@ public class Main {
             }
         }
 
-        // 3. NTP Health Check
-        try {
-            NTPUDPClient client = new NTPUDPClient();
-            client.setDefaultTimeout(5000);
-            client.open();
-            InetAddress hostAddr = InetAddress.getByName(ntpServer);
-            TimeInfo info = client.getTime(hostAddr);
-            long returnTime = info.getMessage().getTransmitTimeStamp().getTime();
-            logger.info("NTP Network Time Status: OK ({})", Instant.ofEpochMilli(returnTime));
-            client.close();
-        } catch (Exception e) {
-            logger.error("NTP Health Check failed: {}", e.getMessage());
+        // 3. NTP Health Check (Using Refactored NtpClient)
+        NtpClient ntpClient = new NtpClient(5000);
+        Optional<Instant> networkTime = ntpClient.poll(ntpServer);
+        if (networkTime.isPresent()) {
+            logger.info("NTP Network Time Status: OK ({})", networkTime.get());
+        } else {
+            logger.error("NTP Health Check failed: Unable to reach {}", ntpServer);
         }
 
         // 4. Start Serial Ingestion

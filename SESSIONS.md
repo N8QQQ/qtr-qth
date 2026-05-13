@@ -29,23 +29,32 @@ This log tracks tactical development sessions, capturing duration, charters, and
 ## 📅 Sprint 4: Network Time Reference (v0.3.0)
 **Goal:** Establish a secure, high-precision network time baseline.
 
-### Session 2026-05-12: Phase 4.1 - Supply Chain & UX Refinement
-- **Charter:** Implement Gradle Dependency Verification and simplify Console UX.
+### Session 2026-05-12: Phase 4.1 & 4.2 - Supply Chain, UX & NTP Baseline
+- **Charter:** Secure supply chain, simplify UX, and implement baseline NTP polling.
 - **Duration:** 1 Hour
+- **Timeline:**
+    - **16:30:** Session Start. SBA initialized for Phase 4.
+    - **16:45:** SOW-01: Dependency verification metadata generated and verified via clean build.
+    - **17:00:** UX-01: Console log pattern simplified for operator focus.
+    - **17:10:** Bench test executed on COM3; verified successful lock with refined UX.
+    - **17:15:** Pulling in Phase 4.2: Initializing NTP Client implementation.
+    - **17:25:** NtpClient component implemented and BDD-certified (100% logic coverage).
+    - **17:30:** Main refactored to use modular NtpClient for health check.
 - **Outcome:** 
     - [x] SOW-01: Gradle Dependency Verification implemented (SHA-256).
     - [x] UX-01: Simplified console log pattern to focus on telemetry.
+    - [x] Phase 4.2: Baseline NTP client implemented and verified.
 - **Defects Found/Fixed:** 
     - Fixed PowerShell bench script syntax.
-    - Verified real-world ingestion on COM3.
+    - Standardized NTP polling logic across the application.
 - **Calibration:**
-    - **Estimated SP:** 2
+    - **Estimated SP:** 4
     - **Actual Hours:** 1.0
-    - **Velocity:** 2.0 SP/Hour
+    - **Velocity:** 4.0 SP/Hour
 
 ---
 ## 📈 Calibration History
 | Sprint | Date | Total SP | Total Hours | SP/Hour | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 3 | 2026-05-10 | 5 | 4.0 | 1.25 | Refactored pipeline + Hardening |
-| 4 | 2026-05-12 | 2 | 1.0 | 2.0 | Supply Chain + UX Polish |
+| 4 | 2026-05-12 | 4 | 1.0 | 4.0 | Supply Chain + UX + NTP Baseline |
