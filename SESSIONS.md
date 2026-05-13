@@ -25,7 +25,27 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **Velocity:** 1.25 SP/Hour
 
 ---
+
+## 📅 Sprint 4: Network Time Reference (v0.3.0)
+**Goal:** Establish a secure, high-precision network time baseline.
+
+### Session 2026-05-12: Phase 4.1 - Supply Chain & UX Refinement
+- **Charter:** Implement Gradle Dependency Verification and simplify Console UX.
+- **Duration:** 1 Hour
+- **Outcome:** 
+    - [x] SOW-01: Gradle Dependency Verification implemented (SHA-256).
+    - [x] UX-01: Simplified console log pattern to focus on telemetry.
+- **Defects Found/Fixed:** 
+    - Fixed PowerShell bench script syntax.
+    - Verified real-world ingestion on COM3.
+- **Calibration:**
+    - **Estimated SP:** 2
+    - **Actual Hours:** 1.0
+    - **Velocity:** 2.0 SP/Hour
+
+---
 ## 📈 Calibration History
 | Sprint | Date | Total SP | Total Hours | SP/Hour | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 3 | 2026-05-10 | 5 | 4.0 | 1.25 | Refactored pipeline + Hardening |
+| 4 | 2026-05-12 | 2 | 1.0 | 2.0 | Supply Chain + UX Polish |

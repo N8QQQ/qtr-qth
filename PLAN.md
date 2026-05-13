@@ -43,9 +43,9 @@ A task or phase is considered "Done" only when:
 ### Phase 4: Network Time Reference (v0.3.0)
 **Objective:** Establish a professional network-based time reference for drift comparison.
 **Branch:** `feat/ntp-nibbles`
-- **Phase 4.1: Supply Chain & Console UX** (SP: 2 | BV: 800)
-  - [ ] **SOW-01:** Implement Gradle Dependency Verification (SHA-256 signatures).
-  - [ ] **UX-01:** Simplify console log pattern to focus on raw GPS/Time telemetry for end-users.
+- **Phase 4.1: Supply Chain & Console UX** (COMPLETED)
+  - [x] **SOW-01:** Implement Gradle Dependency Verification (SHA-256 signatures).
+  - [x] **UX-01:** Simplify console log pattern to focus on raw GPS/Time telemetry for end-users.
 - **Phase 4.2: Baseline NTP Client** (SP: 2 | BV: 800)
   - [ ] Implement robust NTP poll to `pool.ntp.org` returning raw epoch time.
 - **Phase 4.3: Precision Metadata** (SP: 3 | BV: 500)
