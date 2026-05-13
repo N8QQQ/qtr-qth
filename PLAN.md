@@ -2,11 +2,8 @@
 
 `qtr-qth` is a high-precision GPS Time (QTR) and Location (QTH) hub designed for mission-critical synchronization in Amateur Radio and technical shacks.
 
-## 🏛️ Architectural Foundation
-- **Hardware Abstraction Layer (HAL):** Decouples business logic from physical serial ports.
-- **Functional Pipeline:** Telemetry is processed as an immutable stream of state transformations.
-- **Observability:** Structured logging via SLF4J + Logback with Async rolling files and MDC-based Trace IDs.
-- **LTS Stability:** Built on Java 21 LTS baseline.
+## 🏛️ Technical Design
+For details on the concurrency model and functional design patterns, refer to the **[System Architecture (ARCHITECTURE.md)](ARCHITECTURE.md)**.
 
 ## 🔄 Agile Governance: Session-Based Agile (SBA)
 The project follows a hybrid **SBA** methodology to maintain "Heritage Grade" quality in a hobbyist environment:
@@ -44,17 +41,13 @@ A task or phase is considered "Done" only when:
 **Objective:** Establish a professional network-based time reference for drift comparison.
 **Branch:** `feat/ntp-nibbles`
 - **Phase 4.1: Supply Chain & Console UX** (COMPLETED)
-  - [x] **SOW-01:** Implement Gradle Dependency Verification (SHA-256 signatures).
-  - [x] **UX-01:** Simplify console log pattern to focus on raw GPS/Time telemetry for end-users.
-- **Phase 4.2: Baseline NTP Client** (SP: 2 | BV: 800)
-  - [ ] Implement robust NTP poll to `pool.ntp.org` returning raw epoch time.
+- **Phase 4.2: Baseline NTP Client** (COMPLETED)
 - **Phase 4.3: Precision Metadata** (SP: 3 | BV: 500)
   - [ ] Capture RTT (Round-trip time), Stratum, and Root Dispersion.
 - **Phase 4.4: Pipeline Integration** (SP: 2 | BV: 500)
   - [ ] Integrate NTP telemetry into the functional pipeline with MDC Trace IDs.
 - **Phase 4.5: Resilience & Multi-Pooling** (SP: 3 | BV: 300)
   - [ ] Implement fallback pool manager for unreachable NTP hosts.
-  - [ ] Handle network timeouts and Jitter threshold filtering.
 
 ### Phase 5: Drift & Offset Analysis (v0.4.0)
 **Objective:** Quantify the accuracy of the system clock.
@@ -86,10 +79,11 @@ A task or phase is considered "Done" only when:
 
 ---
 ## 🧪 Current Quality Status
-- **Baseline Velocity:** 1.25 SP/Hour
-- **Projected Work Remaining:** 38 Story Points.
-- **Estimated Completion Effort:** ~30 Session Hours.
-- **Instruction Coverage:** 92.6% | **Security:** OWASP 2025 compliant.
+- **Baseline Velocity:** 5.45 SP/Hour (High-fidelity SBA calibration).
+- **Projected Work Remaining:** 32 Story Points.
+- **Estimated Completion Effort:** ~6 Session Hours.
+- **Instruction Coverage:** 92.7% | **Security:** OWASP 2025 compliant.
+- **Trailing Action (SOW-05):** Update feature branching policy to include `CITATION.cff` version bumps.
 
 ## ⚖️ Legal & Identity
 - **Developer:** Nicholas R. Ustick (N8QQQ) | **License:** GNU GPL v3.0
