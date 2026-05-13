@@ -20,8 +20,8 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - `SerialConnector`: Enqueue result check added to prevent silent drops.
     - `Simulator`: GPZDA checksum typo corrected.
 - **Calibration:**
-    - **Estimated SP:** 5 (Cumulative for Phase 3 refinements)
-    - **Actual Hours:** 4
+    - **Estimated SP:** 5
+    - **Actual Hours:** 4.0
     - **Velocity:** 1.25 SP/Hour
 
 ---
@@ -31,30 +31,25 @@ This log tracks tactical development sessions, capturing duration, charters, and
 
 ### Session 2026-05-12: Phase 4.1 & 4.2 - Supply Chain, UX & NTP Baseline
 - **Charter:** Secure supply chain, simplify UX, and implement baseline NTP polling.
-- **Duration:** 1 Hour
+- **Duration:** 0.5 Hours
 - **Timeline:**
-    - **20:43:** Session Start. SBA initialized for Phase 4.
-    - **20:58:** SOW-01: Dependency verification metadata generated and verified via clean build.
-    - **21:13:** UX-01: Console log pattern simplified for operator focus.
-    - **21:23:** Bench test executed on COM3; verified successful lock with refined UX.
-    - **21:28:** Pulling in Phase 4.2: Initializing NTP Client implementation.
-    - **21:38:** NtpClient component implemented and BDD-certified (100% logic coverage).
-    - **21:43:** Session Complete. Main refactored and certified.
+    - **21:19:** Session Start. SBA initialized for Phase 4.
+    - **21:25:** SOW-01: Dependency verification metadata generated and verified.
+    - **21:32:** UX-01: Console log pattern simplified.
+    - **21:40:** NtpClient component implemented and BDD-certified.
+    - **21:47:** Session Complete. Main refactored and certified.
 - **Outcome:** 
     - [x] SOW-01: Gradle Dependency Verification implemented (SHA-256).
     - [x] UX-01: Simplified console log pattern to focus on telemetry.
     - [x] Phase 4.2: Baseline NTP client implemented and verified.
-- **Defects Found/Fixed:** 
-    - Fixed PowerShell bench script syntax.
-    - Standardized NTP polling logic across the application.
 - **Calibration:**
     - **Estimated SP:** 4
-    - **Actual Hours:** 1.0
-    - **Velocity:** 4.0 SP/Hour
+    - **Actual Hours:** 0.5
+    - **Velocity:** 8.0 SP/Hour
 
 ---
 ## 📈 Calibration History
 | Sprint | Date | Total SP | Total Hours | SP/Hour | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 3 | 2026-05-10 | 5 | 4.0 | 1.25 | Refactored pipeline + Hardening |
-| 4 | 2026-05-12 | 4 | 1.0 | 4.0 | Supply Chain + UX + NTP Baseline |
+| 4 | 2026-05-12 | 4 | 0.5 | 8.0 | High-velocity Supply Chain + NTP |
