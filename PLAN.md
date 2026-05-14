@@ -42,10 +42,8 @@ A task or phase is considered "Done" only when:
 **Branch:** `feat/ntp-nibbles`
 - **Phase 4.1: Supply Chain & Console UX** (COMPLETED)
 - **Phase 4.2: Baseline NTP Client** (COMPLETED)
-- **Phase 4.3: Precision Metadata** (SP: 3 | BV: 500)
-  - [ ] Capture RTT (Round-trip time), Stratum, and Root Dispersion.
-- **Phase 4.4: Pipeline Integration** (SP: 2 | BV: 500)
-  - [ ] Integrate NTP telemetry into the functional pipeline with MDC Trace IDs.
+- **Phase 4.3: Precision Metadata** (COMPLETED)
+- **Phase 4.4: Pipeline Integration** (COMPLETED)
 - **Phase 4.5: Resilience & Multi-Pooling** (SP: 3 | BV: 300)
   - [ ] Implement fallback pool manager for unreachable NTP hosts.
 

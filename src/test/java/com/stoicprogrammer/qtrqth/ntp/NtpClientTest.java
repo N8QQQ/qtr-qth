@@ -37,22 +37,42 @@ class NtpClientTest extends BddTest {
         fixture.thenResultIsEmpty();
     }
 
+    @Test
+    void givenAListOfServers_whenPrimaryFails_thenFallbackToSecondary() {
+        fixture.givenServers(java.util.List.of("invalid.host", "pool.ntp.org"));
+        fixture.whenPollingDetailed();
+        fixture.thenDetailedResultIsPresentWithMetadata();
+    }
+
+    @Test
+    void givenAllServersFail_whenPolling_thenReturnEmpty() {
+        fixture.givenServers(java.util.List.of("invalid.host.one", "invalid.host.two"));
+        fixture.whenPollingDetailed();
+        fixture.thenDetailedResultIsEmpty();
+    }
+
     private class NtpFixture {
-        private String server;
+        private java.util.List<String> servers;
         private Optional<Instant> result;
         private Optional<NtpResponse> detailedResult;
         private final NtpClient client = new NtpClient(3000);
 
         void givenServer(String server) {
-            this.server = server;
+            this.servers = java.util.List.of(server);
+        }
+
+        void givenServers(java.util.List<String> servers) {
+            this.servers = servers;
         }
 
         void whenPolling() {
-            this.result = client.poll(server);
+            // Updated to handle multiple servers in implementation
+            this.result = client.poll(servers.get(0)); 
         }
 
         void whenPollingDetailed() {
-            this.detailedResult = client.pollDetailed(server);
+            // We will update the signature to accept List<String>
+            this.detailedResult = client.pollDetailed(servers);
         }
 
         void thenResultIsPresent() {
@@ -75,6 +95,10 @@ class NtpClientTest extends BddTest {
 
         void thenResultIsEmpty() {
             thenTrue(result.isEmpty());
+        }
+
+        void thenDetailedResultIsEmpty() {
+            thenTrue(detailedResult.isEmpty());
         }
     }
 }

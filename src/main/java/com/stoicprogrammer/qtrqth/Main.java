@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,11 +38,11 @@ public class Main {
         
         // 1. Load Configuration
         ConfigManager config = new ConfigManager("qtr-qth.properties");
-        String ntpServer = config.getProperty("ntp.server");
+        List<String> ntpPool = java.util.Arrays.asList(config.getProperty("ntp.server").split(","));
         boolean simulationMode = Boolean.parseBoolean(config.getProperty("simulation.mode"));
         boolean showRaw = Boolean.parseBoolean(config.getProperty("display.raw.telemetry"));
         
-        logger.info("Configuration Loaded - NTP: {}, SimMode: {}, RawTelemetry: {}", ntpServer, simulationMode, showRaw);
+        logger.info("Configuration Loaded - NTP Pool: {}, SimMode: {}, RawTelemetry: {}", ntpPool, simulationMode, showRaw);
 
         // 2. Serial Discovery
         com.stoicprogrammer.qtrqth.serial.api.ISerialProvider provider;
@@ -80,7 +79,7 @@ public class Main {
 
         // Initial Poll and Scheduled Heartbeat
         ntpExecutor.scheduleAtFixedRate(() -> {
-            ntpClient.pollDetailed(ntpServer).ifPresent(response -> {
+            ntpClient.pollDetailed(ntpPool).ifPresent(response -> {
                 lastNtp.set(response);
                 logger.info("NTP Heartbeat: {} | Stratum: {} | RTT: {}ms", 
                     response.time(), response.stratum(), response.rttMs());

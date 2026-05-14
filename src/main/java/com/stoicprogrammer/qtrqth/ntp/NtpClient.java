@@ -7,11 +7,12 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
  * Robust NTP Client for capturing network-based time references.
- * Handles server polling and precision metadata extraction.
+ * Handles server polling, precision metadata extraction, and multi-server fallback.
  */
 public class NtpClient {
     private static final Logger logger = LoggerFactory.getLogger(NtpClient.class);
@@ -22,11 +23,49 @@ public class NtpClient {
     }
 
     /**
+     * Polls the specified NTP servers for high-fidelity time and metadata.
+     * Tries each server in the list until one succeeds.
+     * @param hostnames The list of NTP server addresses.
+     * @return An Optional containing the NtpResponse, or empty if all polls failed.
+     */
+    public Optional<NtpResponse> pollDetailed(List<String> hostnames) {
+        if (hostnames == null || hostnames.isEmpty()) {
+            return Optional.empty();
+        }
+
+        for (String host : hostnames) {
+            Optional<NtpResponse> response = pollSingle(host);
+            if (response.isPresent()) {
+                return response;
+            }
+        }
+        
+        logger.warn("All NTP polls failed for pool: {}", hostnames);
+        return Optional.empty();
+    }
+
+    /**
      * Polls the specified NTP server for high-fidelity time and metadata.
      * @param hostname The NTP server address.
      * @return An Optional containing the NtpResponse, or empty if the poll failed.
      */
     public Optional<NtpResponse> pollDetailed(String hostname) {
+        return pollDetailed(List.of(hostname));
+    }
+
+    /**
+     * Polls the specified NTP server for the current time.
+     * @param hostname The NTP server address (e.g., pool.ntp.org).
+     * @return An Optional containing the Instant, or empty if the poll failed.
+     */
+    public Optional<Instant> poll(String hostname) {
+        return pollDetailed(hostname).map(NtpResponse::time);
+    }
+
+    /**
+     * Internal method to poll a single host.
+     */
+    private Optional<NtpResponse> pollSingle(String hostname) {
         NTPUDPClient client = new NTPUDPClient();
         client.setDefaultTimeout(timeoutMs);
         
@@ -34,7 +73,6 @@ public class NtpClient {
             client.open();
             InetAddress hostAddr = InetAddress.getByName(hostname);
             
-            // Capture Start Time for RTT calculation
             TimeInfo info = client.getTime(hostAddr);
             info.computeDetails(); // Computes RTT and Offset
             
@@ -45,27 +83,18 @@ public class NtpClient {
 
             NtpResponse response = new NtpResponse(networkTime, rtt, stratum, dispersion);
             
-            logger.debug("NTP Detailed Poll Successful: {} | RTT: {}ms | Stratum: {} | Dispersion: {}ms", 
+            logger.debug("NTP Poll Successful: {} | RTT: {}ms | Stratum: {} | Dispersion: {}ms", 
                 hostname, rtt, stratum, String.format("%.2f", dispersion));
             
             return Optional.of(response);
             
         } catch (Exception e) {
-            logger.warn("NTP Detailed Poll Failed for {}: {}", hostname, e.getMessage());
+            logger.warn("NTP Poll Failed for {}: {}", hostname, e.getMessage());
             return Optional.empty();
         } finally {
             if (client.isOpen()) {
                 client.close();
             }
         }
-    }
-
-    /**
-     * Polls the specified NTP server for the current time.
-     * @param hostname The NTP server address (e.g., pool.ntp.org).
-     * @return An Optional containing the Instant, or empty if the poll failed.
-     */
-    public Optional<Instant> poll(String hostname) {
-        return pollDetailed(hostname).map(NtpResponse::time);
     }
 }
