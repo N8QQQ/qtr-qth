@@ -22,7 +22,7 @@ class ConfigManagerTest extends BddTest {
         fixture.givenNoConfigFile();
         fixture.whenInitializing();
         
-        fixture.thenPropertyIs("ntp.server", "pool.ntp.org");
+        fixture.thenPropertyIs("ntp.server", "pool.ntp.org,time.google.com,time.windows.com");
         fixture.thenPropertyIs("serial.baud", "9600");
         fixture.thenPropertyIs("sync.threshold.ms", "1000");
         fixture.thenPropertyIs("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver");

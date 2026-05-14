@@ -48,7 +48,7 @@ This log tracks tactical development sessions, capturing duration, charters, and
 - **Defects Found/Fixed:** 
     - Corrected SLF4J formatting in NmeaParser.
 - **Calibration:**
-    - **Estimated SP:** 6 (4 from previous + 2 for architecture/docs)
+    - **Estimated SP:** 6
     - **Actual Hours:** 1.1
     - **Velocity:** 5.45 SP/Hour
 - **Trailing Actions:**
@@ -59,25 +59,30 @@ This log tracks tactical development sessions, capturing duration, charters, and
 ## 📅 Sprint 4: Network Time Reference (v0.3.0)
 **Goal:** Establish a secure, high-precision network time baseline.
 
-### Session 2026-05-13: Phase 4.3 - Precision Metadata
-- **Charter:** Evolve NtpClient to capture RTT, Stratum, and Dispersion.
-- **Duration:** 0.5 Hours (In Progress)
+### Session 2026-05-13: Phase 4.3 - 4.5 Precision, Confluence & Resilience
+- **Charter:** Evolve NtpClient metadata, implement Two-River Confluence, and add Multi-Pooling.
+- **Duration:** 1.7 Hours
 - **Timeline:**
     - **21:51:** Session Start. Formalized engineering tenets in ARCHITECTURE.md.
     - **22:00:** Created NtpResponse record and initiated Red Phase with failing BDD test.
     - **22:08:** Green Phase: Implemented precision metadata extraction in NtpClient.
     - **22:15:** Certified Phase 4.3 with passing tests (100% logic coverage).
+    - **22:30:** Phase 4.4: Implemented Two-River Confluence concurrency model.
+    - **22:45:** Phase 4.5: Implemented Multi-Pooling resilience with prioritized server list.
+    - **22:55:** Heritage Release Protocol formalized in DEVELOPER.md.
+    - **23:05:** Session Complete. v0.3.0 DoD Certified.
 - **Outcome:** 
     - [x] Phase 4.3: Precision Metadata (RTT, Stratum, Dispersion) implemented and verified.
     - [x] Phase 4.4: Pipeline Integration (Two-River Confluence) implemented.
-    - [ ] Phase 4.5: Resilience & Multi-Pooling implemented.
-    - [ ] Phase 4 DoD Certification: Coverage & Security final pass.
+    - [x] Phase 4.5: Resilience & Multi-Pooling implemented.
+    - [x] Heritage Release Protocol established.
 - **Defects Found/Fixed:** 
     - Corrected SLF4J formatting in NmeaParser.
+    - Repaired build.gradle.kts and Main.java syntax corruption.
 - **Calibration:**
-    - **Estimated SP:** 11 (Phase 4.1-4.5 + Architecture)
-    - **Actual Hours:** 
-    - **Velocity:** 
+    - **Estimated SP:** 12
+    - **Actual Hours:** 1.7
+    - **Velocity:** 7.05 SP/Hour
 
 ---
 ## 📈 Calibration History
@@ -85,4 +90,4 @@ This log tracks tactical development sessions, capturing duration, charters, and
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 3 | 2026-05-10 | 5 | 4.0 | 1.25 | Refactored pipeline + Hardening |
 | 4 | 2026-05-12 | 6 | 1.1 | 5.45 | Supply Chain, NTP, and Architecture Refresh |
-| 4 | 2026-05-13 | 8 | 1.0 | 8.0 | Precision Metadata + Confluence |
+| 4 | 2026-05-13 | 12 | 1.7 | 7.05 | Phase 4 Closure + Release Protocol |
