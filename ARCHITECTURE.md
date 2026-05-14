@@ -25,6 +25,15 @@ The two rivers merge at the **Telemetry Pipeline** using the **Atomic Snapshot**
 - The GPS River takes a non-blocking snapshot of this reference during every pulse.
 - **Result:** A single, immutable `TelemetryPulse` packet containing both GPS reality and Network reference.
 
+## 🛠️ Engineering Tenets
+
+The system is built on four core pillars to ensure long-term viability and "Heritage Grade" quality:
+
+1.  **Testability (TDD/BDD):** No functional logic exists without a corresponding automated test. The system is decoupled via HAL and Interfaces to ensure 100% test coverage of business rules.
+2.  **Extensibility:** The "Two-River Confluence" model allows for adding new data sources (e.g., secondary GPS, Weather telemetry) by simply adding a new "River" thread and an Atomic Reference.
+3.  **Refactorability:** Using pure functions and immutable records makes logic easy to move, modify, and optimize without side-effects.
+4.  **Third-Party Usability:** Core components (`NtpClient`, `NmeaParser`, `GridSquareCalculator`) are designed as high-quality, decoupled modules that can be easily used by third parties or in forked projects.
+
 ## 🛠️ Design Patterns
 
 ### 1. Hardware Abstraction Layer (HAL)

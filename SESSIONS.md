@@ -55,6 +55,27 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **SOW-05:** Update Feature Branching Policy to require `CITATION.cff` version bump (or prompt).
 
 ---
+
+## 📅 Sprint 4: Network Time Reference (v0.3.0)
+**Goal:** Establish a secure, high-precision network time baseline.
+
+### Session 2026-05-13: Phase 4.3 - Precision Metadata
+- **Charter:** Evolve NtpClient to capture RTT, Stratum, and Dispersion.
+- **Duration:** 0.5 Hours (In Progress)
+- **Timeline:**
+    - **21:51:** Session Start. Formalized engineering tenets in ARCHITECTURE.md.
+    - **22:00:** Created NtpResponse record and initiated Red Phase with failing BDD test.
+    - **22:08:** Green Phase: Implemented precision metadata extraction in NtpClient.
+    - **22:15:** Certified Phase 4.3 with passing tests (100% logic coverage).
+- **Outcome:** 
+    - [x] Phase 4.3: Precision Metadata (RTT, Stratum, Dispersion) implemented and verified.
+- **Defects Found/Fixed:**
+- **Calibration:**
+    - **Estimated SP:** 3
+    - **Actual Hours:** 0.4
+    - **Velocity:** 7.5 SP/Hour
+
+---
 ## 📈 Calibration History
 | Sprint | Date | Total SP | Total Hours | SP/Hour | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |

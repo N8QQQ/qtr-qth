@@ -5,6 +5,7 @@ import com.stoicprogrammer.qtrqth.nmea.GpsData;
 import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.ntp.NtpClient;
+import com.stoicprogrammer.qtrqth.ntp.NtpResponse;
 import com.stoicprogrammer.qtrqth.serial.PortDiscovery;
 import com.stoicprogrammer.qtrqth.serial.SerialConnector;
 import com.stoicprogrammer.qtrqth.util.GridSquareCalculator;
@@ -14,7 +15,9 @@ import org.slf4j.MDC;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -65,16 +68,26 @@ public class Main {
             }
         }
 
-        // 3. NTP Health Check (Using Refactored NtpClient)
+        // 3. NTP Heartbeat (The "Slow River")
         NtpClient ntpClient = new NtpClient(5000);
-        Optional<Instant> networkTime = ntpClient.poll(ntpServer);
-        if (networkTime.isPresent()) {
-            logger.info("NTP Network Time Status: OK ({})", networkTime.get());
-        } else {
-            logger.error("NTP Health Check failed: Unable to reach {}", ntpServer);
-        }
+        AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
+        
+        ScheduledExecutorService ntpExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "ntp-heartbeat");
+            t.setDaemon(true);
+            return t;
+        });
 
-        // 4. Start Serial Ingestion
+        // Initial Poll and Scheduled Heartbeat
+        ntpExecutor.scheduleAtFixedRate(() -> {
+            ntpClient.pollDetailed(ntpServer).ifPresent(response -> {
+                lastNtp.set(response);
+                logger.info("NTP Heartbeat: {} | Stratum: {} | RTT: {}ms", 
+                    response.time(), response.stratum(), response.rttMs());
+            });
+        }, 0, 60, TimeUnit.SECONDS);
+
+        // 4. Start Serial Ingestion (The "Fast River")
         if (likelyGps != null) {
             NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
             NmeaParser parser = new NmeaParser();
@@ -87,13 +100,14 @@ public class Main {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 logger.info("Shutdown signal received. Closing resources...");
                 connector.disconnect();
+                ntpExecutor.shutdown();
             }));
 
             logger.info("Connecting to {}...", likelyGps);
 
-            // The Assembly Line: Functional Telemetry Pipeline with MDC Tracking
+            // The Assembly Line: Functional Telemetry Pipeline with MDC Tracking and NTP Snapshot
             connector.connect(likelyGps)
-                .map(TelemetryPulse::start)
+                .map(s -> TelemetryPulse.start(s, lastNtp.get()))
                 .peek(p -> { if (showRaw) p.logRaw(logger); })
                 .map(p -> p.update(parser, currentFix))
                 .filter(TelemetryPulse::hasValidFix)
@@ -109,11 +123,11 @@ public class Main {
      * Manages MDC Trace IDs and logging context.
      * Package-private for unit testing.
      */
-    static record TelemetryPulse(String pulseId, String sentence, GpsData data) {
+    static record TelemetryPulse(String pulseId, String sentence, GpsData data, NtpResponse reference) {
         
-        static TelemetryPulse start(String sentence) {
+        static TelemetryPulse start(String sentence, NtpResponse ntp) {
             String id = String.format("%04X", (sentence.hashCode() & 0xFFFF));
-            return new TelemetryPulse(id, sentence, null);
+            return new TelemetryPulse(id, sentence, null, ntp);
         }
 
         void logRaw(Logger log) {
@@ -122,7 +136,7 @@ public class Main {
 
         TelemetryPulse update(NmeaParser parser, AtomicReference<GpsData> state) {
             GpsData next = state.updateAndGet(fix -> parser.parse(sentence, fix));
-            return new TelemetryPulse(pulseId, sentence, next);
+            return new TelemetryPulse(pulseId, sentence, next, reference);
         }
 
         boolean hasValidFix() {
@@ -132,7 +146,10 @@ public class Main {
         void logFinal(Logger log) {
             runWithContext(() -> {
                 String grid = GridSquareCalculator.calculate(data.latitude(), data.longitude());
-                log.info("GPS Fix Acquired: {} | Grid: {}", data, grid);
+                String ntpStatus = (reference != null) ? String.format("NTP: %s (RTT: %dms, Stratum: %d)", 
+                    reference.time(), reference.rttMs(), reference.stratum()) : "NTP: No Reference";
+                
+                log.info("GPS Fix: {} | {} | Grid: {}", data, ntpStatus, grid);
             });
         }
 
