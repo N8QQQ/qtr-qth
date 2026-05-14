@@ -69,11 +69,13 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **22:15:** Certified Phase 4.3 with passing tests (100% logic coverage).
 - **Outcome:** 
     - [x] Phase 4.3: Precision Metadata (RTT, Stratum, Dispersion) implemented and verified.
-- **Defects Found/Fixed:**
+    - [x] Phase 4.4: Pipeline Integration (Two-River Confluence) implemented.
+- **Defects Found/Fixed:** 
+    - Corrected SLF4J formatting in NmeaParser.
 - **Calibration:**
-    - **Estimated SP:** 3
-    - **Actual Hours:** 0.4
-    - **Velocity:** 7.5 SP/Hour
+    - **Estimated SP:** 8 (Phase 4.1-4.4 + Architecture)
+    - **Actual Hours:** 1.0
+    - **Velocity:** 8.0 SP/Hour
 
 ---
 ## 📈 Calibration History
@@ -81,3 +83,4 @@ This log tracks tactical development sessions, capturing duration, charters, and
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 3 | 2026-05-10 | 5 | 4.0 | 1.25 | Refactored pipeline + Hardening |
 | 4 | 2026-05-12 | 6 | 1.1 | 5.45 | Supply Chain, NTP, and Architecture Refresh |
+| 4 | 2026-05-13 | 8 | 1.0 | 8.0 | Precision Metadata + Confluence |
