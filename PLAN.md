@@ -47,8 +47,17 @@ A task or phase is considered "Done" only when:
 ### Phase 5: Drift & Offset Analysis (v0.4.0)
 **Objective:** Quantify the accuracy of the system clock.
 **Branch:** `feat/jitter-bug`
-- [ ] **Phase 5.1: Clock Differential Logic** (SP: 3 | BV: 900)
-- [ ] **Phase 5.2: Jitter & Stability Scoring** (SP: 2 | BV: 400)
+- **Phase 5.1: The Offset Engine (The "Math")** (SP: 3 | BV: 900)
+  - [ ] **5.1.1: System Clock Sampler:** Capture `System.nanoTime()` at pulse arrival.
+  - [ ] **5.1.2: Differential Calculator:** Compare System Time vs. GPS (QTR) vs. NTP.
+  - [ ] **5.1.3: Reference Prioritization:** Logic to weight GPS vs. NTP based on metadata.
+- **Phase 5.2: Jitter & Statistics (The "Stability")** (SP: 2 | BV: 400)
+  - [ ] **5.2.1: Sliding Window Buffer:** Memory-efficient storage for last 60 samples.
+  - [ ] **5.2.2: Standard Deviation & Mean:** Calculate average offset and jitter.
+  - [ ] **5.2.3: Stability Rating Engine:** Heuristic "Shack-Grade" (S-Grade, A-Grade, etc.).
+- **Phase 5.3: Observability Update (The "Report")** (SP: 1 | BV: 300)
+  - [ ] **5.3.1: Drift Logging:** Enhance pulse logs with drift and jitter metadata.
+  - [ ] **5.3.2: Health Pulse:** Periodic summary log entry detailing overall time health.
 
 ### Phase 6: Precision Clock Synchronization (v1.0.0)
 **Objective:** Update the system clock with precision and authority.
