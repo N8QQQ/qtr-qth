@@ -52,7 +52,9 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **Actual Hours:** 1.1
     - **Velocity:** 5.45 SP/Hour
 - **Trailing Actions:**
-    - **SOW-05:** Update Feature Branching Policy to require `CITATION.cff` version bump (or prompt).
+    - **SOW-05:** Update Feature Branching Policy to require `CITATION.cff` version bump.
+    - **SOW-06:** Implement NTP HAL to stabilize GitHub CI/CD build (Phase 4.6).
+    - **SOW-07:** Proactive migration of GitHub Actions to Node.js 24 (checkout@v6, setup-java@v5, upload-artifact@v7).
 
 ---
 
