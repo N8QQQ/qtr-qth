@@ -9,5 +9,5 @@ authors:
 repository-code: "https://github.com/N8QQQ/qtr-qth"
 abstract: "A high-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks and scientific synchronization."
 license: "GPL-3.0-only"
-version: 0.2.0
-date-released: "2026-05-10"
+version: 0.3.0
+date-released: "2026-05-14"

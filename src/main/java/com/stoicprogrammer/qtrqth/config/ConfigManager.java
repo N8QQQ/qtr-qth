@@ -16,7 +16,7 @@ public class ConfigManager {
 
     public ConfigManager(String configPath) {
         // Load Defaults
-        properties.setProperty("ntp.server", "pool.ntp.org");
+        properties.setProperty("ntp.server", "pool.ntp.org,time.google.com,time.windows.com");
         properties.setProperty("serial.baud", "9600");
         properties.setProperty("sync.threshold.ms", "1000");
         properties.setProperty("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver");
