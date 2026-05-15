@@ -143,6 +143,18 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 
 ---
 
-## 11. Workflow Rules
+## 12. Virtualization & CI/CD Hardware Guardrails
+- **Hardware Fallback:** When physical `/dev/tty` or `COM` ports are unreachable (e.g., in Docker/WSL/CI), the system must utilize the `SimulationSerialProvider` to prevent hard crashes.
+- **Simulation Discovery:** The system must proactively suggest `simulation.mode = true` when hardware discovery returns zero viable paths in a virtualized context.
+- **Rootless Operation:** Logic must assume that containers may run without `PRIVILEGED` access. All hardware-bound exceptions must be caught and transformed into informative functional logs.
+
+## 13. Deterministic Time Ingestion
+- **Ban Static Time:** The use of `Instant.now()` or `System.currentTimeMillis()` is strictly forbidden in production logic.
+- **Clock Injection:** All time-sensitive components must accept a `java.time.Clock` or `java.time.InstantSource` dependency.
+- **Testing Standard:** Verification of jitter and drift math must use `Clock.fixed()` or `Clock.offset()` to ensure 100% deterministic results across all host CPU architectures.
+
+---
+
+## 14. Workflow Rules
 - **Code Output:** Provide the complete Java code with brief comments explaining the functional flow.
 - **Review Before PR:** Ensure the user has the ability to review the overall change before submitting any Pull Requests. Do not auto-merge PRs.
