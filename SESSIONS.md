@@ -25,7 +25,8 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **19:45:** Bug Fix: Corrected Maidenhead Grid Square calculation logic and verified against global coordinates.
     - **20:30:** Visual Architecture: Updated GEMINI.md with Mermaid.js standards and enhanced documentation with TD/LR flowcharts and sequence diagrams.
     - **21:00:** Portability Hardening: Enshrined Rule 10 (Multi-OS/RPi) in GEMINI.md. Refactored file I/O to use java.nio.file.Path for transparent cross-platform compatibility (Pop_OS!, Win11, RPi).
-    - **21:15:** Session Complete.
+    - **21:30:** Roadmap Refinement: Inserted Phase 6 (Structural Hardening v0.4.1) for Typed Config and Numeric Purity. Shifted Virtual Shack to Phase 7 and added Graceful Hardware Fallback.
+    - **21:45:** Session Complete.
 - **Outcome:** 
     - [x] Phase 5 officially COMPLETED. All core logic is branchless and final.
     - [x] Automated linter (Checkstyle) integrated with 'Bulletproof' ruleset.
@@ -34,10 +35,11 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - [x] GitHub CI pipeline hardened for JDK 21 and Node.js 24.
     - [x] Architecture documentation enhanced with high-fidelity Mermaid visualizations.
     - [x] Codebase certified for cross-platform portability (NIO-based pathing).
+    - [x] Roadmap refined for structural hardening and failover.
 - **Calibration:**
-    - **Estimated SP:** 14 (Refactor + Linter + TDD + CI + Visualization + Portability)
-    - **Actual Hours:** 8.0
-    - **Velocity:** 1.75 SP/Hour
+    - **Estimated SP:** 15 (Refactor + Linter + TDD + CI + Visualization + Portability + Roadmap)
+    - **Actual Hours:** 8.5
+    - **Velocity:** 1.76 SP/Hour
 
 ---
 

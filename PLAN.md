@@ -40,39 +40,46 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 5.3: Automated Linter Integration**
 - [x] **Phase 5.4: Test Suite Reconciliation**
 
-### Phase 6: The Virtual Shack (v0.5.0)
+### Phase 6: Structural Hardening (v0.4.1)
+**Objective:** Final polish of the functional baseline before entering complex telemetry analysis.
+**Branch:** `feat/monad-weaver`
+- [ ] **Phase 6.1: Typed Configuration Pipeline:** Parse properties into an immutable `AppConfig` record to eliminate Stringly-Typed logic.
+- [ ] **Phase 6.2: Numeric Purity:** Wrap parsing mechanisms (like `Double.parseDouble`) in `Optional` wrappers via `Functional.java` to prevent hardware noise exceptions.
+
+### Phase 7: The Virtual Shack (v0.5.0)
 **Objective:** Cross-platform simulation of Linux/ARM64 and physical hardware.
 **Branch:** `feat/phantom-shack`
-- [ ] **Phase 6.1: Multi-Arch Dockerization:** amd64/arm64 build profiles.
-- [ ] **Phase 6.2: Hardware Spoofing (socat):** Simulated `/dev/ttyUSB0` in container.
-- [ ] **Phase 6.3: GitHub CI Hardening:** Integration of QEMU and ARM64 verification.
+- [ ] **Phase 7.1: Multi-Arch Dockerization:** amd64/arm64 build profiles.
+- [ ] **Phase 7.2: Hardware Spoofing (socat):** Simulated `/dev/ttyUSB0` in container.
+- [ ] **Phase 7.3: Graceful Hardware Fallback:** Change boot default to hardware mode; auto-failover to `SimulationSerialProvider` if no viable ports are found.
+- [ ] **Phase 7.4: GitHub CI Hardening:** Integration of QEMU and ARM64 verification.
 
-### Phase 7: Temporal Virtualization (v0.6.0)
+### Phase 8: Temporal Virtualization (v0.6.0)
 **Objective:** Decouple time-awareness for deterministic math verification.
 **Branch:** `feat/chrono-tesseract`
-- [ ] **Phase 7.1: Clock Dependency Injection:** Eliminate `Instant.now()`.
-- [ ] **Phase 7.2: Jitter Testing Baseline:** Verify math using `Clock.fixed()`.
+- [ ] **Phase 8.1: Clock Dependency Injection:** Eliminate `Instant.now()`.
+- [ ] **Phase 8.2: Jitter Testing Baseline:** Verify math using `Clock.fixed()`.
 
-### Phase 8: Drift & Offset Analysis (v0.7.0)
+### Phase 9: Drift & Offset Analysis (v0.7.0)
 **Objective:** Quantify the accuracy of the system clock.
 **Branch:** `feat/jitter-bug`
-- [ ] **Phase 8.1: The Offset Engine (The "Math")**
-- [ ] **Phase 8.2: Jitter & Statistics (The "Stability")**
-- [ ] **Phase 8.3: Observability Update (The "Report")**
+- [ ] **Phase 9.1: The Offset Engine (The "Math")**
+- [ ] **Phase 9.2: Jitter & Statistics (The "Stability")**
+- [ ] **Phase 9.3: Observability Update (The "Report")**
 
-### Phase 9: Precision Clock Synchronization (v1.0.0)
+### Phase 10: Precision Clock Synchronization (v1.0.0)
 **Objective:** Update the system clock with precision and authority.
-- [ ] **Phase 9.1: OS Permission HAL**
-- [ ] **Phase 9.2: Windows Time Service Provider**
-- [ ] **Phase 9.3: Linux/Pi Time Service Provider**
+- [ ] **Phase 10.1: OS Permission HAL**
+- [ ] **Phase 10.2: Windows Time Service Provider**
+- [ ] **Phase 10.3: Linux/Pi Time Service Provider**
 
-### Phase 10: The "QTH Hub" (v2.0.0)
+### Phase 11: The "QTH Hub" (v2.0.0)
 **Objective:** Broadcast live telemetry to 3rd party shack tools.
 
-### Phase 11: Dashboard - Embedded Web Scribe (v3.0.0)
-### Phase 12: Dashboard - RESTful Pulse API (v3.1.0)
-### Phase 13: Dashboard - "Shack-View" HTML (v4.0.0)
-### Phase 14: Heritage Stabilization (v5.0.0)
+### Phase 12: Dashboard - Embedded Web Scribe (v3.0.0)
+### Phase 13: Dashboard - RESTful Pulse API (v3.1.0)
+### Phase 14: Dashboard - "Shack-View" HTML (v4.0.0)
+### Phase 15: Heritage Stabilization (v5.0.0)
 
 ---
 ## 🧪 Current Quality Status
