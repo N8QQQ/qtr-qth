@@ -9,7 +9,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.BDDMockito.given;
 
 /**
  * Business Rule: [PHASE 2, STEP 2] - Serial Port Discovery.
@@ -19,24 +21,24 @@ class PortDiscoveryTest extends BddTest {
     private final DiscoveryFixture fixture = new DiscoveryFixture();
 
     @Test
-    void givenHardwareWithGps_whenScanning_thenGpsPortIsIdentified() {
-        fixture.givenMockHardwareHasPort("COM5", "u-blox 7 - GPS/GNSS Receiver");
-        fixture.whenScanning();
-        fixture.thenLikelyGpsIs("COM5");
+    void given_hardware_with_gps_when_scanning_then_gps_port_is_identified() {
+        fixture.given_mock_hardware_has_port("COM5", "u-blox 7 - GPS/GNSS Receiver");
+        fixture.when_scanning();
+        fixture.then_likely_gps_is("COM5");
     }
 
     @Test
-    void givenGenericHardware_whenScanning_thenNoLikelyGpsFound() {
-        fixture.givenMockHardwareHasPort("COM1", "Generic Communications Port");
-        fixture.whenScanning();
-        fixture.thenNoLikelyGpsFound();
+    void given_generic_hardware_when_scanning_then_no_likely_gps_found() {
+        fixture.given_mock_hardware_has_port("COM1", "Generic Communications Port");
+        fixture.when_scanning();
+        fixture.then_no_likely_gps_found();
     }
 
     @Test
-    void givenHardwareWithMultiplePorts_whenListing_thenAllPortNamesAreReturned() {
-        fixture.givenMockHardwareHasPorts(List.of("COM1", "COM2"));
-        fixture.whenListingPorts();
-        fixture.thenPortListContains("COM1", "COM2");
+    void given_hardware_with_multiple_ports_when_listing_then_all_port_names_are_returned() {
+        fixture.given_mock_hardware_has_ports(List.of("COM1", "COM2"));
+        fixture.when_listing_ports();
+        fixture.then_port_list_contains("COM1", "COM2");
     }
 
     private class DiscoveryFixture {
@@ -47,47 +49,46 @@ class PortDiscoveryTest extends BddTest {
         private List<String> portList;
 
         DiscoveryFixture() {
-            givenStubbing(mockConfig.getProperty("gps.discovery.keywords"))
+            given(mockConfig.getProperty("gps.discovery.keywords"))
                 .willReturn(Optional.of("gps,u-blox,prolific,silicon labs,gnss,receiver"));
         }
 
-        void givenMockHardwareHasPorts(final List<String> names) {
+        void given_mock_hardware_has_ports(final List<String> names) {
             final List<ISerialPort> ports = names.stream().map(name -> {
                 final ISerialPort mockPort = mock(ISerialPort.class);
-                givenStubbing(mockPort.getSystemPortName()).willReturn(name);
+                given(mockPort.getSystemPortName()).willReturn(name);
                 return mockPort;
             }).toList();
-            givenStubbing(mockProvider.getAvailablePorts()).willReturn(ports);
+            given(mockProvider.getAvailablePorts()).willReturn(ports);
         }
 
-        void givenMockHardwareHasPort(final String name, final String description) {
+        void given_mock_hardware_has_port(final String name, final String description) {
             final ISerialPort mockPort = mock(ISerialPort.class);
-            givenStubbing(mockPort.getSystemPortName()).willReturn(name);
-            givenStubbing(mockPort.getDescriptivePortName()).willReturn(name);
-            givenStubbing(mockPort.getPortDescription()).willReturn(description);
+            given(mockPort.getSystemPortName()).willReturn(name);
+            given(mockPort.getDescriptivePortName()).willReturn(name);
+            given(mockPort.getPortDescription()).willReturn(description);
             
-            givenStubbing(mockProvider.getAvailablePorts()).willReturn(List.of(mockPort));
+            given(mockProvider.getAvailablePorts()).willReturn(List.of(mockPort));
         }
 
-        void whenScanning() {
+        void when_scanning() {
             this.result = discovery.findLikelyGpsPort();
         }
 
-        void whenListingPorts() {
+        void when_listing_ports() {
             this.portList = discovery.getAvailablePorts();
         }
 
-        void thenLikelyGpsIs(final String expected) {
-            thenTrue(result.isPresent());
-            then(result.get(), expected);
+        void then_likely_gps_is(final String expected) {
+            assertThat(result).isPresent().contains(expected);
         }
 
-        void thenNoLikelyGpsFound() {
-            thenTrue(result.isEmpty());
+        void then_no_likely_gps_found() {
+            assertThat(result).isEmpty();
         }
 
-        void thenPortListContains(final String... expected) {
-            java.util.Arrays.stream(expected).forEach(name -> thenTrue(portList.contains(name)));
+        void then_port_list_contains(final String... expected) {
+            java.util.Arrays.stream(expected).forEach(name -> assertThat(portList).contains(name));
         }
     }
 }

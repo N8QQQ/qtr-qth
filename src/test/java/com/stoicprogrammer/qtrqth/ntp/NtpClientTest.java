@@ -8,56 +8,56 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
 
 /**
  * Business Rule: [PHASE 4.6] - CI Stabilization via NTP HAL.
- * Verify that the NTP client logic remains robust when using mocked network providers.
  */
 class NtpClientTest extends BddTest {
 
     private final NtpFixture fixture = new NtpFixture();
 
     @Test
-    void givenAValidNtpServer_whenPollingDetailed_thenReturnRichMetadata() {
-        fixture.givenMockServerSuccess("pool.ntp.org");
-        fixture.whenPollingDetailed();
-        fixture.thenDetailedResultIsPresentWithMetadata();
+    void given_a_valid_ntp_server_when_polling_detailed_then_return_rich_metadata() {
+        fixture.given_mock_server_success("pool.ntp.org");
+        fixture.when_polling_detailed();
+        fixture.then_detailed_result_is_present_with_metadata();
     }
 
     @Test
-    void givenAValidNtpServer_whenPolling_thenReturnValidInstant() {
-        fixture.givenMockServerSuccess("pool.ntp.org");
-        fixture.whenPolling();
-        fixture.thenResultIsPresent();
+    void given_a_valid_ntp_server_when_polling_then_return_valid_instant() {
+        fixture.given_mock_server_success("pool.ntp.org");
+        fixture.when_polling();
+        fixture.then_result_is_present();
     }
 
     @Test
-    void givenAnInvalidNtpServer_whenPolling_thenReturnEmptyOptional() {
-        fixture.givenMockServerFailure("invalid.host");
-        fixture.whenPolling();
-        fixture.thenResultIsEmpty();
+    void given_an_invalid_ntp_server_when_polling_then_return_empty_optional() {
+        fixture.given_mock_server_failure("invalid.host");
+        fixture.when_polling();
+        fixture.then_result_is_empty();
     }
 
     @Test
-    void givenAListOfServers_whenPrimaryFails_thenFallbackToSecondary() {
-        fixture.givenMockServerFailure("primary.host");
-        fixture.givenMockServerSuccess("secondary.host");
-        fixture.givenServers(List.of("primary.host", "secondary.host"));
-        fixture.whenPollingDetailed();
-        fixture.thenDetailedResultIsPresentWithMetadata();
+    void given_a_list_of_servers_when_primary_fails_then_fallback_to_secondary() {
+        fixture.given_mock_server_failure("primary.host");
+        fixture.given_mock_server_success("secondary.host");
+        fixture.given_servers(List.of("primary.host", "secondary.host"));
+        fixture.when_polling_detailed();
+        fixture.then_detailed_result_is_present_with_metadata();
     }
 
     @Test
-    void givenAllServersFail_whenPolling_thenReturnEmpty() {
-        fixture.givenMockServerFailure("host.one");
-        fixture.givenMockServerFailure("host.two");
-        fixture.givenServers(List.of("host.one", "host.two"));
-        fixture.whenPollingDetailed();
-        fixture.thenDetailedResultIsEmpty();
+    void given_all_servers_fail_when_polling_then_return_empty() {
+        fixture.given_mock_server_failure("host.one");
+        fixture.given_mock_server_failure("host.two");
+        fixture.given_servers(List.of("host.one", "host.two"));
+        fixture.when_polling_detailed();
+        fixture.then_detailed_result_is_empty();
     }
 
     private class NtpFixture {
@@ -67,49 +67,49 @@ class NtpClientTest extends BddTest {
         private final INtpProvider mockProvider = mock(INtpProvider.class);
         private final NtpClient client = new NtpClient(mockProvider, 3000);
 
-        void givenMockServerSuccess(final String host) {
+        void given_mock_server_success(final String host) {
             this.servers = List.of(host);
-            when(mockProvider.getTime(eq(host), anyInt()))
-                .thenReturn(Optional.of(new NtpResponse(Instant.now(), 10, 1, 5.0)));
+            given(mockProvider.getTime(eq(host), anyInt()))
+                .willReturn(Optional.of(new NtpResponse(Instant.now(), 10, 1, 5.0)));
         }
 
-        void givenMockServerFailure(final String host) {
+        void given_mock_server_failure(final String host) {
             this.servers = List.of(host);
-            when(mockProvider.getTime(eq(host), anyInt())).thenReturn(Optional.empty());
+            given(mockProvider.getTime(eq(host), anyInt())).willReturn(Optional.empty());
         }
 
-        void givenServers(final List<String> servers) {
+        void given_servers(final List<String> servers) {
             this.servers = servers;
         }
 
-        void whenPolling() {
+        void when_polling() {
             this.result = client.poll(servers.get(0)); 
         }
 
-        void whenPollingDetailed() {
+        void when_polling_detailed() {
             this.detailedResult = client.pollDetailed(servers);
         }
 
-        void thenResultIsPresent() {
-            thenTrue(result.isPresent());
+        void then_result_is_present() {
+            assertThat(result).isPresent();
         }
 
-        void thenDetailedResultIsPresentWithMetadata() {
-            thenTrue(detailedResult.isPresent());
+        void then_detailed_result_is_present_with_metadata() {
+            assertThat(detailedResult).isPresent();
             final NtpResponse response = detailedResult.get();
             
             // Verify Metadata (RTT > 0, Stratum > 0, Dispersion >= 0)
-            thenTrue(response.rttMs() >= 0);
-            thenTrue(response.stratum() > 0);
-            thenTrue(response.rootDispersionMs() >= 0);
+            assertThat(response.rttMs()).isGreaterThanOrEqualTo(0);
+            assertThat(response.stratum()).isGreaterThan(0);
+            assertThat(response.rootDispersionMs()).isGreaterThanOrEqualTo(0);
         }
 
-        void thenResultIsEmpty() {
-            thenTrue(result.isEmpty());
+        void then_result_is_empty() {
+            assertThat(result).isEmpty();
         }
 
-        void thenDetailedResultIsEmpty() {
-            thenTrue(detailedResult.isEmpty());
+        void then_detailed_result_is_empty() {
+            assertThat(detailedResult).isEmpty();
         }
     }
 }

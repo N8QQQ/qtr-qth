@@ -67,7 +67,7 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 *   **Rule:** If the project is limited to Vanilla Java but faces highly complex branching, deeply nested stream errors, or tuple requirements, the AI *must* append a `[SUGGESTION]` block to its output recommending the addition of `Vavr` or `Lombok` dependencies to simplify the codebase.
 
 ### Checked Exception Handling Standard
-*   **Rule:** Checked exceptions must never block stream evaluation or force ugly `try/catch` blocks inside lambdas. Use the appropriate ecosystem pattern verified above.
+*   **Rule:** Checked exceptions must never block stream evaluation or force ugly `try/catch` blocks inside lambdas. Use the appropriate ecosystem pattern verified below.
 
 ---
 
@@ -110,3 +110,45 @@ public class FunctionalArchitectureTest {
         .orShould().haveRawType(java.util.List.class);
 }
 ```
+
+---
+
+## 6. Testing Methodologies: Functional TDD & BDD Standards
+
+### Tooling Stack Integration
+*   **Frameworks:** Enforce JUnit 5 Jupiter engine combined with standard Mockito.
+*   **Assertion Engine:** Ban standard JUnit assertions (`assertEquals`). Enforce **AssertJ** (`assertThat()`) to ensure assertions maintain a fluent, stream-like functional pipeline.
+
+### Test-Driven Development (TDD) Workflow
+*   **Rule:** Enforce the Red-Green-Refactor loop during logic creation.
+*   **Execution Sequence:**
+    1.  **Red:** The AI must generate a failing unit test asserting business value *before* any production code is written.
+    2.  **Green:** Generate the minimal, expression-based functional logic required to pass the test.
+    3.  **Refactor:** Modernize the codebase (e.g., converting lambdas to method references) while validating that tests remain green.
+
+### Behavior-Driven Development (BDD) Layout
+*   **Rule:** Structure all test bodies using the Gherkin **Given-When-Then** pattern.
+*   **Naming Standards:** Test method names must reflect business behaviors using snake_case syntax instead of camelCase method reflections.
+*   **Mockito Standard:** Ban imperative `Mockito.when()` patterns. Enforce declarative Mockito BDD syntax using `BDDMockito.given()` and `BDDMockito.then()`.
+
+### Mocking vs. Data Ingestion Architecture
+*   **Rule:** Mocks must be strictly isolated to external structural boundaries (Database drivers, Network clients, File I/O).
+*   **Enforcement:** Never mock internal business services, mathematical utilities, or data processing pipelines. If an internal component requires mocking, refactor the production method signature to accept inputs as raw, immutable data types or Java `record` instances rather than relying on heavy object dependencies.
+
+---
+
+## 7. Build Automation & GitHub Integration
+
+### Gradle Project Management
+*   **Rule:** When adding new components, enforce dependency configurations using Gradle's `implementation` and `testImplementation` separation scopes.
+*   **Enforcement:** Never use legacy `testCompile` or `compile` syntax. Ensure any suggested functional dependency additions are formatted cleanly for Groovy DSL `build.gradle` structures.
+
+### GitHub Actions Pipeline Awareness
+*   **Rule:** Assume that code modifications will trigger a GitHub Actions CI pipeline running under JDK 21.
+*   **Compilation Guardrails:** Because the CI server enforces `ignoreFailures = false` on Checkstyle, any generated code that includes implicit variable mutations, omitted `final` keywords, or raw mutable collections (`new ArrayList()`) will instantly break the pipeline. The AI must pre-validate source syntax patterns to avoid integration failures.
+
+---
+
+## 8. Workflow Rules
+- **Code Output:** Provide the complete Java code with brief comments explaining the functional flow.
+- **Review Before PR:** Ensure the user has the ability to review the overall change before submitting any Pull Requests or executing merges. Do not auto-merge PRs without explicit confirmation after review.

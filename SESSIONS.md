@@ -20,15 +20,20 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **17:30:** Automated Linter Integration: Refined Checkstyle configuration and activated Gradle plugin.
     - **18:00:** Linter Refactor: Corrected 92 violations across the test suite (Finality, Loop Ban, Immutable Collections).
     - **18:45:** Pivot: Renamed branch to `feat/monad-weaver` and re-indexed roadmap (Phase 5 is now the Architectural Blueprint).
-    - **19:00:** Session Complete.
+    - **19:15:** TDD/BDD Hardening: Integrated AssertJ and BDDMockito. Refactored all 35 tests for fluent, snake_case behavioral verification.
+    - **19:30:** CI Evolution: Upgraded GitHub Actions to enforce the 'FP Architecture' quality gate and Gradle wrapper validation.
+    - **19:45:** Bug Fix: Corrected Maidenhead Grid Square calculation logic and verified against global coordinates.
+    - **20:00:** Session Complete.
 - **Outcome:** 
     - [x] Phase 5 officially COMPLETED. All core logic is branchless and final.
     - [x] Automated linter (Checkstyle) integrated with 'Bulletproof' ruleset.
     - [x] Codebase certified 100% compliant with the "Monad-Weaver" mandates.
+    - [x] Test suite upgraded to AssertJ/BDDMockito standards.
+    - [x] GitHub CI pipeline hardened for JDK 21 and Node.js 24.
 - **Calibration:**
-    - **Estimated SP:** 8 (Refactor + Linter + Re-indexing)
-    - **Actual Hours:** 4.5
-    - **Velocity:** 1.77 SP/Hour
+    - **Estimated SP:** 10 (Refactor + Linter + TDD + CI)
+    - **Actual Hours:** 5.5
+    - **Velocity:** 1.82 SP/Hour
 
 ---
 
@@ -63,4 +68,4 @@ This log tracks tactical development sessions, capturing duration, charters, and
 | 4 | 2026-05-12 | 6 | 1.1 | 5.45 | Supply Chain, NTP, and Architecture Refresh |
 | 4 | 2026-05-13 | 12 | 1.7 | 7.05 | Phase 4 Closure + Release Protocol |
 | 4 | 2026-05-14 | 3 | 1.0 | 3.00 | Roadmap Refinement + v0.3.0 Heritage Release |
-| 5 | 2026-05-15 | 8 | 4.5 | 1.77 | Architectural Blueprint + Linter Integration |
+| 5 | 2026-05-15 | 10 | 5.5 | 1.82 | Architectural Blueprint + Linter Integration |

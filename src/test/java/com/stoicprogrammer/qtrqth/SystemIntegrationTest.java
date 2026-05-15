@@ -19,11 +19,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 /**
  * Business Rule: [SYSTEM INTEGRITY] - End-to-End Operational Flow.
@@ -33,18 +34,17 @@ class SystemIntegrationTest extends BddTest {
     private final SystemFixture fixture = new SystemFixture();
 
     @Test
-    void givenSimulatedHardware_whenDataFlows_thenFinalGpsDataIsProduced() throws Exception {
-        fixture.givenSimulatedHardwareReady();
+    void given_simulated_hardware_when_data_flows_then_final_gps_data_is_produced() throws Exception {
+        fixture.given_simulated_hardware_ready();
         
-        // Feed multiple sentences to build a full record
-        fixture.whenSerialDataArrives("$GPRMC,123456,A,4000.000,N,08000.000,W,0,0,010126,,,A\r\n");
-        fixture.whenSerialDataArrives("$GPGGA,123456,4000.000,N,08000.000,W,1,08,1.0,100.0,M,,M,,\r\n");
+        fixture.when_serial_data_arrives("$GPRMC,123456,A,4000.000,N,08000.000,W,0,0,010126,,,A\r\n");
+        fixture.when_serial_data_arrives("$GPGGA,123456,4000.000,N,08000.000,W,1,08,1.0,100.0,M,,M,,\r\n");
         
-        fixture.thenCalculatedLatitudeIs(40.0);
-        fixture.thenCalculatedLongitudeIs(-80.0);
-        fixture.thenCalculatedAltitudeIs(100.0);
-        fixture.thenSatelliteCountIs(8);
-        fixture.thenCalculatedTimeIs(java.time.LocalTime.of(12, 34, 56));
+        fixture.then_calculated_latitude_is(40.0);
+        fixture.then_calculated_longitude_is(-80.0);
+        fixture.then_calculated_altitude_is(100.0);
+        fixture.then_satellite_count_is(8);
+        fixture.then_calculated_time_is(java.time.LocalTime.of(12, 34, 56));
     }
 
     private class SystemFixture {
@@ -59,24 +59,23 @@ class SystemIntegrationTest extends BddTest {
         private final List<GpsData> results = new CopyOnWriteArrayList<>();
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-        void givenSimulatedHardwareReady() {
+        void given_simulated_hardware_ready() {
             given(mockConfig.getProperty("serial.baud")).willReturn(Optional.of("9600"));
             given(mockProvider.getPort("SIM1")).willReturn(mockPort);
             given(mockPort.openPort()).willReturn(true);
             
             final AtomicReference<GpsData> state = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
             
-            // Connect and start pipeline in background thread
             final Stream<String> stream = connector.connect("SIM1");
             executor.submit(() -> stream.map(s -> state.updateAndGet(fix -> parser.parse(s, fix)))
                                         .forEach(results::add));
 
             final ArgumentCaptor<com.fazecast.jSerialComm.SerialPortDataListener> captor = ArgumentCaptor.forClass(com.fazecast.jSerialComm.SerialPortDataListener.class);
-            verify(mockPort).addDataListener(captor.capture());
+            then(mockPort).should().addDataListener(captor.capture());
             capturedListener = captor.getValue();
         }
 
-        void whenSerialDataArrives(final String raw) {
+        void when_serial_data_arrives(final String raw) {
             final byte[] bytes = raw.getBytes();
             given(mockPort.bytesAvailable()).willReturn(bytes.length);
             given(mockPort.readBytes(any(byte[].class), anyInt())).willAnswer(inv -> {
@@ -90,36 +89,36 @@ class SystemIntegrationTest extends BddTest {
             capturedListener.serialEvent(event);
         }
 
-        void thenCalculatedLatitudeIs(final double expected) throws Exception {
+        void then_calculated_latitude_is(final double expected) throws Exception {
             waitForResults();
-            then(results.get(results.size() - 1).latitude(), expected);
+            assertThat(results.get(results.size() - 1).latitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(0.000001));
         }
 
-        void thenCalculatedLongitudeIs(final double expected) throws Exception {
+        void then_calculated_longitude_is(final double expected) throws Exception {
             waitForResults();
-            then(results.get(results.size() - 1).longitude(), expected);
+            assertThat(results.get(results.size() - 1).longitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(0.000001));
         }
 
-        void thenCalculatedAltitudeIs(final double expected) throws Exception {
+        void then_calculated_altitude_is(final double expected) throws Exception {
             waitForResults();
-            then(results.get(results.size() - 1).altitude(), expected);
+            assertThat(results.get(results.size() - 1).altitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(0.000001));
         }
 
-        void thenSatelliteCountIs(final int expected) throws Exception {
+        void then_satellite_count_is(final int expected) throws Exception {
             waitForResults();
-            then(results.get(results.size() - 1).satelliteCount(), expected);
+            assertThat(results.get(results.size() - 1).satelliteCount()).isEqualTo(expected);
         }
 
-        void thenCalculatedTimeIs(final java.time.LocalTime expected) throws Exception {
+        void then_calculated_time_is(final java.time.LocalTime expected) throws Exception {
             waitForResults();
-            then(results.get(results.size() - 1).utcTime(), expected);
+            assertThat(results.get(results.size() - 1).utcTime()).isEqualTo(expected);
         }
 
         private void waitForResults() throws Exception {
             Stream.generate(() -> {
                 try { 
                     Thread.sleep(10); 
-                } catch (InterruptedException e) { 
+                } catch (final InterruptedException e) { 
                     Thread.currentThread().interrupt(); 
                 }
                 return results.isEmpty();

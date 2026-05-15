@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Business Rule: [PHASE 2, STEP 1] - Configuration Bootstrapping.
@@ -19,62 +20,59 @@ class ConfigManagerTest extends BddTest {
     private final ConfigFixture fixture = new ConfigFixture();
 
     @Test
-    void givenNoConfigFile_whenInitializing_thenAllDefaultsAreLoaded() {
-        fixture.givenNoConfigFile();
-        fixture.whenInitializing();
+    void given_no_config_file_when_initializing_then_all_defaults_are_loaded() {
+        fixture.given_no_config_file();
+        fixture.when_initializing();
         
-        fixture.thenPropertyIs("ntp.server", "pool.ntp.org,time.google.com,time.windows.com");
-        fixture.thenPropertyIs("serial.baud", "9600");
-        fixture.thenPropertyIs("sync.threshold.ms", "1000");
-        fixture.thenPropertyIs("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver");
-        fixture.thenPropertyIs("display.raw.telemetry", "false");
-        fixture.thenPropertyIs("simulation.mode", "true");
+        fixture.then_property_is("ntp.server", "pool.ntp.org,time.google.com,time.windows.com");
+        fixture.then_property_is("serial.baud", "9600");
+        fixture.then_property_is("sync.threshold.ms", "1000");
+        fixture.then_property_is("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver");
+        fixture.then_property_is("display.raw.telemetry", "false");
+        fixture.then_property_is("simulation.mode", "true");
     }
 
     @Test
-    void givenCustomConfigFile_whenInitializing_thenCustomValuesOverrideDefaults() throws IOException {
-        fixture.givenCustomConfigFile("ntp.server=custom.ntp.org\nserial.baud=4800\nsimulation.mode=false");
-        fixture.whenInitializing();
+    void given_custom_config_file_when_initializing_then_custom_values_override_defaults() throws IOException {
+        fixture.given_custom_config_file("ntp.server=custom.ntp.org\nserial.baud=4800\nsimulation.mode=false");
+        fixture.when_initializing();
         
-        fixture.thenPropertyIs("ntp.server", "custom.ntp.org");
-        fixture.thenPropertyIs("serial.baud", "4800");
-        fixture.thenPropertyIs("simulation.mode", "false");
-        // Verify defaults still hold for unprovided keys
-        fixture.thenPropertyIs("sync.threshold.ms", "1000");
+        fixture.then_property_is("ntp.server", "custom.ntp.org");
+        fixture.then_property_is("serial.baud", "4800");
+        fixture.then_property_is("simulation.mode", "false");
+        fixture.then_property_is("sync.threshold.ms", "1000");
     }
 
     @Test
-    void givenReadOnlyPath_whenInitializing_thenHandlesSaveErrorGracefully() {
-        // Use a path that is a directory instead of a file to trigger IOException on store()
+    void given_read_only_path_when_initializing_then_handles_save_error_gracefully() {
         final java.io.File dir = tempDir.resolve("not-a-file.properties").toFile();
         dir.mkdir();
         
         final ConfigManager config = new ConfigManager(dir.getAbsolutePath());
-        thenTrue(config.getProperty("ntp.server").isPresent());
+        assertThat(config.getProperty("ntp.server")).isPresent();
     }
 
     private class ConfigFixture {
         private String configPath;
         private ConfigManager configManager;
 
-        void givenNoConfigFile() {
+        void given_no_config_file() {
             this.configPath = tempDir.resolve("non-existent.properties").toString();
         }
 
-        void givenCustomConfigFile(final String content) throws IOException {
+        void given_custom_config_file(final String content) throws IOException {
             final Path path = tempDir.resolve("custom.properties");
             java.nio.file.Files.writeString(path, content);
             this.configPath = path.toString();
         }
 
-        void whenInitializing() {
+        void when_initializing() {
             this.configManager = new ConfigManager(configPath);
         }
 
-        void thenPropertyIs(final String key, final String expectedValue) {
+        void then_property_is(final String key, final String expectedValue) {
             final Optional<String> prop = configManager.getProperty(key);
-            thenTrue(prop.isPresent());
-            then(prop.get(), expectedValue);
+            assertThat(prop).isPresent().contains(expectedValue);
         }
     }
 }
