@@ -87,30 +87,6 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 *   **Rule `FinalParameters`:** Enforce that every method parameter passed into a scope is marked `final`.
 *   **Rule `AvoidInlineConditionals`:** *DEACTIVATE THIS RULE.* Override this checkstyle rule explicitly to allow fluent ternary operator expressions (`? :`) for functional assignments.
 
-### ArchUnit Architecture Test Standards
-*   **Rule:** If `archunit` is in the testing dependencies, the AI should be capable of writing an architectural validation test to prevent imperative bleed.
-
-```java
-// Standard ArchUnit validation profile to add to the test package
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
-
-public class FunctionalArchitectureTest {
-    @ArchTest
-    public static final ArchRule enforce_immutable_records = classes()
-        .that().resideInAPackage("..domain.dto..")
-        .should().beRecords()
-        .orShould().haveOnlyFinalFields();
-
-    @ArchTest
-    public static final ArchRule no_public_mutable_fields = fields()
-        .that().areStatic()
-        .should().beFinal()
-        .andShould().haveRawType(java.util.Map.class)
-        .orShould().haveRawType(java.util.List.class);
-}
-```
-
 ---
 
 ## 6. Testing Methodologies: Functional TDD & BDD Standards
@@ -119,21 +95,10 @@ public class FunctionalArchitectureTest {
 *   **Frameworks:** Enforce JUnit 5 Jupiter engine combined with standard Mockito.
 *   **Assertion Engine:** Ban standard JUnit assertions (`assertEquals`). Enforce **AssertJ** (`assertThat()`) to ensure assertions maintain a fluent, stream-like functional pipeline.
 
-### Test-Driven Development (TDD) Workflow
-*   **Rule:** Enforce the Red-Green-Refactor loop during logic creation.
-*   **Execution Sequence:**
-    1.  **Red:** The AI must generate a failing unit test asserting business value *before* any production code is written.
-    2.  **Green:** Generate the minimal, expression-based functional logic required to pass the test.
-    3.  **Refactor:** Modernize the codebase (e.g., converting lambdas to method references) while validating that tests remain green.
-
 ### Behavior-Driven Development (BDD) Layout
 *   **Rule:** Structure all test bodies using the Gherkin **Given-When-Then** pattern.
 *   **Naming Standards:** Test method names must reflect business behaviors using snake_case syntax instead of camelCase method reflections.
 *   **Mockito Standard:** Ban imperative `Mockito.when()` patterns. Enforce declarative Mockito BDD syntax using `BDDMockito.given()` and `BDDMockito.then()`.
-
-### Mocking vs. Data Ingestion Architecture
-*   **Rule:** Mocks must be strictly isolated to external structural boundaries (Database drivers, Network clients, File I/O).
-*   **Enforcement:** Never mock internal business services, mathematical utilities, or data processing pipelines. If an internal component requires mocking, refactor the production method signature to accept inputs as raw, immutable data types or Java `record` instances rather than relying on heavy object dependencies.
 
 ---
 
@@ -141,14 +106,43 @@ public class FunctionalArchitectureTest {
 
 ### Gradle Project Management
 *   **Rule:** When adding new components, enforce dependency configurations using Gradle's `implementation` and `testImplementation` separation scopes.
-*   **Enforcement:** Never use legacy `testCompile` or `compile` syntax. Ensure any suggested functional dependency additions are formatted cleanly for Groovy DSL `build.gradle` structures.
+*   **Enforcement:** Never use legacy `testCompile` or `compile` syntax.
 
 ### GitHub Actions Pipeline Awareness
-*   **Rule:** Assume that code modifications will trigger a GitHub Actions CI pipeline running under JDK 21.
-*   **Compilation Guardrails:** Because the CI server enforces `ignoreFailures = false` on Checkstyle, any generated code that includes implicit variable mutations, omitted `final` keywords, or raw mutable collections (`new ArrayList()`) will instantly break the pipeline. The AI must pre-validate source syntax patterns to avoid integration failures.
+*   **Rule:** Assume that code modifications will trigger a GitHub Actions CI pipeline running under JDK 21 and Node.js 24.
+*   **Compilation Guardrails:** Because the CI server enforces `ignoreFailures = false` on Checkstyle, any generated code that includes implicit variable mutations or omitted `final` keywords will break the pipeline.
 
 ---
 
-## 8. Workflow Rules
+## 8. Documentation & Architecture Diagrams
+- When generating technical design documents, architecture specs, or complex workflow explanations, always include visual diagrams using **Mermaid.js** syntax.
+- Wrap all diagrams in clear ```mermaid code blocks.
+- **Flowcharts**: Use `flowchart TD` (Top-Down) or `flowchart LR` (Left-to-Right). Ensure decision nodes use clear question labels and appropriate geometric shapes.
+- **Sequence Diagrams**: For API lifecycles or multi-component communications, always generate a `sequenceDiagram` mapping out the actors and exact message flows.
+- **Syntax Guardrail**: Never use the literal lowercase word `end` as a node ID or label; use `End` or `"end"`.
+
+---
+
+## 10. Multi-OS, Hardware, & Cross-Platform Portability (Pop_OS!, Win11, RPi)
+
+### Target Environment Matrix
+- **Operating Systems:** Linux (Pop_OS! Workstation), Windows 11 (PowerShell/CMD), and Linux arm64/armv7 (Raspberry Pi).
+- **Execution Guardrails:** All generated code, file I/O operations, and runtime utilities must work transparently across all three environments without modifications.
+
+### Pathing and File System Abstractions
+- **Rule:** Never use explicit literal string forward slashes (`/`) or backslashes (`\`) for file paths.
+- **Enforcement:** Enforce object-oriented pathing via Java's NIO library (`java.nio.file.Path.of()` or `Paths.get()`). For properties and configuration files, utilize platform-agnostic references.
+
+### Phase 7 Hardware Clock Access & Privileges
+- **Architecture Standard:** OS-level clock modifications (e.g., calling Windows Time Service APIs or Linux `settimeofday`) must be entirely decoupled using a Hardware Abstraction Layer (HAL) interface pattern.
+- **Privilege Management:** Since updating the system clock requires root (Linux/RPi) or administrative (Windows) permissions, code must gracefully handle security or privilege exceptions using the `Optional` or custom error wrappers established in Section 4. It must never violently crash if executed without root permissions.
+
+### CPU & Architecture Targets (ARM vs. AMD64)
+- **Compilation:** Ensure background calculation loops (like Phase 6's Rolling Statistical Window) do not cause high CPU load or thread-blocking states on low-resource Raspberry Pi hardware.
+- **Concurrency:** Leverage the functional pipeline combined with thread-safe atomic primitives (`AtomicReference`, `AtomicLong`) to guarantee thread safety when the Fast River (Hardware) and Slow River (Network Time) streams converge across different host CPU architectures.
+
+---
+
+## 11. Workflow Rules
 - **Code Output:** Provide the complete Java code with brief comments explaining the functional flow.
-- **Review Before PR:** Ensure the user has the ability to review the overall change before submitting any Pull Requests or executing merges. Do not auto-merge PRs without explicit confirmation after review.
+- **Review Before PR:** Ensure the user has the ability to review the overall change before submitting any Pull Requests. Do not auto-merge PRs.

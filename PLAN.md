@@ -100,6 +100,7 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - **Architecture:** Pure Functional Assembly Line (Two-River Confluence).
 - **Documentation:** OWASP 2025 compliant.
 - **Trailing Action (SOW-05):** Update feature branching policy to include `CITATION.cff` version bumps.
+- **Trailing Action (SOW-08):** Continuous certification of cross-platform portability (Rule 10).
 
 ## ⚖️ Legal & Identity
 - **Developer:** Nicholas R. Ustick (N8QQQ) | **License:** GNU GPL v3.0

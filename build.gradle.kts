@@ -14,7 +14,7 @@ repositories {
 
 checkstyle {
     toolVersion = "10.15.0"
-    configFile = file("config/checkstyle/checkstyle.xml")
+    configFile = file("config").resolve("checkstyle").resolve("checkstyle.xml")
     isIgnoreFailures = false
     isShowViolations = true
 }

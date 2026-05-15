@@ -4,53 +4,49 @@
 
 ## 🏛️ The "Two-River Confluence" Model
 
-The system operates using two asynchronous "Rivers" of data that merge without blocking, ensuring that network latency never compromises hardware precision.
+The core of the system is based on two asynchronous streams of data merging into a unified telemetry pulse.
 
-### 1. The GPS River (High-Frequency)
-- **Source:** GPS Satellites (Stratum 0).
-- **Ingestion:** Driven by hardware interrupts via `jSerialComm`.
-- **Thread:** Dedicated Serial Event thread.
-- **Pacing:** ~1 Hz (1 pulse per second).
-- **Paradigm:** Pure Functional. Raw bytes are accumulated into sentences, then parsed into immutable state.
+```mermaid
+flowchart TD
+    subgraph "The Slow River (Network)"
+        NTP[NTP Pool] --> |Poll 60s| NC[NtpClient]
+        NC --> |NtpResponse| AR[AtomicReference: lastNtp]
+    end
 
-### 2. The NTP River (Low-Frequency)
-- **Source:** Network Atomic Clocks (Stratum 1/2).
-- **Ingestion:** Polled via UDP using `Apache Commons Net`.
-- **Thread:** Dedicated `ScheduledExecutorService` (The "Heartbeat" thread).
-- **Pacing:** Configurable (Default: 60 seconds).
+    subgraph "The Fast River (Hardware)"
+        GPS[GPS Hardware] --> |Stream 1Hz| SC[SerialConnector]
+        SC --> |Byte Stream| AC[NmeaSentenceAccumulator]
+        AC --> |NMEA Sentence| ML[Main Pipeline]
+    end
 
-### 3. The Confluence (Lock-Free Merge)
-The two rivers merge at the **Telemetry Pipeline** using the **Atomic Snapshot** pattern.
-- The latest NTP poll is stored in an `AtomicReference<NtpResponse>`.
-- The GPS River takes a non-blocking snapshot of this reference during every pulse.
-- **Result:** A single, immutable `TelemetryPulse` packet containing both GPS reality and Network reference.
+    AR -.-> |Merge| TP[TelemetryPulse::start]
+    ML --> TP
+    TP --> |Parse| NP[NmeaParser]
+    NP --> |GpsData| CF[AtomicReference: currentFix]
+    CF --> |Grid| GS[GridSquareCalculator]
+    GS --> |Log| LOG[High-Fidelity Console UI]
+```
 
-## 🛠️ Engineering Tenets
-
-The system is built on four core pillars to ensure long-term viability and "Heritage Grade" quality:
-
-1.  **Testability (TDD/BDD):** No functional logic exists without a corresponding automated test. The system is decoupled via HAL and Interfaces to ensure 100% test coverage of business rules.
-2.  **Extensibility:** The "Two-River Confluence" model allows for adding new data sources (e.g., secondary GPS, Weather telemetry) by simply adding a new "River" thread and an Atomic Reference.
-3.  **Refactorability:** Using pure functions and immutable records makes logic easy to move, modify, and optimize without side-effects.
-4.  **Third-Party Usability:** Core components (`NtpClient`, `NmeaParser`, `GridSquareCalculator`) are designed as high-quality, decoupled modules that can be easily used by third parties or in forked projects.
-
-## 🛠️ Design Patterns
-
-### 1. Hardware Abstraction Layer (HAL)
-We utilize a Provider/Wrapper pattern to decouple the core logic from physical hardware. This allows the system to run in **Simulation Mode** with identical process flows to real hardware.
-
-### 2. Pure Functional Parsing
-The `NmeaParser` is a stateless pure function. It accepts `(String sentence, GpsData previous)` and returns `GpsData next`. This ensures 100% predictable state transitions and simplifies unit testing.
-
-### 3. Contextual Observability (MDC)
-Every pulse is assigned a unique **Trace ID**. We utilize SLF4J's Mapped Diagnostic Context to ensure every log entry generated during a pulse's lifecycle is tagged with this ID, enabling end-to-end traceability across threads.
+1.  **The Slow River (NTP):** A background heartbeat that polls high-stratum network time servers every 60 seconds to provide a reliable "second opinion" on time drift.
+2.  **The Fast River (GPS):** A high-frequency stream of NMEA sentences direct from the serial hardware, providing Stratum 0 precision and location context.
+3.  **The Confluence:** Every time a GPS sentence arrives, it captures the latest known NTP reference to create a `TelemetryPulse`, ensuring end-to-end traceability across threads.
 
 ## 📡 Authority & Stratum
 By directly connecting to GPS (Stratum 0), `qtr-qth` effectively operates as a **Stratum 1** authority for the local shack, using NTP as a "Second Opinion" for drift verification.
 
-## 📉 Stability & Drift Analysis (Phase 5)
+## 📉 Stability & Drift Analysis (Phase 6)
 To certify the precision of the system clock, the system implements a secondary analytical pipeline:
 
 1.  **Differential Calculus:** The system calculates the high-precision delta between `Local Clock` and `Reference Clock` (GPS/NTP) at the exact moment of pulse arrival.
 2.  **Statistical Smoothing:** Real-time offsets are stored in a **Sliding Window Buffer**, where we calculate the arithmetic mean and standard deviation (Jitter).
 3.  **Heuristic Scoring:** A weighted heuristic is applied to the metadata (Stratum, RTT, Fix Quality) to assign a **Stability Grade** to the shack's time health.
+
+```mermaid
+flowchart LR
+    P[Pulse Arrival] --> |System.nanoTime| OE[Offset Engine]
+    REF[Ref: GPS/NTP] --> OE
+    OE --> |Duration| SWB[Sliding Window Buffer]
+    SWB --> |Stream| SE[Stability Engine]
+    SE --> |Stats| SG[Stability Grade]
+    SG --> |Metadata| LOG[Final Telemetry Log]
+```

@@ -45,25 +45,25 @@ class ConfigManagerTest extends BddTest {
 
     @Test
     void given_read_only_path_when_initializing_then_handles_save_error_gracefully() {
-        final java.io.File dir = tempDir.resolve("not-a-file.properties").toFile();
-        dir.mkdir();
+        final Path dir = tempDir.resolve("not-a-file.properties");
+        dir.toFile().mkdir();
         
-        final ConfigManager config = new ConfigManager(dir.getAbsolutePath());
+        final ConfigManager config = new ConfigManager(dir.toAbsolutePath());
         assertThat(config.getProperty("ntp.server")).isPresent();
     }
 
     private class ConfigFixture {
-        private String configPath;
+        private Path configPath;
         private ConfigManager configManager;
 
         void given_no_config_file() {
-            this.configPath = tempDir.resolve("non-existent.properties").toString();
+            this.configPath = tempDir.resolve("non-existent.properties");
         }
 
         void given_custom_config_file(final String content) throws IOException {
             final Path path = tempDir.resolve("custom.properties");
             java.nio.file.Files.writeString(path, content);
-            this.configPath = path.toString();
+            this.configPath = path;
         }
 
         void when_initializing() {

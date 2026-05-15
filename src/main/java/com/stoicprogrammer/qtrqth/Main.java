@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +37,9 @@ public final class Main {
         System.out.println("  qtr-qth : GPS Time & Location Hub       ");
         System.out.println("==========================================");
         
-        final ConfigManager config = new ConfigManager("qtr-qth.properties");
+        // 1. Load Configuration (Using platform-agnostic Path)
+        final ConfigManager config = new ConfigManager(Path.of("qtr-qth.properties"));
+        
         final List<String> ntpPool = config.getProperty("ntp.server")
             .map(s -> java.util.Arrays.stream(s.split(",")).toList())
             .orElse(List.of("pool.ntp.org"));
@@ -51,6 +54,7 @@ public final class Main {
         
         logger.info("Configuration Loaded - NTP Pool: {}, SimMode: {}, RawTelemetry: {}", ntpPool, simulationMode, showRaw);
 
+        // 2. Serial Discovery
         final com.stoicprogrammer.qtrqth.serial.api.ISerialProvider provider = simulationMode 
             ? new com.stoicprogrammer.qtrqth.serial.simulation.SimulationSerialProvider()
             : new com.stoicprogrammer.qtrqth.serial.jserialcomm.JSerialCommProvider();

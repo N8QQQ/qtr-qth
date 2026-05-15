@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -13,13 +14,13 @@ import java.util.function.Consumer;
 
 /**
  * Manages application configuration and defaults using purely functional dispatch.
- * All operations adhere to strict finality and immutability mandates.
+ * All operations adhere to strict finality, immutability, and cross-platform pathing mandates.
  */
 public final class ConfigManager {
     private static final Logger logger = LoggerFactory.getLogger(ConfigManager.class);
     private final Properties properties = new Properties();
 
-    public ConfigManager(final String configPath) {
+    public ConfigManager(final Path configPath) {
         // Load Defaults
         properties.setProperty("ntp.server", "pool.ntp.org,time.google.com,time.windows.com");
         properties.setProperty("serial.baud", "9600");
@@ -28,7 +29,7 @@ public final class ConfigManager {
         properties.setProperty("display.raw.telemetry", "false");
         properties.setProperty("simulation.mode", "true");
 
-        final java.io.File configFile = new java.io.File(configPath);
+        final java.io.File configFile = configPath.toFile();
 
         // Declarative Strategy Mapping
         Map.<Boolean, Consumer<java.io.File>>of(
