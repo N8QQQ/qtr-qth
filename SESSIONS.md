@@ -117,3 +117,24 @@ This log tracks tactical development sessions, capturing duration, charters, and
 | 4 | 2026-05-12 | 6 | 1.1 | 5.45 | Supply Chain, NTP, and Architecture Refresh |
 | 4 | 2026-05-13 | 12 | 1.7 | 7.05 | Phase 4 Closure + Release Protocol |
 | 4 | 2026-05-14 | 3 | 1.0 | 3.00 | Roadmap Refinement + v0.3.0 Heritage Release |
+
+---
+
+## 📅 Sprint 5: Drift & Offset Analysis (v0.4.0)
+**Goal:** Quantify the accuracy of the system clock via "Jitter Bug" telemetry.
+
+### Session 2026-05-14: Phase 5 Initialization & Functional Mandates
+- **Charter:** Initialize feat/jitter-bug branch and enshrine Senior Java Architect functional mandates.
+- **Duration:** 0.5 Hours
+- **Timeline:**
+    - **22:45:** Session Start. Created `feat/jitter-bug` branch.
+    - **22:50:** Formulated `GEMINI.md` with strict functional programming constraints.
+    - **22:55:** Refined `PLAN.md` with granular Phase 5 tasks (Offset Engine, Jitter Stats).
+    - **23:05:** Documentation committed and pushed to feature branch.
+- **Outcome:** 
+    - [x] Functional programming paradigm formalized as project policy.
+    - [x] Phase 5 roadmap granularized and certified for execution.
+- **Calibration:**
+    - **Estimated SP:** 1
+    - **Actual Hours:** 0.5
+    - **Velocity:** 2.0 SP/Hour
