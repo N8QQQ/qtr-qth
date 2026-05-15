@@ -37,43 +37,54 @@ A task or phase is considered "Done" only when:
 - [x] **Traceability:** MDC-based Trace IDs for end-to-end pulse tracking.
 - [x] **Hardening:** OWASP 2025 compliant input sanitization and exception management.
 
-### Phase 4: Network Time Reference (v0.3.0)
-**Objective:** Establish a professional network-based time reference for drift comparison.
-**Branch:** `feat/ntp-nibbles`
-- **Phase 4.1: Supply Chain & Console UX** (COMPLETED)
-- **Phase 4.2: Baseline NTP Client** (COMPLETED)
-- **Phase 4.3: Precision Metadata** (COMPLETED)
-- **Phase 4.4: Pipeline Integration** (COMPLETED)
-- **Phase 4.5: Resilience & Multi-Pooling** (SP: 3 | BV: 300)
-  - [ ] Implement fallback pool manager for unreachable NTP hosts.
+### Phase 4: Network Time Reference (COMPLETED - v0.3.0)
+- [x] **Phase 4.1: Supply Chain & Console UX**
+- [x] **Phase 4.2: Baseline NTP Client**
+- [x] **Phase 4.3: Precision Metadata**
+- [x] **Phase 4.4: Pipeline Integration**
+- [x] **Phase 4.5: Resilience & Multi-Pooling**
 
 ### Phase 5: Drift & Offset Analysis (v0.4.0)
 **Objective:** Quantify the accuracy of the system clock.
 **Branch:** `feat/jitter-bug`
-- **Phase 5.1: Clock Differential Logic** (SP: 3 | BV: 900)
-- **Phase 5.2: Jitter & Stability Scoring** (SP: 2 | BV: 400)
+- [ ] **Phase 5.1: Clock Differential Logic** (SP: 3 | BV: 900)
+- [ ] **Phase 5.2: Jitter & Stability Scoring** (SP: 2 | BV: 400)
 
 ### Phase 6: Precision Clock Synchronization (v1.0.0)
 **Objective:** Update the system clock with precision and authority.
 **Branch:** `feat/chrono-trigger`
-- **Phase 6.1: OS Permission HAL** (SP: 2 | BV: 700)
-- **Phase 6.2: Windows Time Service Provider** (SP: 3 | BV: 600)
-- **Phase 6.3: Linux/Pi Time Service Provider** (SP: 3 | BV: 600)
-- **Phase 6.4: Precision Sync Scheduling** (SP: 3 | BV: 800)
+- [ ] **Phase 6.1: OS Permission HAL** (SP: 2 | BV: 700)
+- [ ] **Phase 6.2: Windows Time Service Provider** (SP: 3 | BV: 600)
+- [ ] **Phase 6.3: Linux/Pi Time Service Provider** (SP: 3 | BV: 600)
+- [ ] **Phase 6.4: Precision Sync Scheduling** (SP: 3 | BV: 800)
 
 ### Phase 7: The "QTH Hub" (v2.0.0)
 **Objective:** Broadcast live telemetry to 3rd party shack tools.
 **Branch:** `feat/stratum-shack`
-- **Phase 7.1: UDP Broadcast Engine** (SP: 3 | BV: 500)
-- **Phase 7.2: Serialization Logic (JSON/NMEA)** (SP: 2 | BV: 400)
-- **Phase 7.3: Broadcast Pipeline Integration** (SP: 2 | BV: 400)
+- [ ] **Phase 7.1: UDP Broadcast Engine** (SP: 3 | BV: 500)
+- [ ] **Phase 7.2: Serialization Logic (JSON/NMEA)** (SP: 2 | BV: 400)
+- [ ] **Phase 7.3: Broadcast Pipeline Integration** (SP: 2 | BV: 400)
 
-### Phase 8: Dashboard & Visualization (v3.0.0+)
-**Objective:** Real-time visual monitoring of shack time health.
-**Branch:** `feat/telemetry-tapestry`
-- **Phase 8.1: Embedded Web Scribe** (SP: 3 | BV: 300)
-- **Phase 8.2: RESTful Pulse API** (SP: 2 | BV: 300)
-- **Phase 8.3: "Shack-View" HTML Dashboard** (SP: 3 | BV: 400)
+### Phase 8: Dashboard - Embedded Web Scribe (v3.0.0)
+**Objective:** Lightweight embedded server for raw telemetry capture.
+- [ ] **Phase 8.1: Embedded Jetty/Spark Orchestration** (SP: 3 | BV: 300)
+- [ ] **Phase 8.2: Secure Context Handling** (SP: 2 | BV: 300)
+
+### Phase 9: Dashboard - RESTful Pulse API (v3.1.0)
+**Objective:** Expose real-time telemetry via structured endpoints.
+- [ ] **Phase 9.1: Live Pulse Endpoint** (SP: 2 | BV: 400)
+- [ ] **Phase 9.2: Historical Drift Snapshot API** (SP: 2 | BV: 300)
+
+### Phase 10: Dashboard - "Shack-View" HTML (v4.0.0)
+**Objective:** High-fidelity, real-time visual monitoring dashboard.
+- [ ] **Phase 10.1: Reactive UI Components (Clock/Map)** (SP: 3 | BV: 500)
+- [ ] **Phase 10.2: WebSocket Pulse Streaming** (SP: 2 | BV: 400)
+
+### Phase 11: Heritage Stabilization (v5.0.0)
+**Objective:** Final hardening, documentation audit, and performance tuning.
+- [ ] **Phase 11.1: Long-haul Stress Testing** (SP: 3 | BV: 600)
+- [ ] **Phase 11.2: SDK/Library Dependency Audit** (SP: 2 | BV: 400)
+- [ ] **Phase 11.3: "Final Seal" Documentation Review** (SP: 1 | BV: 500)
 
 ---
 ## 🧪 Current Quality Status
