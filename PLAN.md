@@ -42,14 +42,14 @@ For details on the concurrency model, functional pipeline, and architectural dec
 
 ### Phase 6: The Virtual Shack (v0.5.0)
 **Objective:** Cross-platform simulation of Linux/ARM64 and physical hardware.
-**Branch:** `feat/virtual-shack`
+**Branch:** `feat/phantom-shack`
 - [ ] **Phase 6.1: Multi-Arch Dockerization:** amd64/arm64 build profiles.
 - [ ] **Phase 6.2: Hardware Spoofing (socat):** Simulated `/dev/ttyUSB0` in container.
 - [ ] **Phase 6.3: GitHub CI Hardening:** Integration of QEMU and ARM64 verification.
 
 ### Phase 7: Temporal Virtualization (v0.6.0)
 **Objective:** Decouple time-awareness for deterministic math verification.
-**Branch:** `feat/temporal-shift`
+**Branch:** `feat/chrono-tesseract`
 - [ ] **Phase 7.1: Clock Dependency Injection:** Eliminate `Instant.now()`.
 - [ ] **Phase 7.2: Jitter Testing Baseline:** Verify math using `Clock.fixed()`.
 
