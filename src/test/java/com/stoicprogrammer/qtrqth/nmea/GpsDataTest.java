@@ -26,20 +26,20 @@ class GpsDataTest extends BddTest {
         private LocalDate date;
         private String result;
 
-        void givenTime(int h, int m, int s) {
+        void givenTime(final int h, final int m, final int s) {
             this.time = LocalTime.of(h, m, s);
         }
 
-        void givenDate(int y, int m, int d) {
+        void givenDate(final int y, final int m, final int d) {
             this.date = LocalDate.of(y, m, d);
         }
 
         void whenFormatting() {
-            GpsData data = new GpsData(time, date, 0, 0, 0, 0);
+            final GpsData data = new GpsData(time, date, 0, 0, 0, 0);
             this.result = data.toString();
         }
 
-        void thenResultContains(String expected) {
+        void thenResultContains(final String expected) {
             thenTrue(result.contains(expected));
         }
     }

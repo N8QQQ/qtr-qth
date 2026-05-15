@@ -1,24 +1,30 @@
 package com.stoicprogrammer.qtrqth.ntp;
 
-import org.apache.commons.net.ntp.NTPUDPClient;
-import org.apache.commons.net.ntp.TimeInfo;
+import com.stoicprogrammer.qtrqth.ntp.api.INtpProvider;
+import com.stoicprogrammer.qtrqth.ntp.network.NetworkNtpProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
- * Robust NTP Client for capturing network-based time references.
- * Handles server polling, precision metadata extraction, and multi-server fallback.
+ * Robust NTP Client for capturing network-based time references using declarative patterns.
+ * Adheres to strict finality and functional purity standards.
  */
-public class NtpClient {
+public final class NtpClient {
     private static final Logger logger = LoggerFactory.getLogger(NtpClient.class);
+    private final INtpProvider provider;
     private final int timeoutMs;
 
-    public NtpClient(int timeoutMs) {
+    public NtpClient(final int timeoutMs) {
+        this(new NetworkNtpProvider(), timeoutMs);
+    }
+
+    public NtpClient(final INtpProvider provider, final int timeoutMs) {
+        this.provider = provider;
         this.timeoutMs = timeoutMs;
     }
 
@@ -28,20 +34,21 @@ public class NtpClient {
      * @param hostnames The list of NTP server addresses.
      * @return An Optional containing the NtpResponse, or empty if all polls failed.
      */
-    public Optional<NtpResponse> pollDetailed(List<String> hostnames) {
-        if (hostnames == null || hostnames.isEmpty()) {
-            return Optional.empty();
-        }
-
-        for (String host : hostnames) {
-            Optional<NtpResponse> response = pollSingle(host);
-            if (response.isPresent()) {
-                return response;
-            }
-        }
-        
-        logger.warn("All NTP polls failed for pool: {}", hostnames);
-        return Optional.empty();
+    public Optional<NtpResponse> pollDetailed(final List<String> hostnames) {
+        return Optional.ofNullable(hostnames)
+            .stream()
+            .flatMap(List::stream)
+            .map(host -> provider.getTime(host, timeoutMs))
+            .flatMap(Optional::stream)
+            .findFirst()
+            .or(() -> {
+                final boolean hasServers = Optional.ofNullable(hostnames).filter(l -> !l.isEmpty()).isPresent();
+                Map.<Boolean, Runnable>of(
+                    true, () -> logger.warn("All NTP polls failed for pool: {}", hostnames),
+                    false, () -> {}
+                ).get(hasServers).run();
+                return Optional.empty();
+            });
     }
 
     /**
@@ -49,7 +56,7 @@ public class NtpClient {
      * @param hostname The NTP server address.
      * @return An Optional containing the NtpResponse, or empty if the poll failed.
      */
-    public Optional<NtpResponse> pollDetailed(String hostname) {
+    public Optional<NtpResponse> pollDetailed(final String hostname) {
         return pollDetailed(List.of(hostname));
     }
 
@@ -58,43 +65,7 @@ public class NtpClient {
      * @param hostname The NTP server address (e.g., pool.ntp.org).
      * @return An Optional containing the Instant, or empty if the poll failed.
      */
-    public Optional<Instant> poll(String hostname) {
+    public Optional<Instant> poll(final String hostname) {
         return pollDetailed(hostname).map(NtpResponse::time);
-    }
-
-    /**
-     * Internal method to poll a single host.
-     */
-    private Optional<NtpResponse> pollSingle(String hostname) {
-        NTPUDPClient client = new NTPUDPClient();
-        client.setDefaultTimeout(timeoutMs);
-        
-        try {
-            client.open();
-            InetAddress hostAddr = InetAddress.getByName(hostname);
-            
-            TimeInfo info = client.getTime(hostAddr);
-            info.computeDetails(); // Computes RTT and Offset
-            
-            Instant networkTime = Instant.ofEpochMilli(info.getMessage().getTransmitTimeStamp().getTime());
-            long rtt = (info.getDelay() != null) ? info.getDelay() : -1;
-            int stratum = info.getMessage().getStratum();
-            double dispersion = info.getMessage().getRootDispersionInMillisDouble();
-
-            NtpResponse response = new NtpResponse(networkTime, rtt, stratum, dispersion);
-            
-            logger.debug("NTP Poll Successful: {} | RTT: {}ms | Stratum: {} | Dispersion: {}ms", 
-                hostname, rtt, stratum, String.format("%.2f", dispersion));
-            
-            return Optional.of(response);
-            
-        } catch (Exception e) {
-            logger.warn("NTP Poll Failed for {}: {}", hostname, e.getMessage());
-            return Optional.empty();
-        } finally {
-            if (client.isOpen()) {
-                client.close();
-            }
-        }
     }
 }

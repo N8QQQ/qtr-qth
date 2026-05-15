@@ -2,6 +2,7 @@ plugins {
     id("java")
     application
     jacoco
+    checkstyle
 }
 
 group = "com.stoicprogrammer"
@@ -9,6 +10,13 @@ version = "0.3.1"
 
 repositories {
     mavenCentral()
+}
+
+checkstyle {
+    toolVersion = "10.15.0"
+    configFile = file("config/checkstyle/checkstyle.xml")
+    isIgnoreFailures = false
+    isShowViolations = true
 }
 
 dependencies {

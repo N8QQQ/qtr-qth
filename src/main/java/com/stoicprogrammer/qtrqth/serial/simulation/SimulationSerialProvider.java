@@ -7,15 +7,16 @@ import java.util.List;
 
 /**
  * Provider for Virtual Hardware.
+ * Adheres to strict finality and unmodifiable collection mandates.
  */
-public class SimulationSerialProvider implements ISerialProvider {
+public final class SimulationSerialProvider implements ISerialProvider {
     @Override
     public List<ISerialPort> getAvailablePorts() {
         return List.of(new SimulationSerialPort("SIM1"));
     }
 
     @Override
-    public ISerialPort getPort(String portName) {
+    public ISerialPort getPort(final String portName) {
         return new SimulationSerialPort(portName);
     }
 }

@@ -10,11 +10,11 @@ import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -53,61 +53,63 @@ class SerialConnectorTest extends BddTest {
         private final NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
         private final SerialConnector connector = new SerialConnector(mockConfig, accumulator, mockProvider);
         
-        private final List<String> receivedSentences = new ArrayList<>();
+        private final List<String> receivedSentences = new CopyOnWriteArrayList<>();
         private SerialPortDataListener capturedListener;
         private Stream<String> stream;
-        private Future<?> streamFuture;
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-        void givenPortExists(String name) {
-            given(mockConfig.getProperty("serial.baud")).willReturn("9600");
+        void givenPortExists(final String name) {
+            given(mockConfig.getProperty("serial.baud")).willReturn(Optional.of("9600"));
             given(mockProvider.getPort(name)).willReturn(mockPort);
             given(mockPort.openPort()).willReturn(true);
         }
 
-        void whenConnecting(String name) {
+        void whenConnecting(final String name) {
             this.stream = connector.connect(name);
             
             // Capture the listener
-            ArgumentCaptor<SerialPortDataListener> captor = ArgumentCaptor.forClass(SerialPortDataListener.class);
+            final ArgumentCaptor<SerialPortDataListener> captor = ArgumentCaptor.forClass(SerialPortDataListener.class);
             verify(mockPort).addDataListener(captor.capture());
             capturedListener = captor.getValue();
         }
 
-        void whenConnectingInAsyncThread(String name) {
+        void whenConnectingInAsyncThread(final String name) {
             whenConnecting(name);
             // Consume the stream in a background thread so we don't block
-            streamFuture = executor.submit(() -> {
-                stream.forEach(receivedSentences::add);
-            });
+            executor.submit(() -> stream.forEach(receivedSentences::add));
         }
 
-        void whenDataArrives(String data) {
-            byte[] bytes = data.getBytes();
+        void whenDataArrives(final String data) {
+            final byte[] bytes = data.getBytes();
             given(mockPort.bytesAvailable()).willReturn(bytes.length);
             given(mockPort.readBytes(any(byte[].class), any(Integer.class))).willAnswer(invocation -> {
-                byte[] target = invocation.getArgument(0);
+                final byte[] target = invocation.getArgument(0);
                 System.arraycopy(bytes, 0, target, 0, bytes.length);
                 return bytes.length;
             });
 
             // Trigger the event
-            SerialPortEvent event = mock(SerialPortEvent.class);
+            final SerialPortEvent event = mock(SerialPortEvent.class);
             given(event.getEventType()).willReturn(com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE);
             capturedListener.serialEvent(event);
         }
 
-        void thenPortWasOpenedWithBaud(int baud) {
+        void thenPortWasOpenedWithBaud(final int baud) {
             verify(mockPort).setBaudRate(baud);
             verify(mockPort).openPort();
         }
 
-        void thenSentenceWasReceived(String expected) throws Exception {
-            // Give the stream a moment to process the queue
-            long start = System.currentTimeMillis();
-            while (receivedSentences.isEmpty() && System.currentTimeMillis() - start < 2000) {
-                Thread.sleep(10);
-            }
+        void thenSentenceWasReceived(final String expected) throws Exception {
+            // Functional wait using Stream recursion or limit
+            Stream.generate(() -> {
+                try { 
+                    Thread.sleep(10); 
+                } catch (InterruptedException e) { 
+                    Thread.currentThread().interrupt(); 
+                }
+                return receivedSentences.contains(expected);
+            }).limit(200).filter(found -> found).findFirst();
+
             thenTrue(receivedSentences.contains(expected));
             executor.shutdownNow();
         }

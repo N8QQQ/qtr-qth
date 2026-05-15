@@ -47,3 +47,10 @@ Every pulse is assigned a unique **Trace ID**. We utilize SLF4J's Mapped Diagnos
 
 ## 📡 Authority & Stratum
 By directly connecting to GPS (Stratum 0), `qtr-qth` effectively operates as a **Stratum 1** authority for the local shack, using NTP as a "Second Opinion" for drift verification.
+
+## 📉 Stability & Drift Analysis (Phase 5)
+To certify the precision of the system clock, the system implements a secondary analytical pipeline:
+
+1.  **Differential Calculus:** The system calculates the high-precision delta between `Local Clock` and `Reference Clock` (GPS/NTP) at the exact moment of pulse arrival.
+2.  **Statistical Smoothing:** Real-time offsets are stored in a **Sliding Window Buffer**, where we calculate the arithmetic mean and standard deviation (Jitter).
+3.  **Heuristic Scoring:** A weighted heuristic is applied to the metadata (Stratum, RTT, Fix Quality) to assign a **Stability Grade** to the shack's time health.

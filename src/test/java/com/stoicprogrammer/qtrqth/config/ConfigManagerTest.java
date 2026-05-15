@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 
 /**
  * Business Rule: [PHASE 2, STEP 1] - Configuration Bootstrapping.
@@ -13,7 +14,7 @@ import java.nio.file.Path;
 class ConfigManagerTest extends BddTest {
 
     @TempDir
-    Path tempDir;
+    private Path tempDir;
 
     private final ConfigFixture fixture = new ConfigFixture();
 
@@ -45,11 +46,11 @@ class ConfigManagerTest extends BddTest {
     @Test
     void givenReadOnlyPath_whenInitializing_thenHandlesSaveErrorGracefully() {
         // Use a path that is a directory instead of a file to trigger IOException on store()
-        java.io.File dir = tempDir.resolve("not-a-file.properties").toFile();
+        final java.io.File dir = tempDir.resolve("not-a-file.properties").toFile();
         dir.mkdir();
         
-        ConfigManager config = new ConfigManager(dir.getAbsolutePath());
-        thenNotNull(config.getProperty("ntp.server"));
+        final ConfigManager config = new ConfigManager(dir.getAbsolutePath());
+        thenTrue(config.getProperty("ntp.server").isPresent());
     }
 
     private class ConfigFixture {
@@ -60,8 +61,8 @@ class ConfigManagerTest extends BddTest {
             this.configPath = tempDir.resolve("non-existent.properties").toString();
         }
 
-        void givenCustomConfigFile(String content) throws IOException {
-            Path path = tempDir.resolve("custom.properties");
+        void givenCustomConfigFile(final String content) throws IOException {
+            final Path path = tempDir.resolve("custom.properties");
             java.nio.file.Files.writeString(path, content);
             this.configPath = path.toString();
         }
@@ -70,8 +71,10 @@ class ConfigManagerTest extends BddTest {
             this.configManager = new ConfigManager(configPath);
         }
 
-        void thenPropertyIs(String key, String expectedValue) {
-            then(configManager.getProperty(key), expectedValue);
+        void thenPropertyIs(final String key, final String expectedValue) {
+            final Optional<String> prop = configManager.getProperty(key);
+            thenTrue(prop.isPresent());
+            then(prop.get(), expectedValue);
         }
     }
 }

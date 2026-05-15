@@ -11,11 +11,13 @@ import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -54,72 +56,74 @@ class SystemIntegrationTest extends BddTest {
         private final SerialConnector connector = new SerialConnector(mockConfig, accumulator, mockProvider);
         
         private com.fazecast.jSerialComm.SerialPortDataListener capturedListener;
-        private final List<GpsData> results = new ArrayList<>();
+        private final List<GpsData> results = new CopyOnWriteArrayList<>();
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
         void givenSimulatedHardwareReady() {
-            given(mockConfig.getProperty("serial.baud")).willReturn("9600");
+            given(mockConfig.getProperty("serial.baud")).willReturn(Optional.of("9600"));
             given(mockProvider.getPort("SIM1")).willReturn(mockPort);
             given(mockPort.openPort()).willReturn(true);
             
-            AtomicReference<GpsData> state = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
+            final AtomicReference<GpsData> state = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
             
             // Connect and start pipeline in background thread
-            java.util.stream.Stream<String> stream = connector.connect("SIM1");
-            executor.submit(() -> {
-                stream.map(s -> state.updateAndGet(fix -> parser.parse(s, fix)))
-                      .forEach(results::add);
-            });
+            final Stream<String> stream = connector.connect("SIM1");
+            executor.submit(() -> stream.map(s -> state.updateAndGet(fix -> parser.parse(s, fix)))
+                                        .forEach(results::add));
 
-            ArgumentCaptor<com.fazecast.jSerialComm.SerialPortDataListener> captor = ArgumentCaptor.forClass(com.fazecast.jSerialComm.SerialPortDataListener.class);
+            final ArgumentCaptor<com.fazecast.jSerialComm.SerialPortDataListener> captor = ArgumentCaptor.forClass(com.fazecast.jSerialComm.SerialPortDataListener.class);
             verify(mockPort).addDataListener(captor.capture());
             capturedListener = captor.getValue();
         }
 
-        void whenSerialDataArrives(String raw) {
-            byte[] bytes = raw.getBytes();
+        void whenSerialDataArrives(final String raw) {
+            final byte[] bytes = raw.getBytes();
             given(mockPort.bytesAvailable()).willReturn(bytes.length);
             given(mockPort.readBytes(any(byte[].class), anyInt())).willAnswer(inv -> {
-                byte[] buffer = inv.getArgument(0);
+                final byte[] buffer = inv.getArgument(0);
                 System.arraycopy(bytes, 0, buffer, 0, bytes.length);
                 return bytes.length;
             });
 
-            com.fazecast.jSerialComm.SerialPortEvent event = mock(com.fazecast.jSerialComm.SerialPortEvent.class);
+            final com.fazecast.jSerialComm.SerialPortEvent event = mock(com.fazecast.jSerialComm.SerialPortEvent.class);
             given(event.getEventType()).willReturn(com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE);
             capturedListener.serialEvent(event);
         }
 
-        void thenCalculatedLatitudeIs(double expected) throws Exception {
+        void thenCalculatedLatitudeIs(final double expected) throws Exception {
             waitForResults();
-            then(results.get(results.size()-1).latitude(), expected);
+            then(results.get(results.size() - 1).latitude(), expected);
         }
 
-        void thenCalculatedLongitudeIs(double expected) throws Exception {
+        void thenCalculatedLongitudeIs(final double expected) throws Exception {
             waitForResults();
-            then(results.get(results.size()-1).longitude(), expected);
+            then(results.get(results.size() - 1).longitude(), expected);
         }
 
-        void thenCalculatedAltitudeIs(double expected) throws Exception {
+        void thenCalculatedAltitudeIs(final double expected) throws Exception {
             waitForResults();
-            then(results.get(results.size()-1).altitude(), expected);
+            then(results.get(results.size() - 1).altitude(), expected);
         }
 
-        void thenSatelliteCountIs(int expected) throws Exception {
+        void thenSatelliteCountIs(final int expected) throws Exception {
             waitForResults();
-            then(results.get(results.size()-1).satelliteCount(), expected);
+            then(results.get(results.size() - 1).satelliteCount(), expected);
         }
 
-        void thenCalculatedTimeIs(java.time.LocalTime expected) throws Exception {
+        void thenCalculatedTimeIs(final java.time.LocalTime expected) throws Exception {
             waitForResults();
-            then(results.get(results.size()-1).utcTime(), expected);
+            then(results.get(results.size() - 1).utcTime(), expected);
         }
 
         private void waitForResults() throws Exception {
-            long start = System.currentTimeMillis();
-            while (results.isEmpty() && System.currentTimeMillis() - start < 2000) {
-                Thread.sleep(10);
-            }
+            Stream.generate(() -> {
+                try { 
+                    Thread.sleep(10); 
+                } catch (InterruptedException e) { 
+                    Thread.currentThread().interrupt(); 
+                }
+                return results.isEmpty();
+            }).limit(200).takeWhile(empty -> empty).count();
             executor.shutdownNow();
         }
     }

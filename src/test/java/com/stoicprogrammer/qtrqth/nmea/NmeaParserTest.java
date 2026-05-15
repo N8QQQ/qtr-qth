@@ -25,7 +25,7 @@ class NmeaParserTest extends BddTest {
 
     @Test
     void givenInvalidChecksumFormat_whenParsing_thenReturnsPreviousState() {
-        GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
+        final GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
         fixture.givenSentence("$GPRMC,123,A*ZZ"); // Invalid hex in checksum
         fixture.whenParsingWith(initial);
         fixture.thenResultIs(initial);
@@ -33,7 +33,7 @@ class NmeaParserTest extends BddTest {
 
     @Test
     void givenMalformedTimeInGprmc_whenParsing_thenTimeIsPreserved() {
-        GpsData initial = new GpsData(LocalTime.of(10,0,0), null, 0, 0, 0, 0);
+        final GpsData initial = new GpsData(LocalTime.of(10, 0, 0), null, 0, 0, 0, 0);
         fixture.givenSentence("$GPRMC,12,A,0,N,0,E,0,0,010126,,,A"); // Time too short (12)
         fixture.whenParsingWith(initial);
         fixture.thenUtcTimeIs(LocalTime.of(10, 0, 0));
@@ -57,8 +57,8 @@ class NmeaParserTest extends BddTest {
 
     @Test
     void givenPartialGpzdaFields_whenParsing_thenPreviousDateIsPreserved() {
-        LocalDate initialDate = LocalDate.of(2026, 1, 1);
-        GpsData initial = new GpsData(null, initialDate, 0, 0, 0, 0);
+        final LocalDate initialDate = LocalDate.of(2026, 1, 1);
+        final GpsData initial = new GpsData(null, initialDate, 0, 0, 0, 0);
         
         // Missing month and year in ZDA
         fixture.givenSentence("$GPZDA,123456,01,,"); 
@@ -68,7 +68,7 @@ class NmeaParserTest extends BddTest {
 
     @Test
     void givenShortSentences_whenParsing_thenHandlesGracefully() {
-        GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
+        final GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
         fixture.givenSentence("$GPRMC,short"); // Too few fields
         fixture.whenParsingWith(initial);
         fixture.thenResultIs(initial);
@@ -116,20 +116,20 @@ class NmeaParserTest extends BddTest {
         private final NmeaParser parser = new NmeaParser();
         private GpsData result;
 
-        void givenSentence(String sentence) {
+        void givenSentence(final String sentence) {
             this.sentence = sentence;
         }
 
-        void givenValidSentence(String sentence) {
+        void givenValidSentence(final String sentence) {
             this.sentence = sentence;
         }
 
         void whenParsing() {
-            GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
+            final GpsData initial = new GpsData(null, null, 0, 0, 0, 0);
             this.result = parser.parse(sentence, initial);
         }
 
-        void whenParsingWith(GpsData state) {
+        void whenParsingWith(final GpsData state) {
             this.result = parser.parse(sentence, state);
         }
 
@@ -137,31 +137,31 @@ class NmeaParserTest extends BddTest {
             thenNotNull(result);
         }
 
-        void thenResultIs(GpsData expected) {
+        void thenResultIs(final GpsData expected) {
             then(result, expected);
         }
 
-        void thenUtcTimeIs(LocalTime expected) {
+        void thenUtcTimeIs(final LocalTime expected) {
             then(result.utcTime(), expected);
         }
 
-        void thenDateIs(LocalDate expected) {
+        void thenDateIs(final LocalDate expected) {
             then(result.date(), expected);
         }
 
-        void thenLatitudeIs(double expected) {
+        void thenLatitudeIs(final double expected) {
             then(result.latitude(), expected);
         }
 
-        void thenLongitudeIs(double expected) {
+        void thenLongitudeIs(final double expected) {
             then(result.longitude(), expected);
         }
 
-        void thenAltitudeIs(double expected) {
+        void thenAltitudeIs(final double expected) {
             then(result.altitude(), expected);
         }
 
-        void thenSatelliteCountIs(int expected) {
+        void thenSatelliteCountIs(final int expected) {
             then(result.satelliteCount(), expected);
         }
     }

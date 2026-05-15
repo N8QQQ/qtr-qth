@@ -7,6 +7,7 @@ import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 
@@ -42,26 +43,25 @@ class PortDiscoveryTest extends BddTest {
         private final ISerialProvider mockProvider = mock(ISerialProvider.class);
         private final ConfigManager mockConfig = mock(ConfigManager.class);
         private final PortDiscovery discovery = new PortDiscovery(mockProvider, mockConfig);
-        private String result;
+        private Optional<String> result;
         private List<String> portList;
 
         DiscoveryFixture() {
             givenStubbing(mockConfig.getProperty("gps.discovery.keywords"))
-                .willReturn("gps,u-blox,prolific,silicon labs,gnss,receiver");
+                .willReturn(Optional.of("gps,u-blox,prolific,silicon labs,gnss,receiver"));
         }
 
-        void givenMockHardwareHasPorts(List<String> names) {
-            List<ISerialPort> ports = new java.util.ArrayList<>();
-            for (String name : names) {
-                ISerialPort mockPort = mock(ISerialPort.class);
+        void givenMockHardwareHasPorts(final List<String> names) {
+            final List<ISerialPort> ports = names.stream().map(name -> {
+                final ISerialPort mockPort = mock(ISerialPort.class);
                 givenStubbing(mockPort.getSystemPortName()).willReturn(name);
-                ports.add(mockPort);
-            }
+                return mockPort;
+            }).toList();
             givenStubbing(mockProvider.getAvailablePorts()).willReturn(ports);
         }
 
-        void givenMockHardwareHasPort(String name, String description) {
-            ISerialPort mockPort = mock(ISerialPort.class);
+        void givenMockHardwareHasPort(final String name, final String description) {
+            final ISerialPort mockPort = mock(ISerialPort.class);
             givenStubbing(mockPort.getSystemPortName()).willReturn(name);
             givenStubbing(mockPort.getDescriptivePortName()).willReturn(name);
             givenStubbing(mockPort.getPortDescription()).willReturn(description);
@@ -77,18 +77,17 @@ class PortDiscoveryTest extends BddTest {
             this.portList = discovery.getAvailablePorts();
         }
 
-        void thenLikelyGpsIs(String expected) {
-            then(result, expected);
+        void thenLikelyGpsIs(final String expected) {
+            thenTrue(result.isPresent());
+            then(result.get(), expected);
         }
 
         void thenNoLikelyGpsFound() {
-            then(result, (String) null);
+            thenTrue(result.isEmpty());
         }
 
-        void thenPortListContains(String... expected) {
-            for (String name : expected) {
-                thenTrue(portList.contains(name));
-            }
+        void thenPortListContains(final String... expected) {
+            java.util.Arrays.stream(expected).forEach(name -> thenTrue(portList.contains(name)));
         }
     }
 }

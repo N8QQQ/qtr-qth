@@ -34,19 +34,19 @@ class NmeaSentenceAccumulatorTest extends BddTest {
         private String rawInput;
         private String lastCaptured;
 
-        void givenRawSentence(String raw) {
+        void givenRawSentence(final String raw) {
             this.rawInput = raw;
             this.lastCaptured = null;
         }
 
         void whenAddingBytes() {
-            for (char c : rawInput.toCharArray()) {
-                Optional<String> result = accumulator.process((byte) c);
+            rawInput.chars().forEach(c -> {
+                final Optional<String> result = accumulator.process((byte) c);
                 result.ifPresent(s -> lastCaptured = s);
-            }
+            });
         }
 
-        void thenLastSentenceWas(String expected) {
+        void thenLastSentenceWas(final String expected) {
             then(lastCaptured, expected);
         }
     }

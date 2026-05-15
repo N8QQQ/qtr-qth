@@ -12,35 +12,35 @@ public class BddTest {
     /**
      * Use this for Mockito stubbing in a BDD style.
      */
-    protected <T> BDDMockito.BDDMyOngoingStubbing<T> givenStubbing(T methodCall) {
+    protected <T> BDDMockito.BDDMyOngoingStubbing<T> givenStubbing(final T methodCall) {
         return BDDMockito.given(methodCall);
     }
 
     /**
      * Assertion helper for general objects.
      */
-    protected <T> void then(T actual, T expected) {
+    protected <T> void then(final T actual, final T expected) {
         Assertions.assertEquals(expected, actual);
     }
 
     /**
      * Assertion helper for doubles with precision delta.
      */
-    protected void then(double actual, double expected) {
+    protected void then(final double actual, final double expected) {
         Assertions.assertEquals(expected, actual, 0.000001);
     }
 
     /**
      * Assertion helper for booleans.
      */
-    protected void thenTrue(boolean condition) {
+    protected void thenTrue(final boolean condition) {
         Assertions.assertTrue(condition);
     }
 
     /**
      * Assertion helper for nullity.
      */
-    protected void thenNotNull(Object object) {
+    protected void thenNotNull(final Object object) {
         Assertions.assertNotNull(object);
     }
 }

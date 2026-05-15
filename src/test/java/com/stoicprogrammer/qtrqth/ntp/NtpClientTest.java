@@ -1,16 +1,21 @@
 package com.stoicprogrammer.qtrqth.ntp;
 
 import com.stoicprogrammer.qtrqth.base.BddTest;
+import com.stoicprogrammer.qtrqth.ntp.api.INtpProvider;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
- * Business Rule: [PHASE 4.3] - Precision Metadata.
- * Verify that the NTP client can capture high-fidelity metadata (RTT, Stratum, Dispersion).
+ * Business Rule: [PHASE 4.6] - CI Stabilization via NTP HAL.
+ * Verify that the NTP client logic remains robust when using mocked network providers.
  */
 class NtpClientTest extends BddTest {
 
@@ -18,74 +23,80 @@ class NtpClientTest extends BddTest {
 
     @Test
     void givenAValidNtpServer_whenPollingDetailed_thenReturnRichMetadata() {
-        fixture.givenServer("pool.ntp.org");
+        fixture.givenMockServerSuccess("pool.ntp.org");
         fixture.whenPollingDetailed();
         fixture.thenDetailedResultIsPresentWithMetadata();
     }
 
     @Test
     void givenAValidNtpServer_whenPolling_thenReturnValidInstant() {
-        fixture.givenServer("pool.ntp.org");
+        fixture.givenMockServerSuccess("pool.ntp.org");
         fixture.whenPolling();
         fixture.thenResultIsPresent();
     }
 
     @Test
     void givenAnInvalidNtpServer_whenPolling_thenReturnEmptyOptional() {
-        fixture.givenServer("invalid.server.address.internal");
+        fixture.givenMockServerFailure("invalid.host");
         fixture.whenPolling();
         fixture.thenResultIsEmpty();
     }
 
     @Test
     void givenAListOfServers_whenPrimaryFails_thenFallbackToSecondary() {
-        fixture.givenServers(java.util.List.of("invalid.host", "pool.ntp.org"));
+        fixture.givenMockServerFailure("primary.host");
+        fixture.givenMockServerSuccess("secondary.host");
+        fixture.givenServers(List.of("primary.host", "secondary.host"));
         fixture.whenPollingDetailed();
         fixture.thenDetailedResultIsPresentWithMetadata();
     }
 
     @Test
     void givenAllServersFail_whenPolling_thenReturnEmpty() {
-        fixture.givenServers(java.util.List.of("invalid.host.one", "invalid.host.two"));
+        fixture.givenMockServerFailure("host.one");
+        fixture.givenMockServerFailure("host.two");
+        fixture.givenServers(List.of("host.one", "host.two"));
         fixture.whenPollingDetailed();
         fixture.thenDetailedResultIsEmpty();
     }
 
     private class NtpFixture {
-        private java.util.List<String> servers;
+        private List<String> servers;
         private Optional<Instant> result;
         private Optional<NtpResponse> detailedResult;
-        private final NtpClient client = new NtpClient(3000);
+        private final INtpProvider mockProvider = mock(INtpProvider.class);
+        private final NtpClient client = new NtpClient(mockProvider, 3000);
 
-        void givenServer(String server) {
-            this.servers = java.util.List.of(server);
+        void givenMockServerSuccess(final String host) {
+            this.servers = List.of(host);
+            when(mockProvider.getTime(eq(host), anyInt()))
+                .thenReturn(Optional.of(new NtpResponse(Instant.now(), 10, 1, 5.0)));
         }
 
-        void givenServers(java.util.List<String> servers) {
+        void givenMockServerFailure(final String host) {
+            this.servers = List.of(host);
+            when(mockProvider.getTime(eq(host), anyInt())).thenReturn(Optional.empty());
+        }
+
+        void givenServers(final List<String> servers) {
             this.servers = servers;
         }
 
         void whenPolling() {
-            // Updated to handle multiple servers in implementation
             this.result = client.poll(servers.get(0)); 
         }
 
         void whenPollingDetailed() {
-            // We will update the signature to accept List<String>
             this.detailedResult = client.pollDetailed(servers);
         }
 
         void thenResultIsPresent() {
             thenTrue(result.isPresent());
-            thenTrue(result.get().isAfter(Instant.parse("2025-01-01T00:00:00Z")));
         }
 
         void thenDetailedResultIsPresentWithMetadata() {
             thenTrue(detailedResult.isPresent());
-            NtpResponse response = detailedResult.get();
-            
-            // Verify time
-            thenTrue(response.time().isAfter(Instant.parse("2025-01-01T00:00:00Z")));
+            final NtpResponse response = detailedResult.get();
             
             // Verify Metadata (RTT > 0, Stratum > 0, Dispersion >= 0)
             thenTrue(response.rttMs() >= 0);

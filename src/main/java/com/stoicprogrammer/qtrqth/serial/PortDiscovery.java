@@ -4,15 +4,19 @@ import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-public class PortDiscovery {
+/**
+ * Service for identifying available serial hardware.
+ * Adheres to strict finality and functional Stream mandates.
+ */
+public final class PortDiscovery {
 
     private final ISerialProvider provider;
     private final ConfigManager config;
 
-    public PortDiscovery(ISerialProvider provider, ConfigManager config) {
+    public PortDiscovery(final ISerialProvider provider, final ConfigManager config) {
         this.provider = provider;
         this.config = config;
     }
@@ -22,35 +26,33 @@ public class PortDiscovery {
      * @return List of system port names.
      */
     public List<String> getAvailablePorts() {
-        List<ISerialPort> ports = provider.getAvailablePorts();
-        List<String> names = new ArrayList<>();
-        for (ISerialPort port : ports) {
-            names.add(port.getSystemPortName());
-        }
-        return names;
+        return provider.getAvailablePorts().stream()
+            .map(ISerialPort::getSystemPortName)
+            .toList();
     }
 
     /**
      * Attempts to identify a potential GPS device based on configurable keywords.
-     * @return The most likely GPS port name, or null if none found.
+     * @return An Optional containing the most likely GPS port name.
      */
-    public String findLikelyGpsPort() {
-        String[] keywords = config.getProperty("gps.discovery.keywords").split(",");
-        List<ISerialPort> ports = provider.getAvailablePorts();
-        
-        for (ISerialPort port : ports) {
-            String name = port.getDescriptivePortName().toLowerCase();
-            String desc = port.getPortDescription().toLowerCase();
-            
-            for (String keyword : keywords) {
-                String trimmed = keyword.trim().toLowerCase();
-                if (!trimmed.isEmpty() && (name.contains(trimmed) || desc.contains(trimmed))) {
-                    return port.getSystemPortName();
-                }
-            }
-        }
-        return null;
+    public Optional<String> findLikelyGpsPort() {
+        final List<String> keywords = config.getProperty("gps.discovery.keywords")
+            .map(s -> List.of(s.split(",")))
+            .orElse(List.of())
+            .stream()
+            .map(String::trim)
+            .map(String::toLowerCase)
+            .filter(s -> !s.isEmpty())
+            .toList();
+
+        return provider.getAvailablePorts().stream()
+            .filter(port -> isLikelyGps(port, keywords))
+            .map(ISerialPort::getSystemPortName)
+            .findFirst();
+    }
+
+    private boolean isLikelyGps(final ISerialPort port, final List<String> keywords) {
+        final String combinedMetadata = (port.getDescriptivePortName() + " " + port.getPortDescription()).toLowerCase();
+        return keywords.stream().anyMatch(combinedMetadata::contains);
     }
 }
-
-

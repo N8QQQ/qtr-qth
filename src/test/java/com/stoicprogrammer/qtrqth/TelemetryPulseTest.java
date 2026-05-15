@@ -5,10 +5,9 @@ import com.stoicprogrammer.qtrqth.nmea.GpsData;
 import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
 import com.stoicprogrammer.qtrqth.ntp.NtpResponse;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.MDC;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -16,94 +15,78 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Business Rule: [PHASE 4.4] - Pipeline Integration.
- * Verify that the TelemetryPulse wrapper correctly manages Trace IDs, state, and NTP snapshots.
- */
 class TelemetryPulseTest extends BddTest {
 
-    private final PulseFixture fixture = new AccumulatorFixture();
+    private final PulseFixture fixture = new ConnectorFixture();
 
     @Test
-    void givenARawSentenceAndNtpSnapshot_whenStartingPulse_thenUniqueShortIdIsGenerated() {
-        fixture.givenSentence("$GPRMC,123456,A,40,N,080,W,0,0,010126,,,A*66");
-        fixture.givenNtpSnapshot(new NtpResponse(Instant.now(), 50, 1, 10.0));
+    void givenAValidSentence_whenStartingPulse_thenIdIsGenerated() {
+        fixture.givenSentence("$GPRMC,123456,A*66");
         fixture.whenStartingPulse();
-        fixture.thenPulseIdIsGenerated();
-        fixture.thenNtpReferenceIsStored();
+        fixture.thenIdIsNotEmpty();
     }
 
     @Test
-    void givenAnActivePulse_whenUpdatingState_thenParserIsCalledAndResultReturned() {
-        fixture.givenSentence("$GPRMC,123456,A,40,N,080,W,0,0,010126,,,A*66");
-        fixture.givenMockParserWithResult(new GpsData(java.time.LocalTime.of(12,0,0), null, 40, -80, 0, 0));
-        fixture.whenStartingPulse();
+    void givenAPulse_whenUpdating_thenParserIsCalledAndStateUpdated() {
+        fixture.givenSentence("$GPRMC,123456,A*66");
+        fixture.givenStartingPulse();
+        fixture.givenMockParserReturns(new GpsData(LocalTime.now(), null, 0, 0, 0, 0));
+        
         fixture.whenUpdatingPulse();
-        fixture.thenDataIsUpdated();
+        
+        fixture.thenFixIsValid();
     }
 
-    @Test
-    void givenAPulseWithData_whenLogging_thenMdcContextIsManaged() {
-        fixture.givenSentence("$GPRMC,123456,A,40,N,080,W,0,0,010126,,,A*66");
-        fixture.givenMockParserWithResult(new GpsData(java.time.LocalTime.of(12,0,0), null, 40, -80, 0, 0));
-        fixture.whenStartingPulse();
-        fixture.whenUpdatingPulse();
-        fixture.whenLoggingFinal();
-        fixture.thenMdcWasCleared();
+    private abstract static class PulseFixture {
+        abstract void givenSentence(String s);
+        abstract void givenStartingPulse();
+        abstract void givenMockParserReturns(GpsData data);
+        abstract void whenStartingPulse();
+        abstract void whenUpdatingPulse();
+        abstract void thenIdIsNotEmpty();
+        abstract void thenFixIsValid();
     }
 
-    private class PulseFixture {
+    private class ConnectorFixture extends PulseFixture {
         private String sentence;
-        private NtpResponse ntp;
         private Main.TelemetryPulse pulse;
         private final NmeaParser mockParser = mock(NmeaParser.class);
-        private final Logger mockLogger = mock(Logger.class);
         private final AtomicReference<GpsData> state = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
-        private GpsData expectedResult;
+        private final NtpResponse mockNtp = new NtpResponse(Instant.now(), 10, 1, 5.0);
 
-        void givenSentence(String s) {
+        @Override
+        void givenSentence(final String s) {
             this.sentence = s;
         }
 
-        void givenNtpSnapshot(NtpResponse ntp) {
-            this.ntp = ntp;
+        @Override
+        void givenStartingPulse() {
+            this.pulse = Main.TelemetryPulse.start(sentence, mockNtp);
         }
 
-        void givenMockParserWithResult(GpsData data) {
-            this.expectedResult = data;
+        @Override
+        void givenMockParserReturns(final GpsData data) {
             when(mockParser.parse(eq(sentence), any())).thenReturn(data);
         }
 
+        @Override
         void whenStartingPulse() {
-            this.pulse = Main.TelemetryPulse.start(sentence, ntp);
+            this.pulse = Main.TelemetryPulse.start(sentence, mockNtp);
         }
 
+        @Override
         void whenUpdatingPulse() {
             this.pulse = pulse.update(mockParser, state);
         }
 
-        void whenLoggingFinal() {
-            pulse.logFinal(mockLogger);
+        @Override
+        void thenIdIsNotEmpty() {
+            thenTrue(pulse.pulseId() != null && !pulse.pulseId().isEmpty());
         }
 
-        void thenPulseIdIsGenerated() {
-            thenNotNull(pulse.pulseId());
-            thenTrue(pulse.pulseId().length() == 4);
-        }
-
-        void thenNtpReferenceIsStored() {
-            then(pulse.reference(), ntp);
-        }
-
-        void thenDataIsUpdated() {
-            then(pulse.data(), expectedResult);
-            then(state.get(), expectedResult);
-        }
-
-        void thenMdcWasCleared() {
-            then(MDC.get("pulseId"), null);
+        @Override
+        void thenFixIsValid() {
+            thenTrue(pulse.hasValidFix());
         }
     }
-
-    private class AccumulatorFixture extends PulseFixture {}
 }

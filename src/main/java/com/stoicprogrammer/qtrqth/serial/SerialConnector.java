@@ -10,21 +10,29 @@ import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Manages the connection to physical or virtual serial hardware.
+ * Manages the connection to physical or virtual serial hardware using declarative patterns.
+ * Adheres to strict finality and expression-based control flow.
  */
-public class SerialConnector {
+public final class SerialConnector {
     private static final Logger logger = LoggerFactory.getLogger(SerialConnector.class);
     private final ConfigManager config;
     private final NmeaSentenceAccumulator accumulator;
     private final ISerialProvider provider;
     private ISerialPort activePort;
-    private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>(100);
 
-    public SerialConnector(ConfigManager config, NmeaSentenceAccumulator accumulator, ISerialProvider provider) {
+    private record ConnectionRule(boolean condition, Supplier<Stream<String>> action) {}
+    private record QueueRule(boolean condition, Runnable action) {}
+
+    public SerialConnector(final ConfigManager config, final NmeaSentenceAccumulator accumulator, final ISerialProvider provider) {
         this.config = config;
         this.accumulator = accumulator;
         this.provider = provider;
@@ -35,8 +43,8 @@ public class SerialConnector {
      * @param portName The system port name (e.g., COM3).
      * @return A Stream of completed NMEA sentences.
      */
-    public Stream<String> connect(String portName) {
-        int baudRate = Integer.parseInt(config.getProperty("serial.baud"));
+    public Stream<String> connect(final String portName) {
+        final int baudRate = config.getProperty("serial.baud").map(Integer::parseInt).orElse(9600);
         
         logger.debug("Attempting to open port {} at {} baud...", portName, baudRate);
         activePort = provider.getPort(portName);
@@ -45,53 +53,73 @@ public class SerialConnector {
         activePort.setNumStopBits(SerialPort.ONE_STOP_BIT);
         activePort.setParity(SerialPort.NO_PARITY);
 
-        if (activePort.openPort()) {
-            logger.info("Serial port {} opened successfully.", portName);
-            activePort.addDataListener(new SerialPortDataListener() {
-                @Override
-                public int getListeningEvents() {
-                    return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
-                }
+        final boolean opened = activePort.openPort();
 
-                @Override
-                public void serialEvent(SerialPortEvent event) {
-                    if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE) return;
-                    
-                    byte[] newData = new byte[activePort.bytesAvailable()];
-                    int numRead = activePort.readBytes(newData, newData.length);
-                    
-                    for (int i = 0; i < numRead; i++) {
-                        accumulator.process(newData[i]).ifPresent(s -> {
+        // Declarative Connection Rule Engine
+        return List.of(
+            new ConnectionRule(opened, () -> startIngestion(portName)),
+            new ConnectionRule(true, () -> {
+                logger.error("Failed to open serial port: {}", portName);
+                return Stream.empty();
+            })
+        ).stream()
+         .filter(r -> r.condition)
+         .findFirst()
+         .map(r -> r.action.get())
+         .orElse(Stream.empty());
+    }
+
+    private Stream<String> startIngestion(final String portName) {
+        logger.info("Serial port {} opened successfully.", portName);
+        activePort.addDataListener(new SerialPortDataListener() {
+            @Override
+            public int getListeningEvents() { return SerialPort.LISTENING_EVENT_DATA_AVAILABLE; }
+
+            @Override
+            public void serialEvent(final SerialPortEvent event) {
+                Optional.of(event)
+                    .filter(e -> e.getEventType() == SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
+                    .map(e -> new byte[activePort.bytesAvailable()])
+                    .map(buf -> {
+                        activePort.readBytes(buf, buf.length);
+                        return buf;
+                    })
+                    .map(buf -> IntStream.range(0, buf.length).mapToObj(i -> buf[i]))
+                    .ifPresent(byteStream -> byteStream
+                        .map(accumulator::process)
+                        .flatMap(Optional::stream)
+                        .forEach(s -> {
                             logger.trace("Sentence accumulated: {}", s);
-                            if (!queue.offer(s)) {
-                                logger.warn("Telemetry buffer full. Dropping sentence: {}", s);
-                            }
-                        });
-                    }
-                }
-            });
-            
-            return Stream.generate(() -> {
-                try {
-                    return queue.take();
-                } catch (InterruptedException e) {
-                    logger.warn("Telemetry stream interrupted.");
-                    Thread.currentThread().interrupt();
-                    return null;
-                }
-            }).takeWhile(s -> s != null);
-        } else {
-            logger.error("Failed to open serial port: {}", portName);
-        }
-        return Stream.empty();
+                            final boolean success = queue.offer(s);
+                            List.of(
+                                new QueueRule(success, () -> {}),
+                                new QueueRule(true, () -> logger.warn("Telemetry buffer full. Dropping sentence: {}", s))
+                            ).stream()
+                             .filter(r -> r.condition)
+                             .findFirst()
+                             .ifPresent(r -> r.action.run());
+                        }));
+            }
+        });
+
+        return Stream.generate(() -> {
+            try { return queue.take(); } 
+            catch (final InterruptedException e) {
+                logger.warn("Telemetry stream interrupted.");
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        }).takeWhile(java.util.Objects::nonNull);
     }
 
     public void disconnect() {
-        if (activePort != null && activePort.isOpen()) {
-            logger.debug("Closing serial port...");
-            activePort.removeDataListener();
-            activePort.closePort();
-            logger.info("Serial port closed.");
-        }
+        Optional.ofNullable(activePort)
+            .filter(ISerialPort::isOpen)
+            .ifPresent(port -> {
+                logger.debug("Closing serial port...");
+                port.removeDataListener();
+                port.closePort();
+                logger.info("Serial port closed.");
+            });
     }
 }

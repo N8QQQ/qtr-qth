@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class MockitoCheckTest {
     @Test
     void testListMock() {
-        List mockList = mock(List.class);
+        final List mockList = mock(List.class);
         when(mockList.size()).thenReturn(10);
         assertEquals(10, mockList.size());
     }
