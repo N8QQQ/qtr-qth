@@ -85,9 +85,35 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **Velocity:** 7.05 SP/Hour
 
 ---
+
+## 📅 Sprint 4: Network Time Reference (v0.3.0)
+**Goal:** Establish a secure, high-precision network time baseline.
+
+### Session 2026-05-14: PR Review, Roadmap Refinement & v0.3.0 Release
+- **Charter:** Review PR comments, refine roadmap granularity, and execute v0.3.0 Heritage Release Protocol.
+- **Duration:** 1 Hour
+- **Timeline:**
+    - **21:40:** Session Start. Reviewed PR #4 comments from Nick-Gate.
+    - **21:45:** Refined PLAN.md: Marked Phase 4 COMPLETED and refactored Phase 8 into Phases 8-11.
+    - **21:50:** Heritage Release Protocol: Synchronized metadata in build.gradle.kts and CITATION.cff.
+    - **21:55:** Logic Certification: Executed `./gradlew clean test distZip`. All systems green.
+    - **22:05:** Archival: Executed local squash-merge into `main` and pushed to origin.
+    - **22:10:** Sealing: Created and pushed git tag `v0.3.0`.
+    - **22:15:** Session Complete.
+- **Outcome:** 
+    - [x] PR Comments addressed and documented in PLAN.md.
+    - [x] Roadmap expanded for Phases 8, 9, 10, and 11.
+    - [x] v0.3.0 officially released and tagged.
+- **Calibration:**
+    - **Estimated SP:** 3
+    - **Actual Hours:** 1.0
+    - **Velocity:** 3.0 SP/Hour
+
+---
 ## 📈 Calibration History
 | Sprint | Date | Total SP | Total Hours | SP/Hour | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 3 | 2026-05-10 | 5 | 4.0 | 1.25 | Refactored pipeline + Hardening |
 | 4 | 2026-05-12 | 6 | 1.1 | 5.45 | Supply Chain, NTP, and Architecture Refresh |
 | 4 | 2026-05-13 | 12 | 1.7 | 7.05 | Phase 4 Closure + Release Protocol |
+| 4 | 2026-05-14 | 3 | 1.0 | 3.00 | Roadmap Refinement + v0.3.0 Heritage Release |
