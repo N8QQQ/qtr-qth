@@ -45,6 +45,8 @@ For details on the concurrency model, functional pipeline, and architectural dec
 **Branch:** `feat/monad-weaver`
 - [ ] **Phase 6.1: Typed Configuration Pipeline:** Parse properties into an immutable `AppConfig` record to eliminate Stringly-Typed logic.
 - [ ] **Phase 6.2: Numeric Purity:** Wrap parsing mechanisms (like `Double.parseDouble`) in `Optional` wrappers via `Functional.java` to prevent hardware noise exceptions.
+- [ ] **Phase 6.3: Supply Chain Synchronization:** Refine `verification-metadata.xml` to include multi-platform checksums and trust-keys (Windows/Linux/ARM).
+- [ ] **Phase 6.4: CI Action Refresh:** Update `gradle/actions/wrapper-validation` to latest major version to silence Node.js 20 deprecation.
 
 ### Phase 7: The Virtual Shack (v0.5.0)
 **Objective:** Cross-platform simulation of Linux/ARM64 and physical hardware.
