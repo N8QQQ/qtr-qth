@@ -44,7 +44,13 @@ public final class SerialConnector {
      * @return A Stream of completed NMEA sentences.
      */
     public Stream<String> connect(final String portName) {
-        final int baudRate = config.getProperty("serial.baud").map(Integer::parseInt).orElse(9600);
+        final int baudRate = config.getProperty("serial.baud")
+            .flatMap(this::tryParseInt)
+            .or(() -> {
+                logger.warn("Invalid or missing serial.baud in config. Defaulting to 9600.");
+                return Optional.of(9600);
+            })
+            .orElse(9600);
         
         logger.debug("Attempting to open port {} at {} baud...", portName, baudRate);
         activePort = provider.getPort(portName);
@@ -121,5 +127,13 @@ public final class SerialConnector {
                 port.closePort();
                 logger.info("Serial port closed.");
             });
+    }
+
+    private Optional<Integer> tryParseInt(final String s) {
+        try {
+            return Optional.of(Integer.parseInt(s));
+        } catch (final NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 }

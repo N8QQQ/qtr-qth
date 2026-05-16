@@ -35,7 +35,7 @@ class GridSquareCalculatorTest extends BddTest {
         fixture.then_grid_square_is("QF56od");
     }
 
-    private class CalculatorFixture {
+    private static class CalculatorFixture {
         private double latitude;
         private double longitude;
         private String result;

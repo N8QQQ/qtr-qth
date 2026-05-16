@@ -46,7 +46,7 @@ class ConfigManagerTest extends BddTest {
     @Test
     void given_read_only_path_when_initializing_then_handles_save_error_gracefully() {
         final Path dir = tempDir.resolve("not-a-file.properties");
-        dir.toFile().mkdir();
+        assertThat(dir.toFile().mkdir()).isTrue();
         
         final ConfigManager config = new ConfigManager(dir.toAbsolutePath());
         assertThat(config.getProperty("ntp.server")).isPresent();

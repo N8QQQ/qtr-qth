@@ -73,11 +73,7 @@ public final class NmeaParser {
                     .orElse(rawHexSum);
                 
                 final int calculated = content.chars().reduce(0, (a, b) -> a ^ b);
-                return Optional.of(hexSum)
-                    .map(s -> {
-                        try { return Integer.parseInt(s, 16); } 
-                        catch (final NumberFormatException e) { return -1; }
-                    })
+                return tryParseInt(hexSum, 16)
                     .filter(expected -> calculated == expected)
                     .isPresent();
             })
@@ -110,11 +106,11 @@ public final class NmeaParser {
             .filter(p -> p.length >= 10)
             .map(p -> {
                 final int sats = extractField(p, GPGGA_SATS)
-                    .map(Integer::parseInt)
+                    .flatMap(this::tryParseInt)
                     .orElse(prev.satelliteCount());
 
                 final double alt = extractField(p, GPGGA_ALT)
-                    .map(Double::parseDouble)
+                    .flatMap(this::tryParseDouble)
                     .orElse(prev.altitude());
 
                 return new GpsData(prev.utcTime(), prev.date(), prev.latitude(), prev.longitude(), alt, sats);
@@ -127,9 +123,12 @@ public final class NmeaParser {
             .filter(p -> p.length >= 5)
             .map(p -> {
                 final LocalDate date = extractField(p, GPZDA_DAY)
+                    .flatMap(this::tryParseInt)
                     .flatMap(d -> extractField(p, GPZDA_MONTH)
+                        .flatMap(this::tryParseInt)
                         .flatMap(m -> extractField(p, GPZDA_YEAR)
-                            .map(y -> LocalDate.of(Integer.parseInt(y), Integer.parseInt(m), Integer.parseInt(d)))))
+                            .flatMap(this::tryParseInt)
+                            .map(y -> LocalDate.of(y, m, d))))
                     .orElse(prev.date());
 
                 return new GpsData(prev.utcTime(), date, prev.latitude(), prev.longitude(), prev.altitude(), prev.satelliteCount());
@@ -143,15 +142,35 @@ public final class NmeaParser {
 
     private Optional<Double> extractCoordinate(final String[] parts, final int coordIdx, final int dirIdx) {
         return extractField(parts, coordIdx)
+            .flatMap(this::tryParseDouble)
             .flatMap(coord -> extractField(parts, dirIdx)
                 .map(dir -> convertToDecimalDegrees(coord, dir)));
     }
 
-    private double convertToDecimalDegrees(final String nmeaCoord, final String direction) {
-        final double raw = Double.parseDouble(nmeaCoord);
+    private double convertToDecimalDegrees(final double raw, final String direction) {
         final int degrees = (int) (raw / 100);
         final double minutes = raw - (degrees * 100);
         final double decimal = degrees + (minutes / 60);
         return (direction.equals("S") || direction.equals("W")) ? -decimal : decimal;
+    }
+
+    private Optional<Integer> tryParseInt(final String s) {
+        return tryParseInt(s, 10);
+    }
+
+    private Optional<Integer> tryParseInt(final String s, final int radix) {
+        try {
+            return Optional.of(Integer.parseInt(s, radix));
+        } catch (final NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Double> tryParseDouble(final String s) {
+        try {
+            return Optional.of(Double.parseDouble(s));
+        } catch (final NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 }

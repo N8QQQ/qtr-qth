@@ -48,7 +48,7 @@ class TelemetryPulseTest extends BddTest {
         abstract void then_fix_is_valid();
     }
 
-    private class ConnectorFixture extends PulseFixture {
+    private static class ConnectorFixture extends PulseFixture {
         private String sentence;
         private Main.TelemetryPulse pulse;
         private final NmeaParser mockParser = mock(NmeaParser.class);
