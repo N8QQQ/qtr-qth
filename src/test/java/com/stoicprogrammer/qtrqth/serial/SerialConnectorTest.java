@@ -23,47 +23,60 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 
-/**
- * Business Rule: [PHASE 2, STEP 2 & 3] - Serial Connection & Data Ingestion.
- */
 class SerialConnectorTest extends BddTest {
 
+    private static final int EXPECTED_BAUD = 9600;
     private final ConnectorFixture fixture = new ConnectorFixture();
 
     @Test
-    void given_a_valid_port_when_connecting_then_port_is_configured_and_opened() {
+    void should_connect_to_specified_port_with_correct_baud() {
         fixture.given_port_exists("COM3");
         fixture.when_connecting("COM3");
-        fixture.then_port_was_opened_with_baud(9600);
+        fixture.then_port_was_opened_with_baud(EXPECTED_BAUD);
     }
 
     @Test
-    void given_a_connected_port_when_data_arrives_then_nmea_sentences_are_in_stream() throws Exception {
-        fixture.given_port_exists("COM3");
-        fixture.when_connecting_in_async_thread("COM3");
-        
-        fixture.when_data_arrives("$GPRMC,123456,A*66\r\n");
-        
-        fixture.then_sentence_was_received("$GPRMC,123456,A*66");
+    void should_ingest_data_from_serial_event_stream() {
+        final String expected = "$GPRMC,1,2,3*44";
+        fixture.given_port_exists("COM4");
+        fixture.when_connecting_in_async_thread("COM4");
+        fixture.when_data_arrives(expected);
+        fixture.then_sentence_is_received(expected);
     }
 
-    private class ConnectorFixture {
-        private final ConfigManager mockConfig = mock(ConfigManager.class);
+    @Test
+    void should_return_empty_stream_when_port_fails_to_open() {
+        fixture.given_port_cannot_be_opened("COM_FAIL");
+        fixture.when_connecting_without_capture("COM_FAIL");
+        fixture.then_stream_is_empty();
+    }
+
+    private final class ConnectorFixture {
+        private static final int DEFAULT_BAUD = 9600;
+        private static final int SLEEP_INTERVAL_MS = 10;
+        private static final int MAX_WAIT_ATTEMPTS = 200;
+
         private final ISerialProvider mockProvider = mock(ISerialProvider.class);
         private final ISerialPort mockPort = mock(ISerialPort.class);
+        private final ConfigManager mockConfig = mock(ConfigManager.class);
         private final NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
         private final SerialConnector connector = new SerialConnector(mockConfig, accumulator, mockProvider);
         
-        private final List<String> receivedSentences = new CopyOnWriteArrayList<>();
-        private SerialPortDataListener capturedListener;
         private Stream<String> stream;
+        private com.fazecast.jSerialComm.SerialPortDataListener capturedListener;
+        private final List<String> receivedSentences = new CopyOnWriteArrayList<>();
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
         void given_port_exists(final String name) {
-            given(mockConfig.getProperty("serial.baud")).willReturn(Optional.of("9600"));
+            given(mockConfig.getProperty("serial.baud")).willReturn(Optional.of(String.valueOf(DEFAULT_BAUD)));
             given(mockProvider.getPort(name)).willReturn(mockPort);
             given(mockPort.openPort()).willReturn(true);
             given(mockPort.isOpen()).willReturn(true);
+        }
+
+        void given_port_cannot_be_opened(final String name) {
+            given(mockProvider.getPort(name)).willReturn(mockPort);
+            given(mockPort.openPort()).willReturn(false);
         }
 
         void when_connecting(final String name) {
@@ -75,13 +88,17 @@ class SerialConnectorTest extends BddTest {
             capturedListener = captor.getValue();
         }
 
+        void when_connecting_without_capture(final String name) {
+            this.stream = connector.connect(name);
+        }
+
         void when_connecting_in_async_thread(final String name) {
             when_connecting(name);
             executor.submit(() -> stream.forEach(receivedSentences::add));
         }
 
         void when_data_arrives(final String data) {
-            final byte[] bytes = data.getBytes();
+            final byte[] bytes = (data.trim() + "\r\n").getBytes();
             given(mockPort.bytesAvailable()).willReturn(bytes.length);
             given(mockPort.readBytes(any(byte[].class), any(Integer.class))).willAnswer(invocation -> {
                 final byte[] target = invocation.getArgument(0);
@@ -100,15 +117,20 @@ class SerialConnectorTest extends BddTest {
             then(mockPort).should().openPort();
         }
 
-        void then_sentence_was_received(final String expected) throws Exception {
+        void then_stream_is_empty() {
+            assertThat(stream).isEmpty();
+        }
+
+        void then_sentence_is_received(final String expected) {
+            // Functional Polling: Avoid while-loop per Section 1.
             Stream.generate(() -> {
-                try { 
-                    Thread.sleep(10); 
-                } catch (final InterruptedException e) { 
-                    Thread.currentThread().interrupt(); 
-                }
-                return receivedSentences.contains(expected);
-            }).limit(200).filter(found -> found).findFirst();
+               try { 
+                   Thread.sleep(SLEEP_INTERVAL_MS); 
+               } catch (final InterruptedException e) { 
+                   Thread.currentThread().interrupt(); 
+               }
+               return receivedSentences.contains(expected);
+            }).limit(MAX_WAIT_ATTEMPTS).filter(found -> found).findFirst();
 
             assertThat(receivedSentences).contains(expected);
             executor.shutdownNow();

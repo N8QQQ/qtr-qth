@@ -7,6 +7,7 @@ import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
+import com.stoicprogrammer.qtrqth.util.Functional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,11 +24,17 @@ import java.util.stream.Stream;
  */
 public final class SerialConnector {
     private static final Logger logger = LoggerFactory.getLogger(SerialConnector.class);
+
+    // Operational Constants
+    private static final int DEFAULT_BAUD = 9600;
+    private static final int TELEMETRY_QUEUE_CAPACITY = 100;
+    private static final int DATA_BITS = 8;
+
     private final ConfigManager config;
     private final NmeaSentenceAccumulator accumulator;
     private final ISerialProvider provider;
     private ISerialPort activePort;
-    private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>(100);
+    private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>(TELEMETRY_QUEUE_CAPACITY);
 
     private record ConnectionRule(boolean condition, Supplier<Stream<String>> action) {}
     private record QueueRule(boolean condition, Runnable action) {}
@@ -45,17 +52,17 @@ public final class SerialConnector {
      */
     public Stream<String> connect(final String portName) {
         final int baudRate = config.getProperty("serial.baud")
-            .flatMap(this::tryParseInt)
+            .flatMap(Functional::tryParseInt)
             .or(() -> {
-                logger.warn("Invalid or missing serial.baud in config. Defaulting to 9600.");
-                return Optional.of(9600);
+                logger.warn("Invalid or missing serial.baud in config. Defaulting to {}.", DEFAULT_BAUD);
+                return Optional.of(DEFAULT_BAUD);
             })
-            .orElse(9600);
+            .orElse(DEFAULT_BAUD);
         
         logger.debug("Attempting to open port {} at {} baud...", portName, baudRate);
         activePort = provider.getPort(portName);
         activePort.setBaudRate(baudRate);
-        activePort.setNumDataBits(8);
+        activePort.setNumDataBits(DATA_BITS);
         activePort.setNumStopBits(SerialPort.ONE_STOP_BIT);
         activePort.setParity(SerialPort.NO_PARITY);
 
@@ -85,13 +92,13 @@ public final class SerialConnector {
             public void serialEvent(final SerialPortEvent event) {
                 Optional.of(event)
                     .filter(e -> e.getEventType() == SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
-                    .map(e -> new byte[activePort.bytesAvailable()])
-                    .map(buf -> {
-                        activePort.readBytes(buf, buf.length);
-                        return buf;
+                    .map(e -> {
+                        final byte[] buf = new byte[activePort.bytesAvailable()];
+                        final int read = activePort.readBytes(buf, buf.length);
+                        return new SerialChunk(buf, read);
                     })
-                    .map(buf -> IntStream.range(0, buf.length).mapToObj(i -> buf[i]))
-                    .ifPresent(byteStream -> byteStream
+                    .ifPresent(chunk -> IntStream.range(0, chunk.length)
+                        .mapToObj(i -> chunk.data[i])
                         .map(accumulator::process)
                         .flatMap(Optional::stream)
                         .forEach(s -> {
@@ -108,15 +115,20 @@ public final class SerialConnector {
             }
         });
 
+        // Use takeWhile with a presence check to ensure the stream terminates on interruption.
         return Stream.generate(() -> {
-            try { return queue.take(); } 
-            catch (final InterruptedException e) {
+            try { 
+                return Optional.ofNullable(queue.take()); 
+            } catch (final InterruptedException e) {
                 logger.warn("Telemetry stream interrupted.");
                 Thread.currentThread().interrupt();
-                return null;
+                return Optional.<String>empty();
             }
-        }).takeWhile(java.util.Objects::nonNull);
+        }).takeWhile(Optional::isPresent)
+          .map(Optional::get);
     }
+
+    private record SerialChunk(byte[] data, int length) {}
 
     public void disconnect() {
         Optional.ofNullable(activePort)
@@ -127,13 +139,5 @@ public final class SerialConnector {
                 port.closePort();
                 logger.info("Serial port closed.");
             });
-    }
-
-    private Optional<Integer> tryParseInt(final String s) {
-        try {
-            return Optional.of(Integer.parseInt(s));
-        } catch (final NumberFormatException e) {
-            return Optional.empty();
-        }
     }
 }

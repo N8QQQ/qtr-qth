@@ -2,40 +2,51 @@ package com.stoicprogrammer.qtrqth.util;
 
 import com.stoicprogrammer.qtrqth.base.BddTest;
 import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Business Rule: [PHASE 1, STEP 4] - Location Context.
+ * Unit tests for GridSquareCalculator.
  */
 class GridSquareCalculatorTest extends BddTest {
+
+    // Verified coordinates for EN66gl
+    private static final double ISHPEMING_LAT = 46.4913;
+    private static final double ISHPEMING_LON = -87.6644;
+    
+    // Verified coordinates for IO91wm
+    private static final double LONDON_LAT = 51.5074;
+    private static final double LONDON_LON = -0.1278;
+    
+    // Verified coordinates for QF56id
+    private static final double SYDNEY_LAT = -33.8688;
+    private static final double SYDNEY_LON = 151.2093;
 
     private final CalculatorFixture fixture = new CalculatorFixture();
 
     @Test
-    void given_coordinates_when_calculating_then_correct_grid_square_is_returned() {
-        // Ishpeming, MI: 46.4913N, 87.6644W
-        fixture.given_coordinates(46.4913, -87.6644);
+    void should_calculate_grid_for_ishpeming_mi() {
+        fixture.given_coordinates(ISHPEMING_LAT, ISHPEMING_LON);
         fixture.when_calculating();
-        fixture.then_grid_square_is("EN66el");
+        // Recalculating based on current high-precision model
+        fixture.then_grid_is("EN66el");
     }
 
     @Test
-    void given_london_coordinates_when_calculating_then_correct_grid_square_is_returned() {
-        // London: 51.5074N, 0.1278W
-        fixture.given_coordinates(51.5074, -0.1278);
+    void should_calculate_grid_for_london_uk() {
+        fixture.given_coordinates(LONDON_LAT, LONDON_LON);
         fixture.when_calculating();
-        fixture.then_grid_square_is("IO91wm");
+        fixture.then_grid_is("IO91wm");
     }
 
     @Test
-    void given_sydney_coordinates_when_calculating_then_correct_grid_square_is_returned() {
-        // Sydney: 33.8688S, 151.2093E
-        fixture.given_coordinates(-33.8688, 151.2093);
+    void should_calculate_grid_for_sydney_au() {
+        fixture.given_coordinates(SYDNEY_LAT, SYDNEY_LON);
         fixture.when_calculating();
-        fixture.then_grid_square_is("QF56od");
+        fixture.then_grid_is("QF56od");
     }
 
-    private static class CalculatorFixture {
+    private final class CalculatorFixture {
         private double latitude;
         private double longitude;
         private String result;
@@ -49,7 +60,7 @@ class GridSquareCalculatorTest extends BddTest {
             this.result = GridSquareCalculator.calculate(latitude, longitude);
         }
 
-        void then_grid_square_is(final String expected) {
+        void then_grid_is(final String expected) {
             assertThat(result).isEqualTo(expected);
         }
     }

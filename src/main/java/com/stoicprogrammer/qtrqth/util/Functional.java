@@ -1,32 +1,77 @@
 package com.stoicprogrammer.qtrqth.util;
 
+import io.vavr.control.Try;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Lightweight functional wrappers for Vanilla Java 8+.
- * Adheres to Phase 5 Architectural Rule 4.
+ * High-fidelity functional wrappers and monadic utilities.
+ * Adheres to strict branchless and expression-based mandates.
  */
 public final class Functional {
 
+    // Default Operational Constants
+    private static final int DEFAULT_RADIX = 10;
+
+    /**
+     * Specialized functional interface for operations that may throw checked exceptions.
+     */
     @FunctionalInterface
     public interface ThrowingFunction<T, R, E extends Exception> {
         R apply(T t) throws E;
     }
 
     /**
-     * Wraps a function that throws checked exceptions into a standard Function.
+     * Wraps a throwing function into a standard Function, pivoting to a RuntimeException on failure.
+     * Useful for clean integration with Java Streams.
      */
     public static <T, R> Function<T, R> wrap(final ThrowingFunction<T, R, Exception> throwingFunction) {
-        return t -> {
-            try {
-                return throwingFunction.apply(t);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        };
+        return t -> Try.of(() -> throwingFunction.apply(t)).getOrElseThrow(e -> new RuntimeException(e));
+    }
+
+    /**
+     * Pure functional wrapper for Integer parsing.
+     * @param s The string to parse.
+     * @return An Optional containing the integer, or empty if malformed.
+     */
+    public static Optional<Integer> tryParseInt(final String s) {
+        return tryParseInt(s, DEFAULT_RADIX);
+    }
+
+    /**
+     * Pure functional wrapper for Integer parsing with radix.
+     */
+    @SuppressWarnings("java:S1166") // Exception caught and handled monadically by Vavr
+    public static Optional<Integer> tryParseInt(final String s, final int radix) {
+        return Optional.ofNullable(s)
+            .map(String::trim)
+            .filter(str -> !str.isEmpty())
+            .flatMap(str -> Try.of(() -> Integer.parseInt(str, radix)).toJavaOptional());
+    }
+
+    /**
+     * Pure functional wrapper for Double parsing.
+     */
+    @SuppressWarnings("java:S1166") // Exception caught and handled monadically by Vavr
+    public static Optional<Double> tryParseDouble(final String s) {
+        return Optional.ofNullable(s)
+            .map(String::trim)
+            .filter(str -> !str.isEmpty())
+            .flatMap(str -> Try.of(() -> Double.parseDouble(str)).toJavaOptional());
+    }
+
+    /**
+     * Pure functional wrapper for Long parsing.
+     */
+    @SuppressWarnings("java:S1166") // Exception caught and handled monadically by Vavr
+    public static Optional<Long> tryParseLong(final String s) {
+        return Optional.ofNullable(s)
+            .map(String::trim)
+            .filter(str -> !str.isEmpty())
+            .flatMap(str -> Try.of(() -> Long.parseLong(str)).toJavaOptional());
     }
 
     private Functional() {
-        // Utility Class
+        // Utility Class - Instances forbidden by Section 2.
     }
 }

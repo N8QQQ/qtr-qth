@@ -1,5 +1,6 @@
 package com.stoicprogrammer.qtrqth.serial;
 
+import com.stoicprogrammer.qtrqth.config.AppConfig;
 import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
@@ -14,11 +15,11 @@ import java.util.Optional;
 public final class PortDiscovery {
 
     private final ISerialProvider provider;
-    private final ConfigManager config;
+    private final AppConfig config;
 
-    public PortDiscovery(final ISerialProvider provider, final ConfigManager config) {
+    public PortDiscovery(final ISerialProvider provider, final ConfigManager configManager) {
         this.provider = provider;
-        this.config = config;
+        this.config = configManager.getConfig();
     }
 
     /**
@@ -36,13 +37,8 @@ public final class PortDiscovery {
      * @return An Optional containing the most likely GPS port name.
      */
     public Optional<String> findLikelyGpsPort() {
-        final List<String> keywords = config.getProperty("gps.discovery.keywords")
-            .map(s -> List.of(s.split(",")))
-            .orElse(List.of())
-            .stream()
-            .map(String::trim)
+        final List<String> keywords = config.discoveryKeywords().stream()
             .map(String::toLowerCase)
-            .filter(s -> !s.isEmpty())
             .toList();
 
         return provider.getAvailablePorts().stream()

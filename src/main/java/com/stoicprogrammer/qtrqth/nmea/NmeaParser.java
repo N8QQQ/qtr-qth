@@ -1,5 +1,6 @@
 package com.stoicprogrammer.qtrqth.nmea;
 
+import com.stoicprogrammer.qtrqth.util.Functional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,16 @@ import java.util.function.BiFunction;
  */
 public final class NmeaParser {
     private static final Logger logger = LoggerFactory.getLogger(NmeaParser.class);
+
+    // Operational Constants
+    private static final int MAX_SENTENCE_LENGTH = 128;
+    private static final int MAX_FIELDS = 20;
+    private static final int MIN_FIELDS_GPRMC = 10;
+    private static final int MIN_FIELDS_GPGGA = 10;
+    private static final int MIN_FIELDS_GPZDA = 5;
+    private static final int HEX_RADIX = 16;
+    private static final int CHECKSUM_LENGTH = 2;
+    private static final int NMEA_TIME_STRING_LEN = 6;
 
     // Functional Routing Table: Logic treated as Data
     private final Map<String, BiFunction<String[], GpsData, GpsData>> parsers = Map.of(
@@ -48,9 +59,9 @@ public final class NmeaParser {
     public GpsData parse(final String raw, final GpsData previous) {
         return Optional.ofNullable(raw)
             .map(s -> s.replaceAll("[^\\x20-\\x7E]", "").trim())
-            .filter(s -> !s.isEmpty() && s.startsWith("$") && s.length() <= 128)
+            .filter(s -> !s.isEmpty() && s.startsWith("$") && s.length() <= MAX_SENTENCE_LENGTH)
             .filter(s -> !s.contains("*") || isValidChecksum(s))
-            .map(s -> s.split(",", 20))
+            .map(s -> s.split(",", MAX_FIELDS))
             .map(parts -> route(parts, previous))
             .orElse(previous);
     }
@@ -68,12 +79,12 @@ public final class NmeaParser {
                 final String content = sentence.substring(1, idx);
                 final String rawHexSum = sentence.substring(idx + 1).trim();
                 final String hexSum = Optional.of(rawHexSum)
-                    .filter(s -> s.length() > 2)
-                    .map(s -> s.substring(0, 2))
+                    .filter(s -> s.length() > CHECKSUM_LENGTH)
+                    .map(s -> s.substring(0, CHECKSUM_LENGTH))
                     .orElse(rawHexSum);
                 
                 final int calculated = content.chars().reduce(0, (a, b) -> a ^ b);
-                return tryParseInt(hexSum, 16)
+                return Functional.tryParseInt(hexSum, HEX_RADIX)
                     .filter(expected -> calculated == expected)
                     .isPresent();
             })
@@ -82,11 +93,11 @@ public final class NmeaParser {
 
     private GpsData parseGprmc(final String[] parts, final GpsData prev) {
         return Optional.of(parts)
-            .filter(p -> p.length >= 10)
+            .filter(p -> p.length >= MIN_FIELDS_GPRMC)
             .map(p -> {
                 final LocalTime time = extractField(p, GPRMC_TIME)
-                    .filter(s -> s.length() >= 6)
-                    .map(s -> LocalTime.parse(s.substring(0, 6), DateTimeFormatter.ofPattern("HHmmss")))
+                    .filter(s -> s.length() >= NMEA_TIME_STRING_LEN)
+                    .map(s -> LocalTime.parse(s.substring(0, NMEA_TIME_STRING_LEN), DateTimeFormatter.ofPattern("HHmmss")))
                     .orElse(prev.utcTime());
 
                 final double lat = extractCoordinate(p, GPRMC_LAT, GPRMC_LAT_DIR).orElse(prev.latitude());
@@ -103,14 +114,14 @@ public final class NmeaParser {
 
     private GpsData parseGpgga(final String[] parts, final GpsData prev) {
         return Optional.of(parts)
-            .filter(p -> p.length >= 10)
+            .filter(p -> p.length >= MIN_FIELDS_GPGGA)
             .map(p -> {
                 final int sats = extractField(p, GPGGA_SATS)
-                    .flatMap(this::tryParseInt)
+                    .flatMap(Functional::tryParseInt)
                     .orElse(prev.satelliteCount());
 
                 final double alt = extractField(p, GPGGA_ALT)
-                    .flatMap(this::tryParseDouble)
+                    .flatMap(Functional::tryParseDouble)
                     .orElse(prev.altitude());
 
                 return new GpsData(prev.utcTime(), prev.date(), prev.latitude(), prev.longitude(), alt, sats);
@@ -120,14 +131,14 @@ public final class NmeaParser {
 
     private GpsData parseGpzda(final String[] parts, final GpsData prev) {
         return Optional.of(parts)
-            .filter(p -> p.length >= 5)
+            .filter(p -> p.length >= MIN_FIELDS_GPZDA)
             .map(p -> {
                 final LocalDate date = extractField(p, GPZDA_DAY)
-                    .flatMap(this::tryParseInt)
+                    .flatMap(Functional::tryParseInt)
                     .flatMap(d -> extractField(p, GPZDA_MONTH)
-                        .flatMap(this::tryParseInt)
+                        .flatMap(Functional::tryParseInt)
                         .flatMap(m -> extractField(p, GPZDA_YEAR)
-                            .flatMap(this::tryParseInt)
+                            .flatMap(Functional::tryParseInt)
                             .map(y -> LocalDate.of(y, m, d))))
                     .orElse(prev.date());
 
@@ -142,35 +153,16 @@ public final class NmeaParser {
 
     private Optional<Double> extractCoordinate(final String[] parts, final int coordIdx, final int dirIdx) {
         return extractField(parts, coordIdx)
-            .flatMap(this::tryParseDouble)
+            .flatMap(Functional::tryParseDouble)
             .flatMap(coord -> extractField(parts, dirIdx)
                 .map(dir -> convertToDecimalDegrees(coord, dir)));
     }
 
     private double convertToDecimalDegrees(final double raw, final String direction) {
-        final int degrees = (int) (raw / 100);
-        final double minutes = raw - (degrees * 100);
-        final double decimal = degrees + (minutes / 60);
+        final double degrees = raw / 100.0;
+        final int degInt = (int) degrees;
+        final double minutes = raw - (degInt * 100.0);
+        final double decimal = degInt + (minutes / 60.0);
         return (direction.equals("S") || direction.equals("W")) ? -decimal : decimal;
-    }
-
-    private Optional<Integer> tryParseInt(final String s) {
-        return tryParseInt(s, 10);
-    }
-
-    private Optional<Integer> tryParseInt(final String s, final int radix) {
-        try {
-            return Optional.of(Integer.parseInt(s, radix));
-        } catch (final NumberFormatException e) {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<Double> tryParseDouble(final String s) {
-        try {
-            return Optional.of(Double.parseDouble(s));
-        } catch (final NumberFormatException e) {
-            return Optional.empty();
-        }
     }
 }

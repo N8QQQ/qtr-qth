@@ -3,6 +3,7 @@ plugins {
     application
     jacoco
     checkstyle
+    id("me.champeau.jmh") version "0.7.2"
 }
 
 group = "com.stoicprogrammer"
@@ -10,6 +11,11 @@ version = "0.4.0"
 
 repositories {
     mavenCentral()
+}
+
+jmh {
+    jmhVersion.set("1.37")
+    duplicateClassesStrategy.set(DuplicatesStrategy.EXCLUDE)
 }
 
 checkstyle {
@@ -29,6 +35,9 @@ dependencies {
     // Network Time Protocol
     implementation("commons-net:commons-net:3.13.0")
 
+    // Functional Ecosystem (The Hybrid Weaver)
+    implementation("io.vavr:vavr:1.0.1")
+
     // Testing
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -37,6 +46,7 @@ dependencies {
     testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
 
 application {
     mainClass.set("com.stoicprogrammer.qtrqth.Main")

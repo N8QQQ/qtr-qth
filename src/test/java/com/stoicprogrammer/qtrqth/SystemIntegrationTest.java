@@ -28,26 +28,38 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Business Rule: [SYSTEM INTEGRITY] - End-to-End Operational Flow.
+ * Hardened in Phase 6.6 with Test Data Vaulting.
  */
 class SystemIntegrationTest extends BddTest {
+
+    private static final double RMC_LAT = 46.28342983333333;
+    private static final double RMC_LON = -87.88802466666667;
+    private static final double RMC_ALT = 425.1;
+    private static final int RMC_SATS = 8;
+    private static final int RMC_HOUR = 23;
+    private static final int RMC_MIN = 28;
+    private static final int RMC_SEC = 10;
+    private static final double PRECISION_OFFSET = 0.000001;
+    private static final int POLL_INTERVAL_MS = 10;
+    private static final int MAX_POLL_ATTEMPTS = 200;
 
     private final SystemFixture fixture = new SystemFixture();
 
     @Test
-    void given_simulated_hardware_when_data_flows_then_final_gps_data_is_produced() throws Exception {
+    void should_process_vaulted_telemetry_through_full_pipeline() throws Exception {
         fixture.given_simulated_hardware_ready();
         
-        fixture.when_serial_data_arrives("$GPRMC,123456,A,4000.000,N,08000.000,W,0,0,010126,,,A\r\n");
-        fixture.when_serial_data_arrives("$GPGGA,123456,4000.000,N,08000.000,W,1,08,1.0,100.0,M,,M,,\r\n");
+        // Stream every sentence from the shack sample into the virtual hardware
+        getTelemetrySentences("shack_sample_01.nmea").forEach(fixture::when_serial_data_arrives);
         
-        fixture.then_calculated_latitude_is(40.0);
-        fixture.then_calculated_longitude_is(-80.0);
-        fixture.then_calculated_altitude_is(100.0);
-        fixture.then_satellite_count_is(8);
-        fixture.then_calculated_time_is(java.time.LocalTime.of(12, 34, 56));
+        fixture.then_calculated_latitude_is(RMC_LAT);
+        fixture.then_calculated_longitude_is(RMC_LON);
+        fixture.then_calculated_altitude_is(RMC_ALT);
+        fixture.then_satellite_count_is(RMC_SATS);
+        fixture.then_calculated_time_is(java.time.LocalTime.of(RMC_HOUR, RMC_MIN, RMC_SEC));
     }
 
-    private class SystemFixture {
+    private static final class SystemFixture {
         private final ISerialProvider mockProvider = mock(ISerialProvider.class);
         private final ISerialPort mockPort = mock(ISerialPort.class);
         private final ConfigManager mockConfig = mock(ConfigManager.class);
@@ -76,7 +88,8 @@ class SystemIntegrationTest extends BddTest {
         }
 
         void when_serial_data_arrives(final String raw) {
-            final byte[] bytes = raw.getBytes();
+            // Append CRLF as hardware would
+            final byte[] bytes = (raw.trim() + "\r\n").getBytes();
             given(mockPort.bytesAvailable()).willReturn(bytes.length);
             given(mockPort.readBytes(any(byte[].class), anyInt())).willAnswer(inv -> {
                 final byte[] buffer = inv.getArgument(0);
@@ -91,17 +104,17 @@ class SystemIntegrationTest extends BddTest {
 
         void then_calculated_latitude_is(final double expected) throws Exception {
             waitForResults();
-            assertThat(results.get(results.size() - 1).latitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(0.000001));
+            assertThat(results.get(results.size() - 1).latitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(PRECISION_OFFSET));
         }
 
         void then_calculated_longitude_is(final double expected) throws Exception {
             waitForResults();
-            assertThat(results.get(results.size() - 1).longitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(0.000001));
+            assertThat(results.get(results.size() - 1).longitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(PRECISION_OFFSET));
         }
 
         void then_calculated_altitude_is(final double expected) throws Exception {
             waitForResults();
-            assertThat(results.get(results.size() - 1).altitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(0.000001));
+            assertThat(results.get(results.size() - 1).altitude()).isCloseTo(expected, org.assertj.core.data.Offset.offset(PRECISION_OFFSET));
         }
 
         void then_satellite_count_is(final int expected) throws Exception {
@@ -114,16 +127,13 @@ class SystemIntegrationTest extends BddTest {
             assertThat(results.get(results.size() - 1).utcTime()).isEqualTo(expected);
         }
 
-        private void waitForResults() throws Exception {
+        private void waitForResults() {
+            // Functional Polling: Use a stream to wait for results without an imperative loop
             Stream.generate(() -> {
-                try { 
-                    Thread.sleep(10); 
-                } catch (final InterruptedException e) { 
-                    Thread.currentThread().interrupt(); 
-                }
+                try { Thread.sleep(POLL_INTERVAL_MS); } 
+                catch (final InterruptedException e) { Thread.currentThread().interrupt(); }
                 return results.isEmpty();
-            }).limit(200).takeWhile(empty -> empty).count();
-            executor.shutdownNow();
+            }).limit(MAX_POLL_ATTEMPTS).takeWhile(empty -> empty).count();
         }
     }
 }

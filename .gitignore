@@ -5,6 +5,18 @@ build/
 !**/src/test/**/build/
 .kotlin
 
+### Java / Gradle ###
+*.class
+*.jar
+*.war
+*.ear
+*.hprof
+*.tmp
+*.temp
+logs/
+*.log
+.DS_Store
+
 ### IntelliJ IDEA ###
 .idea/
 out/
@@ -37,7 +49,9 @@ bin/
 .vscode/
 
 ### Project Artifacts ###
-*.log
 *.properties
 !gradle.properties
-.DS_Store
+!src/main/resources/*.properties
+!src/test/resources/*.properties
+!src/main/resources/**/*.properties
+!src/test/resources/**/*.properties
