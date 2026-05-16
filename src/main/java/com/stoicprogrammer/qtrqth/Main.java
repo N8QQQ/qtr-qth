@@ -33,19 +33,31 @@ public final class Main {
     private static final int NTP_TIMEOUT_MS = 5000;
     private static final int NTP_POLL_INTERVAL_SECONDS = 60;
     private static final int PULSE_ID_MASK = 0xFFFF;
-    private static final String CONFIG_FILENAME = "qtr-qth.properties";
+    private static final String DEFAULT_CONFIG_FILENAME = "qtr-qth.properties";
 
     private Main() {
         // Utility Class
     }
 
     public static void main(final String[] args) {
+        final String configPath = Optional.of(args)
+            .filter(a -> a.length > 0)
+            .map(a -> a[0])
+            .orElse(DEFAULT_CONFIG_FILENAME);
+
+        run(Path.of(configPath));
+    }
+
+    /**
+     * Internal entry point for testing and standard boot.
+     */
+    public static void run(final Path configPath) {
         System.out.println("==========================================");
         System.out.println("  qtr-qth : GPS Time & Location Hub       ");
         System.out.println("==========================================");
         
-        // 1. Load Configuration (Typed & Immutable)
-        final ConfigManager configManager = new ConfigManager(Path.of(CONFIG_FILENAME));
+        // 1. Load Configuration
+        final ConfigManager configManager = new ConfigManager(configPath);
         final AppConfig config = configManager.getConfig();
         
         logger.info("Configuration Loaded - NTP Pool: {}, SimMode: {}, RawTelemetry: {}", 

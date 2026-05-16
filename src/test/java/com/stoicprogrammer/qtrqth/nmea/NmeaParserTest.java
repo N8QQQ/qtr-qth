@@ -16,7 +16,6 @@ class NmeaParserTest extends BddTest {
 
     @Test
     void should_parse_valid_shack_sample_from_vault() {
-        // Sample 01 contains RMC, GGA, and ZDA
         getTelemetrySentences("shack_sample_01.nmea").forEach(sentence -> {
             fixture.given_sentence(sentence);
             fixture.when_parsing_and_merging();
@@ -26,6 +25,20 @@ class NmeaParserTest extends BddTest {
         fixture.then_latitude_is(46.28342983333333);
         fixture.then_longitude_is(-87.88802466666667);
         fixture.then_date_is(LocalDate.of(2026, 4, 2));
+    }
+
+    @Test
+    void should_handle_temporal_and_positional_boundaries_from_vault() {
+        // Boundary Sample: Midnight rollover, Date Line, Leap Year, North Pole
+        getTelemetrySentences("boundary_stress_sample.nmea").forEach(sentence -> {
+            fixture.given_sentence(sentence);
+            fixture.when_parsing_and_merging();
+        });
+
+        // Final fix in stress sample is at North Pole on Feb 29, 2024
+        fixture.then_date_is(LocalDate.of(2024, 2, 29));
+        fixture.then_latitude_is(89.99998333333333);
+        fixture.then_utc_time_is(LocalTime.of(12, 0, 0));
     }
 
     @Test
