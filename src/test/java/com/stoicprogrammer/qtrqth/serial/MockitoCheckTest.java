@@ -3,14 +3,14 @@ package com.stoicprogrammer.qtrqth.serial;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.BDDMockito.given;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class MockitoCheckTest {
     @Test
-    void testListMock() {
-        List mockList = mock(List.class);
-        when(mockList.size()).thenReturn(10);
-        assertEquals(10, mockList.size());
+    void should_return_mocked_size_when_list_is_queried() {
+        final List<?> mockList = mock(List.class);
+        given(mockList.size()).willReturn(10);
+        assertThat(mockList.size()).isEqualTo(10);
     }
 }

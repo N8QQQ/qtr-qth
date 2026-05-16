@@ -39,4 +39,5 @@ bin/
 ### Project Artifacts ###
 *.log
 *.properties
+!gradle.properties
 .DS_Store

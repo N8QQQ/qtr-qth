@@ -3,9 +3,11 @@ package com.stoicprogrammer.qtrqth.nmea;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 /**
  * Immutable record representing a GPS fix.
+ * Adheres to strict finality and functional scannability.
  */
 public record GpsData(
     LocalTime utcTime,
@@ -17,10 +19,11 @@ public record GpsData(
 ) {
     @Override
     public String toString() {
-        String timeStr = (utcTime != null) ? utcTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")) : "null";
+        final String timeStr = Optional.ofNullable(utcTime)
+            .map(t -> t.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
+            .orElse("null");
+            
         return String.format("UTC: %s | Date: %s | Lat: %.5f | Lon: %.5f | Alt: %.1fm | Sats: %d",
                 timeStr, date, latitude, longitude, altitude, satelliteCount);
     }
 }
-
-

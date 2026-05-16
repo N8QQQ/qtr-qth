@@ -3,39 +3,28 @@
 `qtr-qth` is a high-precision GPS Time (QTR) and Location (QTH) hub designed for mission-critical synchronization in Amateur Radio and technical shacks.
 
 ## 🏛️ Technical Design
-For details on the concurrency model and functional design patterns, refer to the **[System Architecture (ARCHITECTURE.md)](ARCHITECTURE.md)**.
-
-## 🔄 Agile Governance: Session-Based Agile (SBA)
-The project follows a hybrid **SBA** methodology to maintain "Heritage Grade" quality in a hobbyist environment:
-- **Sprints:** 2-week strategic milestones.
-- **Sessions:** Tactical development blocks (typically 2-4 hours).
-- **Atomic Phases:** Roadmap phases are partitioned into units of **2-3 Story Points**, targeting completion of 1-2 units per session.
-- **Calibration:** We track **Story Points per Session Hour** ($SP / h$) to calibrate future capacity and project completion dates.
-- **Business Value (BV):** Priority assigned on a scale of **100 to 1000** (1000 = Critical Mission Impact).
-
-## 🏁 Definition of Done (DoD)
-A task or phase is considered "Done" only when:
-1.  **Functionality:** Requirements implemented and verified via BDD suites.
-2.  **Test Coverage:** "Business Logic" must maintain **>90% instruction coverage**.
-3.  **Security (OWASP 2025):** Code hardened against [OWASP Top 10 (2025)](https://owasp.org/Top10/2025/) standards.
-4.  **Static Analysis:** Mandatory review for security concerns (Injection, Exceptional Conditions) and logic flaws.
-5.  **Heritage Stability:** No business logic modified during logging/observability refactors.
-6.  **Operational Resilience:** Non-blocking async I/O and graceful shutdown hooks must be preserved.
+For details on the concurrency model, functional pipeline, and architectural decisions, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
-## 🗺️ Project Roadmap
+## 🗺️ Execution Roadmap
 
-### Phase 1 & 2: Foundations & Hardware (COMPLETED - v0.1.0)
-- [x] Repository structure, Gradle setup, and CI/CD.
-- [x] **NMEA Engine:** Asynchronous ingestion and functional parsing ($GPRMC, $GPGGA, $GPZDA).
-- [x] **GPS Simulator:** decoupling hardware via HAL.
-- [x] **QTH Utility:** Maidenhead Grid Square calculation.
+### Phase 1: Foundation (COMPLETED - v0.1.0)
+- [x] **Phase 1.1: Project Skeleton (Gradle/Java 21)**
+- [x] **Phase 1.2: NMEA Sentence Capture**
+- [x] **Phase 1.3: GPS Data Records (Immutable)**
+- [x] **Phase 1.4: Grid Square Calculator**
 
-### Phase 3: Observability Foundation (COMPLETED - v0.2.0)
-- [x] **Logging:** SLF4J + Logback with dual Async rolling files (Shack/Lab).
-- [x] **Traceability:** MDC-based Trace IDs for end-to-end pulse tracking.
-- [x] **Hardening:** OWASP 2025 compliant input sanitization and exception management.
+### Phase 2: Serial Plumbing (COMPLETED - v0.2.0)
+- [x] **Phase 2.1: jSerialComm Integration**
+- [x] **Phase 2.2: Hardware Abstraction Layer (ISerialProvider)**
+- [x] **Phase 2.3: Port Auto-Discovery**
+- [x] **Phase 2.4: Data Streaming Pipeline**
+
+### Phase 3: Observability (COMPLETED - v0.2.0)
+- [x] **Phase 3.1: Logback Integration**
+- [x] **Phase 3.2: Mapped Diagnostic Context (MDC) for Pulse ID**
+- [x] **Phase 3.3: High-Fidelity Console UI**
 
 ### Phase 4: Network Time Reference (COMPLETED - v0.3.0)
 - [x] **Phase 4.1: Supply Chain & Console UX**
@@ -43,56 +32,63 @@ A task or phase is considered "Done" only when:
 - [x] **Phase 4.3: Precision Metadata**
 - [x] **Phase 4.4: Pipeline Integration**
 - [x] **Phase 4.5: Resilience & Multi-Pooling**
+- [x] **Phase 4.6: Test HAL & CI Stabilization**
 
-### Phase 5: Drift & Offset Analysis (v0.4.0)
+### Phase 5: The Functional Blueprint (COMPLETED - v0.4.0)
+- [x] **Phase 5.1: Functional Purity Refactor**
+- [x] **Phase 5.2: Immutability Enforcement**
+- [x] **Phase 5.3: Automated Linter Integration**
+- [x] **Phase 5.4: Test Suite Reconciliation**
+
+### Phase 6: Structural Hardening (v0.4.1)
+**Objective:** Final polish of the functional baseline before entering complex telemetry analysis.
+**Branch:** `feat/monad-weaver`
+- [ ] **Phase 6.1: Typed Configuration Pipeline:** Parse properties into an immutable `AppConfig` record to eliminate Stringly-Typed logic.
+- [ ] **Phase 6.2: Numeric Purity:** Wrap parsing mechanisms (like `Double.parseDouble`) in `Optional` wrappers via `Functional.java` to prevent hardware noise exceptions.
+- [ ] **Phase 6.3: Supply Chain Synchronization:** Refine `verification-metadata.xml` to include multi-platform checksums and trust-keys (Windows/Linux/ARM).
+- [ ] **Phase 6.4: CI Action Refresh:** Update `gradle/actions/wrapper-validation` to latest major version to silence Node.js 20 deprecation.
+
+### Phase 7: The Virtual Shack (v0.5.0)
+**Objective:** Cross-platform simulation of Linux/ARM64 and physical hardware.
+**Branch:** `feat/phantom-shack`
+- [ ] **Phase 7.1: Multi-Arch Dockerization:** amd64/arm64 build profiles.
+- [ ] **Phase 7.2: Hardware Spoofing (socat):** Simulated `/dev/ttyUSB0` in container.
+- [ ] **Phase 7.3: Graceful Hardware Fallback:** Change boot default to hardware mode; auto-failover to `SimulationSerialProvider` if no viable ports are found.
+- [ ] **Phase 7.4: GitHub CI Hardening:** Integration of QEMU and ARM64 verification.
+
+### Phase 8: Temporal Virtualization (v0.6.0)
+**Objective:** Decouple time-awareness for deterministic math verification.
+**Branch:** `feat/chrono-tesseract`
+- [ ] **Phase 8.1: Clock Dependency Injection:** Eliminate `Instant.now()`.
+- [ ] **Phase 8.2: Jitter Testing Baseline:** Verify math using `Clock.fixed()`.
+
+### Phase 9: Drift & Offset Analysis (v0.7.0)
 **Objective:** Quantify the accuracy of the system clock.
 **Branch:** `feat/jitter-bug`
-- [ ] **Phase 5.1: Clock Differential Logic** (SP: 3 | BV: 900)
-- [ ] **Phase 5.2: Jitter & Stability Scoring** (SP: 2 | BV: 400)
+- [ ] **Phase 9.1: The Offset Engine (The "Math")**
+- [ ] **Phase 9.2: Jitter & Statistics (The "Stability")**
+- [ ] **Phase 9.3: Observability Update (The "Report")**
 
-### Phase 6: Precision Clock Synchronization (v1.0.0)
+### Phase 10: Precision Clock Synchronization (v1.0.0)
 **Objective:** Update the system clock with precision and authority.
-**Branch:** `feat/chrono-trigger`
-- [ ] **Phase 6.1: OS Permission HAL** (SP: 2 | BV: 700)
-- [ ] **Phase 6.2: Windows Time Service Provider** (SP: 3 | BV: 600)
-- [ ] **Phase 6.3: Linux/Pi Time Service Provider** (SP: 3 | BV: 600)
-- [ ] **Phase 6.4: Precision Sync Scheduling** (SP: 3 | BV: 800)
+- [ ] **Phase 10.1: OS Permission HAL**
+- [ ] **Phase 10.2: Windows Time Service Provider**
+- [ ] **Phase 10.3: Linux/Pi Time Service Provider**
 
-### Phase 7: The "QTH Hub" (v2.0.0)
+### Phase 11: The "QTH Hub" (v2.0.0)
 **Objective:** Broadcast live telemetry to 3rd party shack tools.
-**Branch:** `feat/stratum-shack`
-- [ ] **Phase 7.1: UDP Broadcast Engine** (SP: 3 | BV: 500)
-- [ ] **Phase 7.2: Serialization Logic (JSON/NMEA)** (SP: 2 | BV: 400)
-- [ ] **Phase 7.3: Broadcast Pipeline Integration** (SP: 2 | BV: 400)
 
-### Phase 8: Dashboard - Embedded Web Scribe (v3.0.0)
-**Objective:** Lightweight embedded server for raw telemetry capture.
-- [ ] **Phase 8.1: Embedded Jetty/Spark Orchestration** (SP: 3 | BV: 300)
-- [ ] **Phase 8.2: Secure Context Handling** (SP: 2 | BV: 300)
-
-### Phase 9: Dashboard - RESTful Pulse API (v3.1.0)
-**Objective:** Expose real-time telemetry via structured endpoints.
-- [ ] **Phase 9.1: Live Pulse Endpoint** (SP: 2 | BV: 400)
-- [ ] **Phase 9.2: Historical Drift Snapshot API** (SP: 2 | BV: 300)
-
-### Phase 10: Dashboard - "Shack-View" HTML (v4.0.0)
-**Objective:** High-fidelity, real-time visual monitoring dashboard.
-- [ ] **Phase 10.1: Reactive UI Components (Clock/Map)** (SP: 3 | BV: 500)
-- [ ] **Phase 10.2: WebSocket Pulse Streaming** (SP: 2 | BV: 400)
-
-### Phase 11: Heritage Stabilization (v5.0.0)
-**Objective:** Final hardening, documentation audit, and performance tuning.
-- [ ] **Phase 11.1: Long-haul Stress Testing** (SP: 3 | BV: 600)
-- [ ] **Phase 11.2: SDK/Library Dependency Audit** (SP: 2 | BV: 400)
-- [ ] **Phase 11.3: "Final Seal" Documentation Review** (SP: 1 | BV: 500)
+### Phase 12: Dashboard - Embedded Web Scribe (v3.0.0)
+### Phase 13: Dashboard - RESTful Pulse API (v3.1.0)
+### Phase 14: Dashboard - "Shack-View" HTML (v4.0.0)
+### Phase 15: Heritage Stabilization (v5.0.0)
 
 ---
 ## 🧪 Current Quality Status
-- **Baseline Velocity:** 5.45 SP/Hour (High-fidelity SBA calibration).
-- **Projected Work Remaining:** 32 Story Points.
-- **Estimated Completion Effort:** ~6 Session Hours.
-- **Instruction Coverage:** 92.7% | **Security:** OWASP 2025 compliant.
-- **Trailing Action (SOW-05):** Update feature branching policy to include `CITATION.cff` version bumps.
+- **Test Coverage:** 92.7% | **Logic Integrity:** Certified High Fidelity.
+- **Supply Chain:** Gradle Verification Enabled (SHA-256).
+- **Architecture:** Pure Functional Assembly Line.
+- **Portability:** NIO-based pathing (Win/Linux/RPi ready).
 
 ## ⚖️ Legal & Identity
 - **Developer:** Nicholas R. Ustick (N8QQQ) | **License:** GNU GPL v3.0

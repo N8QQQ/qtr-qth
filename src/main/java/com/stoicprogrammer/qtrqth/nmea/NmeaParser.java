@@ -6,12 +6,23 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiFunction;
 
 /**
  * Pure functional parser for NMEA 0183 sentences.
+ * Adheres to strict branchless mandates and finality requirements.
  */
-public class NmeaParser {
+public final class NmeaParser {
     private static final Logger logger = LoggerFactory.getLogger(NmeaParser.class);
+
+    // Functional Routing Table: Logic treated as Data
+    private final Map<String, BiFunction<String[], GpsData, GpsData>> parsers = Map.of(
+        "$GPRMC", this::parseGprmc,
+        "$GPGGA", this::parseGpgga,
+        "$GPZDA", this::parseGpzda
+    );
 
     // NMEA Field Indices
     private static final int GPRMC_TIME = 1;
@@ -34,141 +45,132 @@ public class NmeaParser {
      * @param previous The previous GpsData state.
      * @return A new GpsData record with updated fields.
      */
-    public GpsData parse(String raw, GpsData previous) {
-        if (raw == null) return previous;
+    public GpsData parse(final String raw, final GpsData previous) {
+        return Optional.ofNullable(raw)
+            .map(s -> s.replaceAll("[^\\x20-\\x7E]", "").trim())
+            .filter(s -> !s.isEmpty() && s.startsWith("$") && s.length() <= 128)
+            .filter(s -> !s.contains("*") || isValidChecksum(s))
+            .map(s -> s.split(",", 20))
+            .map(parts -> route(parts, previous))
+            .orElse(previous);
+    }
 
-        // A05:2025 Injection & A10:2025 Resilience
-        // 1. Sanitize: Strip non-printable/control chars and trim
-        String sentence = raw.replaceAll("[^\\x20-\\x7E]", "").trim();
-        
-        // 2. Boundary Check: Max NMEA sentence length is ~82, we allow 128 for safety
-        if (sentence.isEmpty() || !sentence.startsWith("$") || sentence.length() > 128) {
-            return previous;
-        }
+    private GpsData route(final String[] parts, final GpsData previous) {
+        return Optional.ofNullable(parsers.get(parts[0]))
+            .map(parser -> parser.apply(parts, previous))
+            .orElse(previous);
+    }
 
-        // Verify Checksum if present
-        if (sentence.contains("*")) {
-            if (!isValidChecksum(sentence)) {
-                logger.warn("Security/Integrity Warning: Invalid NMEA checksum. Data discarded.");
-                return previous;
-            }
-        }
+    private boolean isValidChecksum(final String sentence) {
+        return Optional.of(sentence.lastIndexOf('*'))
+            .filter(idx -> idx != -1 && idx + 1 < sentence.length())
+            .map(idx -> {
+                final String content = sentence.substring(1, idx);
+                final String rawHexSum = sentence.substring(idx + 1).trim();
+                final String hexSum = Optional.of(rawHexSum)
+                    .filter(s -> s.length() > 2)
+                    .map(s -> s.substring(0, 2))
+                    .orElse(rawHexSum);
+                
+                final int calculated = content.chars().reduce(0, (a, b) -> a ^ b);
+                return tryParseInt(hexSum, 16)
+                    .filter(expected -> calculated == expected)
+                    .isPresent();
+            })
+            .orElse(false);
+    }
 
-        // 3. Robust Tokenization: Split with limit to prevent runaway token counts
-        String[] parts = sentence.split(",", 20); 
-        String type = parts[0];
+    private GpsData parseGprmc(final String[] parts, final GpsData prev) {
+        return Optional.of(parts)
+            .filter(p -> p.length >= 10)
+            .map(p -> {
+                final LocalTime time = extractField(p, GPRMC_TIME)
+                    .filter(s -> s.length() >= 6)
+                    .map(s -> LocalTime.parse(s.substring(0, 6), DateTimeFormatter.ofPattern("HHmmss")))
+                    .orElse(prev.utcTime());
 
+                final double lat = extractCoordinate(p, GPRMC_LAT, GPRMC_LAT_DIR).orElse(prev.latitude());
+                final double lon = extractCoordinate(p, GPRMC_LON, GPRMC_LON_DIR).orElse(prev.longitude());
+
+                final LocalDate date = extractField(p, GPRMC_DATE)
+                    .map(s -> LocalDate.parse(s, DateTimeFormatter.ofPattern("ddMMyy")))
+                    .orElse(prev.date());
+
+                return new GpsData(time, date, lat, lon, prev.altitude(), prev.satelliteCount());
+            })
+            .orElse(prev);
+    }
+
+    private GpsData parseGpgga(final String[] parts, final GpsData prev) {
+        return Optional.of(parts)
+            .filter(p -> p.length >= 10)
+            .map(p -> {
+                final int sats = extractField(p, GPGGA_SATS)
+                    .flatMap(this::tryParseInt)
+                    .orElse(prev.satelliteCount());
+
+                final double alt = extractField(p, GPGGA_ALT)
+                    .flatMap(this::tryParseDouble)
+                    .orElse(prev.altitude());
+
+                return new GpsData(prev.utcTime(), prev.date(), prev.latitude(), prev.longitude(), alt, sats);
+            })
+            .orElse(prev);
+    }
+
+    private GpsData parseGpzda(final String[] parts, final GpsData prev) {
+        return Optional.of(parts)
+            .filter(p -> p.length >= 5)
+            .map(p -> {
+                final LocalDate date = extractField(p, GPZDA_DAY)
+                    .flatMap(this::tryParseInt)
+                    .flatMap(d -> extractField(p, GPZDA_MONTH)
+                        .flatMap(this::tryParseInt)
+                        .flatMap(m -> extractField(p, GPZDA_YEAR)
+                            .flatMap(this::tryParseInt)
+                            .map(y -> LocalDate.of(y, m, d))))
+                    .orElse(prev.date());
+
+                return new GpsData(prev.utcTime(), date, prev.latitude(), prev.longitude(), prev.altitude(), prev.satelliteCount());
+            })
+            .orElse(prev);
+    }
+
+    private Optional<String> extractField(final String[] parts, final int index) {
+        return Optional.ofNullable(parts[index]).filter(s -> !s.isEmpty());
+    }
+
+    private Optional<Double> extractCoordinate(final String[] parts, final int coordIdx, final int dirIdx) {
+        return extractField(parts, coordIdx)
+            .flatMap(this::tryParseDouble)
+            .flatMap(coord -> extractField(parts, dirIdx)
+                .map(dir -> convertToDecimalDegrees(coord, dir)));
+    }
+
+    private double convertToDecimalDegrees(final double raw, final String direction) {
+        final int degrees = (int) (raw / 100);
+        final double minutes = raw - (degrees * 100);
+        final double decimal = degrees + (minutes / 60);
+        return (direction.equals("S") || direction.equals("W")) ? -decimal : decimal;
+    }
+
+    private Optional<Integer> tryParseInt(final String s) {
+        return tryParseInt(s, 10);
+    }
+
+    private Optional<Integer> tryParseInt(final String s, final int radix) {
         try {
-            return switch (type) {
-                case "$GPRMC" -> parseGprmc(parts, previous);
-                case "$GPGGA" -> parseGpgga(parts, previous);
-                case "$GPZDA" -> parseGpzda(parts, previous);
-                default -> previous;
-            };
-        } catch (Exception e) {
-            // A10:2025 - Graceful handling of unexpected parser logic failures
-            logger.error("Mishandled exception during parsing of {}: {}", type, e.getMessage());
-            return previous;
+            return Optional.of(Integer.parseInt(s, radix));
+        } catch (final NumberFormatException e) {
+            return Optional.empty();
         }
     }
 
-    private boolean isValidChecksum(String sentence) {
-        int starIndex = sentence.lastIndexOf('*');
-        if (starIndex == -1 || starIndex + 1 >= sentence.length()) return false;
-
-        // Content is between $ and *
-        String content = sentence.substring(1, starIndex);
-        String hexSum = sentence.substring(starIndex + 1).trim();
-        
-        // Only take the first 2 chars of the hex sum (ignore trailing CRLF)
-        if (hexSum.length() > 2) hexSum = hexSum.substring(0, 2);
-
-        int calculated = 0;
-        for (char c : content.toCharArray()) {
-            calculated ^= c;
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("XOR Char: '%s' (0x%02X) -> Running Sum: 0x%02X", c, (int)c, calculated));
-            }
-        }
-
+    private Optional<Double> tryParseDouble(final String s) {
         try {
-            int expected = Integer.parseInt(hexSum, 16);
-            if (calculated != expected) {
-                logger.debug("Checksum Mismatch: Calculated {}, Expected {} for content between $ and *", 
-                    String.format("%02X", calculated), String.format("%02X", expected));
-            }
-            return calculated == expected;
-        } catch (NumberFormatException e) {
-            logger.debug("Checksum Format Error: '{}' is not valid hex", hexSum);
-            return false;
+            return Optional.of(Double.parseDouble(s));
+        } catch (final NumberFormatException e) {
+            return Optional.empty();
         }
-    }
-
-    private GpsData parseGprmc(String[] parts, GpsData prev) {
-        if (parts.length < 10) return prev;
-
-        LocalTime time = prev.utcTime();
-        if (parts[GPRMC_TIME] != null && parts[GPRMC_TIME].length() >= 6) {
-            time = LocalTime.parse(parts[GPRMC_TIME].substring(0, 6), DateTimeFormatter.ofPattern("HHmmss"));
-        }
-
-        double lat = prev.latitude();
-        if (!parts[GPRMC_LAT].isEmpty() && !parts[GPRMC_LAT_DIR].isEmpty()) {
-            lat = convertToDecimalDegrees(parts[GPRMC_LAT], parts[GPRMC_LAT_DIR]);
-        }
-
-        double lon = prev.longitude();
-        if (!parts[GPRMC_LON].isEmpty() && !parts[GPRMC_LON_DIR].isEmpty()) {
-            lon = convertToDecimalDegrees(parts[GPRMC_LON], parts[GPRMC_LON_DIR]);
-        }
-        
-        LocalDate date = prev.date();
-        if (!parts[GPRMC_DATE].isEmpty()) {
-            date = LocalDate.parse(parts[GPRMC_DATE], DateTimeFormatter.ofPattern("ddMMyy"));
-        }
-
-        return new GpsData(time, date, lat, lon, prev.altitude(), prev.satelliteCount());
-    }
-
-    private GpsData parseGpgga(String[] parts, GpsData prev) {
-        if (parts.length < 10) return prev;
-
-        int sats = prev.satelliteCount();
-        if (!parts[GPGGA_SATS].isEmpty()) {
-            sats = Integer.parseInt(parts[GPGGA_SATS]);
-        }
-
-        double alt = prev.altitude();
-        if (!parts[GPGGA_ALT].isEmpty()) {
-            alt = Double.parseDouble(parts[GPGGA_ALT]);
-        }
-
-        return new GpsData(prev.utcTime(), prev.date(), prev.latitude(), prev.longitude(), alt, sats);
-    }
-
-    private GpsData parseGpzda(String[] parts, GpsData prev) {
-        if (parts.length < 5) return prev;
-
-        LocalDate date = prev.date();
-        if (!parts[GPZDA_DAY].isEmpty() && !parts[GPZDA_MONTH].isEmpty() && !parts[GPZDA_YEAR].isEmpty()) {
-            int day = Integer.parseInt(parts[GPZDA_DAY]);
-            int month = Integer.parseInt(parts[GPZDA_MONTH]);
-            int year = Integer.parseInt(parts[GPZDA_YEAR]);
-            date = LocalDate.of(year, month, day);
-        }
-
-        return new GpsData(prev.utcTime(), date, prev.latitude(), prev.longitude(), prev.altitude(), prev.satelliteCount());
-    }
-
-    private double convertToDecimalDegrees(String nmeaCoord, String direction) {
-        double raw = Double.parseDouble(nmeaCoord);
-        int degrees = (int) (raw / 100);
-        double minutes = raw - (degrees * 100);
-        double decimal = degrees + (minutes / 60);
-        
-        if (direction.equals("S") || direction.equals("W")) {
-            decimal *= -1;
-        }
-        return decimal;
     }
 }

@@ -4,25 +4,23 @@ import com.fazecast.jSerialComm.SerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Physical hardware serial provider.
+ * Refactored to use pure Stream-based collection.
  */
-public class JSerialCommProvider implements ISerialProvider {
+public final class JSerialCommProvider implements ISerialProvider {
     @Override
     public List<ISerialPort> getAvailablePorts() {
-        SerialPort[] ports = SerialPort.getCommPorts();
-        List<ISerialPort> list = new ArrayList<>();
-        for (SerialPort p : ports) {
-            list.add(new JSerialPortWrapper(p));
-        }
-        return list;
+        return Arrays.stream(SerialPort.getCommPorts())
+            .map(JSerialPortWrapper::new)
+            .collect(java.util.stream.Collectors.toUnmodifiableList());
     }
 
     @Override
-    public ISerialPort getPort(String portName) {
+    public ISerialPort getPort(final String portName) {
         return new JSerialPortWrapper(SerialPort.getCommPort(portName));
     }
 }

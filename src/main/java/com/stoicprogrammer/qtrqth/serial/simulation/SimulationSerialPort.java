@@ -1,47 +1,44 @@
 package com.stoicprogrammer.qtrqth.serial.simulation;
 
+import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortDataListener;
 import com.fazecast.jSerialComm.SerialPortEvent;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * A Virtual Serial Port that replays NMEA data.
+ * Functional simulation of a serial port that generates synthetic GPS data.
+ * Adheres to strict finality and unmodifiable collection mandates.
  */
-public class SimulationSerialPort implements ISerialPort {
+public final class SimulationSerialPort implements ISerialPort {
     private final String name;
-    private final List<String> script = new ArrayList<>();
     private boolean open = false;
     private SerialPortDataListener listener;
     private Timer timer;
-    private int scriptIndex = 0;
 
-    public SimulationSerialPort(String name) {
+    public SimulationSerialPort(final String name) {
         this.name = name;
-        // Default simulation script (Live capture from VFAN UG-353)
-        script.add("$GPRMC,232810.00,A,4617.00579,N,08753.28148,W,0.650,,020426,,,A*68\r\n");
-        script.add("$GPGGA,232810.00,4617.00579,N,08753.28148,W,1,07,1.15,431.1,M,-35.0,M,,*6B\r\n");
-        script.add("$GPZDA,232810.00,02,04,2026,00,00*6C\r\n");
     }
+
+    @Override public String getSystemPortName() { return name; }
+    @Override public String getDescriptivePortName() { return "Simulated GPS Device (" + name + ")"; }
+    @Override public String getPortDescription() { return "Simulation"; }
+    @Override public void setBaudRate(final int baud) {}
+    @Override public void setNumDataBits(final int bits) {}
+    @Override public void setNumStopBits(final int stopBits) {}
+    @Override public void setParity(final int parity) {}
 
     @Override
     public boolean openPort() {
-        this.open = true;
-        this.timer = new Timer(true);
-        // Create a dummy real SerialPort for the event source
-        com.fazecast.jSerialComm.SerialPort dummy = com.fazecast.jSerialComm.SerialPort.getCommPort(name);
-        
+        open = true;
+        timer = new Timer("sim-gps-timer", true);
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (listener != null) {
-                    SerialPortEvent event = new SerialPortEvent(dummy, com.fazecast.jSerialComm.SerialPort.LISTENING_EVENT_DATA_AVAILABLE);
-                    listener.serialEvent(event);
-                }
+                Optional.ofNullable(listener).ifPresent(l -> l.serialEvent(new SerialPortEvent(null, SerialPort.LISTENING_EVENT_DATA_AVAILABLE)));
             }
         }, 1000, 1000);
         return true;
@@ -49,43 +46,29 @@ public class SimulationSerialPort implements ISerialPort {
 
     @Override
     public boolean closePort() {
-        if (timer != null) timer.cancel();
-        this.open = false;
+        open = false;
+        Optional.ofNullable(timer).ifPresent(Timer::cancel);
         return true;
     }
 
-    @Override
-    public boolean isOpen() { return open; }
-    @Override public void setBaudRate(int baudRate) {}
-    @Override public void setNumDataBits(int dataBits) {}
-    @Override public void setNumStopBits(int stopBits) {}
-    @Override public void setParity(int parity) {}
-
-    @Override
-    public int bytesAvailable() {
-        return script.get(scriptIndex).length();
+    @Override public boolean isOpen() { return open; }
+    
+    @Override 
+    public boolean addDataListener(final SerialPortDataListener l) { 
+        this.listener = l; 
+        return true; 
     }
+    
+    @Override public void removeDataListener() { this.listener = null; }
+    @Override public int bytesAvailable() { return 100; }
 
     @Override
-    public int readBytes(byte[] buffer, int bytesToRead) {
-        String sentence = script.get(scriptIndex);
-        byte[] data = sentence.getBytes();
-        int count = Math.min(bytesToRead, data.length);
-        System.arraycopy(data, 0, buffer, 0, count);
-        
-        scriptIndex = (scriptIndex + 1) % script.size();
-        return count;
+    public int readBytes(final byte[] buffer, final int bytesToRead) {
+        // Generate a synthetic GPZDA sentence: $GPZDA,hhmmss.ss,dd,mm,yyyy,xx,yy*CC
+        final String raw = "$GPZDA,232810.00,02,04,2026,00,00*6C\r\n";
+        final byte[] data = raw.getBytes();
+        final int len = Math.min(data.length, bytesToRead);
+        System.arraycopy(data, 0, buffer, 0, len);
+        return len;
     }
-
-    @Override
-    public boolean addDataListener(SerialPortDataListener listener) {
-        this.listener = listener;
-        return true;
-    }
-
-    @Override
-    public void removeDataListener() { this.listener = null; }
-    @Override public String getSystemPortName() { return name; }
-    @Override public String getDescriptivePortName() { return "Simulated GPS Device"; }
-    @Override public String getPortDescription() { return "JARVIS Simulation Module"; }
 }

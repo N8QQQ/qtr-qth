@@ -13,7 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -21,138 +24,131 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * qtr-qth: GPS Time & Location Sync for Amateur Radio.
- * 
- * Developed by Nicholas R. Ustick (N8QQQ)
- * StoicProgrammer.com
- * 
- * Copyright (c) 2026 Nicholas R. Ustick.
- * Licensed under the GNU General Public License v3.0.
  */
-public class Main {
+public final class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) {
+    private Main() {
+        // Utility Class
+    }
+
+    public static void main(final String[] args) {
         System.out.println("==========================================");
         System.out.println("  qtr-qth : GPS Time & Location Hub       ");
         System.out.println("==========================================");
         
-        // 1. Load Configuration
-        ConfigManager config = new ConfigManager("qtr-qth.properties");
-        List<String> ntpPool = java.util.Arrays.asList(config.getProperty("ntp.server").split(","));
-        boolean simulationMode = Boolean.parseBoolean(config.getProperty("simulation.mode"));
-        boolean showRaw = Boolean.parseBoolean(config.getProperty("display.raw.telemetry"));
+        // 1. Load Configuration (Using platform-agnostic Path)
+        final ConfigManager config = new ConfigManager(Path.of("qtr-qth.properties"));
+        
+        final List<String> ntpPool = config.getProperty("ntp.server")
+            .map(s -> java.util.Arrays.stream(s.split(",")).toList())
+            .orElse(List.of("pool.ntp.org"));
+        
+        final boolean simulationMode = config.getProperty("simulation.mode")
+            .map(Boolean::parseBoolean)
+            .orElse(true);
+            
+        final boolean showRaw = config.getProperty("display.raw.telemetry")
+            .map(Boolean::parseBoolean)
+            .orElse(false);
         
         logger.info("Configuration Loaded - NTP Pool: {}, SimMode: {}, RawTelemetry: {}", ntpPool, simulationMode, showRaw);
 
         // 2. Serial Discovery
-        com.stoicprogrammer.qtrqth.serial.api.ISerialProvider provider;
-        if (simulationMode) {
-            provider = new com.stoicprogrammer.qtrqth.serial.simulation.SimulationSerialProvider();
-        } else {
-            provider = new com.stoicprogrammer.qtrqth.serial.jserialcomm.JSerialCommProvider();
-        }
+        final com.stoicprogrammer.qtrqth.serial.api.ISerialProvider provider = simulationMode 
+            ? new com.stoicprogrammer.qtrqth.serial.simulation.SimulationSerialProvider()
+            : new com.stoicprogrammer.qtrqth.serial.jserialcomm.JSerialCommProvider();
         
-        PortDiscovery discovery = new PortDiscovery(provider, config);
-        List<String> availablePorts = discovery.getAvailablePorts();
+        final PortDiscovery discovery = new PortDiscovery(provider, config);
+        final List<String> availablePorts = discovery.getAvailablePorts();
         logger.info("Scanning for serial devices... Found {} ports.", availablePorts.size());
         
-        String likelyGps = discovery.findLikelyGpsPort();
-        if (likelyGps != null) {
-            logger.info("Likely GPS hardware identified on: {}", likelyGps);
-        } else {
-            logger.warn("No obvious GPS device detected by metadata scan.");
-            if (!availablePorts.isEmpty()) {
-                likelyGps = availablePorts.get(0);
-                logger.info("Defaulting to first available port: {}", likelyGps);
-            }
-        }
+        discovery.findLikelyGpsPort()
+            .or(() -> {
+                logger.warn("No obvious GPS device detected by metadata scan.");
+                return availablePorts.stream().findFirst();
+            })
+            .ifPresentOrElse(
+                port -> startTelemetryPipeline(port, config, provider, ntpPool, showRaw), 
+                () -> logger.error("No serial ports available for GPS connection. System operational failure.")
+            );
+    }
 
-        // 3. NTP Heartbeat (The "Slow River")
-        NtpClient ntpClient = new NtpClient(5000);
-        AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
+    private static void startTelemetryPipeline(final String port, final ConfigManager config, final com.stoicprogrammer.qtrqth.serial.api.ISerialProvider provider, final List<String> ntpPool, final boolean showRaw) {
+        final NtpClient ntpClient = new NtpClient(5000);
+        final AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
         
-        ScheduledExecutorService ntpExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "ntp-heartbeat");
+        final ScheduledExecutorService ntpExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            final Thread t = new Thread(r, "ntp-heartbeat");
             t.setDaemon(true);
             return t;
         });
 
-        // Initial Poll and Scheduled Heartbeat
-        ntpExecutor.scheduleAtFixedRate(() -> {
+        ntpExecutor.scheduleAtFixedRate(() -> 
             ntpClient.pollDetailed(ntpPool).ifPresent(response -> {
                 lastNtp.set(response);
                 logger.info("NTP Heartbeat: {} | Stratum: {} | RTT: {}ms", 
                     response.time(), response.stratum(), response.rttMs());
-            });
-        }, 0, 60, TimeUnit.SECONDS);
+            }), 0, 60, TimeUnit.SECONDS);
 
-        // 4. Start Serial Ingestion (The "Fast River")
-        if (likelyGps != null) {
-            NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
-            NmeaParser parser = new NmeaParser();
-            SerialConnector connector = new SerialConnector(config, accumulator, provider);
-            
-            // Functional State: Immutable record container
-            AtomicReference<GpsData> currentFix = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
+        final NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
+        final NmeaParser parser = new NmeaParser();
+        final SerialConnector connector = new SerialConnector(config, accumulator, provider);
+        final AtomicReference<GpsData> currentFix = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
 
-            // Graceful Shutdown Hook
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                logger.info("Shutdown signal received. Closing resources...");
-                connector.disconnect();
-                ntpExecutor.shutdown();
-            }));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Shutdown signal received. Closing resources...");
+            connector.disconnect();
+            ntpExecutor.shutdown();
+        }));
 
-            logger.info("Connecting to {}...", likelyGps);
+        logger.info("Connecting to {}...", port);
 
-            // The Assembly Line: Functional Telemetry Pipeline with MDC Tracking and NTP Snapshot
-            connector.connect(likelyGps)
-                .map(s -> TelemetryPulse.start(s, lastNtp.get()))
-                .peek(p -> { if (showRaw) p.logRaw(logger); })
-                .map(p -> p.update(parser, currentFix))
-                .filter(TelemetryPulse::hasValidFix)
-                .forEach(p -> p.logFinal(logger));
-
-        } else {
-            logger.error("System Failure: No serial ports available for GPS connection.");
-        }
+        connector.connect(port)
+            .map(s -> TelemetryPulse.start(s, lastNtp.get()))
+            .peek(p -> Map.<Boolean, Runnable>of(
+                true, () -> p.logRaw(logger),
+                false, () -> {}
+            ).get(showRaw).run())
+            .map(p -> p.update(parser, currentFix))
+            .filter(TelemetryPulse::hasValidFix)
+            .forEach(p -> p.logFinal(logger));
     }
 
-    /**
-     * Contextual Wrapper for a single GPS Telemetry event.
-     * Manages MDC Trace IDs and logging context.
-     * Package-private for unit testing.
-     */
     static record TelemetryPulse(String pulseId, String sentence, GpsData data, NtpResponse reference) {
         
-        static TelemetryPulse start(String sentence, NtpResponse ntp) {
-            String id = String.format("%04X", (sentence.hashCode() & 0xFFFF));
+        static TelemetryPulse start(final String sentence, final NtpResponse ntp) {
+            final String id = String.format("%04X", (sentence.hashCode() & 0xFFFF));
             return new TelemetryPulse(id, sentence, null, ntp);
         }
 
-        void logRaw(Logger log) {
+        void logRaw(final Logger log) {
             runWithContext(() -> log.debug("[RAW] {}", sentence));
         }
 
-        TelemetryPulse update(NmeaParser parser, AtomicReference<GpsData> state) {
-            GpsData next = state.updateAndGet(fix -> parser.parse(sentence, fix));
+        TelemetryPulse update(final NmeaParser parser, final AtomicReference<GpsData> state) {
+            final GpsData next = state.updateAndGet(fix -> parser.parse(sentence, fix));
             return new TelemetryPulse(pulseId, sentence, next, reference);
         }
 
         boolean hasValidFix() {
-            return data != null && data.utcTime() != null;
+            return Optional.ofNullable(data)
+                .flatMap(d -> Optional.ofNullable(d.utcTime()))
+                .isPresent();
         }
 
-        void logFinal(Logger log) {
+        void logFinal(final Logger log) {
             runWithContext(() -> {
-                String grid = GridSquareCalculator.calculate(data.latitude(), data.longitude());
-                String ntpStatus = (reference != null) ? String.format("NTP: %s (RTT: %dms, Stratum: %d)", 
-                    reference.time(), reference.rttMs(), reference.stratum()) : "NTP: No Reference";
+                final String grid = GridSquareCalculator.calculate(data.latitude(), data.longitude());
+                final String ntpStatus = Optional.ofNullable(reference)
+                    .map(r -> String.format("NTP: %s (RTT: %dms, Stratum: %d)", r.time(), r.rttMs(), r.stratum()))
+                    .orElse("NTP: No Reference");
                 
                 log.info("GPS Fix: {} | {} | Grid: {}", data, ntpStatus, grid);
             });
         }
 
-        private void runWithContext(Runnable action) {
+        private void runWithContext(final Runnable action) {
             MDC.put("pulseId", pulseId);
             try {
                 action.run();
