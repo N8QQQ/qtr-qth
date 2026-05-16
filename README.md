@@ -1,6 +1,9 @@
 # qtr-qth : GPS Time & Location Hub
 
-`qtr-qth` is a cross-platform application for Amateur Radio operators. It synchronizes your system clock (QTR) and provides precise location data (QTH), including Maidenhead Grid Squares, using a standard GPS USB receiver.
+[![DOI](https://zenodo.org/badge/1200462693.svg)](https://doi.org/10.5281/zenodo.20114280)
+
+`qtr-qth` is a cross-platform application for Amateur Radio operators.
+ It synchronizes your system clock (QTR) and provides precise location data (QTH), including Maidenhead Grid Squares, using a standard GPS USB receiver.
 
 ## 🚀 Capabilities
 
