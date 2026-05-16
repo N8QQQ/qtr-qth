@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   verify-fp-standards:
     runs-on: ubuntu-latest
@@ -24,7 +27,7 @@ jobs:
         cache: gradle
 
     - name: Validate Gradle Wrapper
-      uses: gradle/actions/wrapper-validation@v4
+      uses: gradle/actions/wrapper-validation@v6.1.0
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
