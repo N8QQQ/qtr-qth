@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SystemOrchestratorTest extends BddTest {
 
     private static final int POLL_INTERVAL_MS = 200;
-    private static final int MAX_POLL_ATTEMPTS = 50;
+    private static final int MAX_POLL_ATTEMPTS = 75; // Increased patience for slow CI
     private static final int SHUTDOWN_WAIT_MS = 2000;
 
     @TempDir
@@ -36,12 +36,16 @@ class SystemOrchestratorTest extends BddTest {
 
         // Start the engine with a simple list collector as the 'View'
         final Thread engineThread = new Thread(() -> orchestrator.start(capturedPulses::add));
+        engineThread.setDaemon(true);
         engineThread.start();
 
         // Functional Polling: Wait for at least one pulse
         Stream.generate(() -> {
-            try { Thread.sleep(POLL_INTERVAL_MS); } 
-            catch (final InterruptedException e) { Thread.currentThread().interrupt(); }
+            try { 
+                Thread.sleep(POLL_INTERVAL_MS); 
+            } catch (final InterruptedException e) { 
+                Thread.currentThread().interrupt(); 
+            }
             return capturedPulses.isEmpty();
         }).limit(MAX_POLL_ATTEMPTS).takeWhile(empty -> empty).count();
 

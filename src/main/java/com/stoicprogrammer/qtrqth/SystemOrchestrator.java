@@ -8,6 +8,9 @@ import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.ntp.NtpClient;
 import com.stoicprogrammer.qtrqth.ntp.NtpResponse;
+import com.stoicprogrammer.qtrqth.ntp.api.INtpProvider;
+import com.stoicprogrammer.qtrqth.ntp.network.NetworkNtpProvider;
+import com.stoicprogrammer.qtrqth.ntp.simulation.SimulationNtpProvider;
 import com.stoicprogrammer.qtrqth.serial.PortDiscovery;
 import com.stoicprogrammer.qtrqth.serial.SerialConnector;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
@@ -60,24 +63,28 @@ public final class SystemOrchestrator {
         final AppConfig config = configManager.getConfig();
         
         // 1. Hardware Provider Selection
-        final ISerialProvider provider = config.simulationMode() 
+        final ISerialProvider serialProvider = config.simulationMode() 
             ? new SimulationSerialProvider()
             : new JSerialCommProvider();
 
-        // 2. Network Time Heartbeat
-        final NtpClient ntpClient = new NtpClient(NTP_TIMEOUT_MS);
+        // 2. Network Time Heartbeat (Simulated or Network)
+        final INtpProvider ntpProvider = config.simulationMode()
+            ? new SimulationNtpProvider()
+            : new NetworkNtpProvider();
+
+        final NtpClient ntpClient = new NtpClient(ntpProvider, NTP_TIMEOUT_MS);
         ntpExecutor.scheduleAtFixedRate(() -> 
             ntpClient.pollDetailed(config.ntpPool()).ifPresent(lastNtp::set), 
             0, NTP_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
         // 3. Serial Discovery & Connection
-        final PortDiscovery discovery = new PortDiscovery(provider, configManager);
+        final PortDiscovery discovery = new PortDiscovery(serialProvider, configManager);
         final List<String> availablePorts = discovery.getAvailablePorts();
         
         discovery.findLikelyGpsPort()
             .or(() -> availablePorts.stream().findFirst())
             .ifPresentOrElse(
-                port -> runPipeline(port, provider, pulseConsumer),
+                port -> runPipeline(port, serialProvider, pulseConsumer),
                 () -> logger.error("No serial ports available. System operational failure.")
             );
     }
