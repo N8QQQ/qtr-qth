@@ -50,3 +50,6 @@ flowchart LR
     SE --> |Stats| SG[Stability Grade]
     SG --> |Metadata| LOG[Final Telemetry Log]
 ```
+
+---
+*For historical tactical details, see the [Phase Designs](../design/DESIGN_PHASE_1.md).*

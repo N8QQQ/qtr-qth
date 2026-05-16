@@ -60,11 +60,7 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 *   **Behavior Matrix:**
     *   **IF `vavr` is present:** Prioritize `vavr` data types over native Java equivalents. Use `Try` for exception handling, `Either` for error routing, `Tuple` for multi-value returns, and Vavr's persistent immutable collections.
     *   **IF `lombok` is present:** Use `@SneakyThrows` to bypass checked exception signatures inside Stream pipelines.
-    *   **IF `eclipse-collections` is present:** Bypass standard Java streams; use fluent iteration methods directly on the specialized collection classes (e.g., `.select()`, `.reject()`).
     *   **IF Vanilla Java 8+ only:** Implement lightweight custom functional wrappers (e.g., a custom `ThrowingFunction` utility) to safely handle checked exceptions inside streams.
-
-### Proactive Suggestions
-*   **Rule:** If the project is limited to Vanilla Java but faces highly complex branching, deeply nested stream errors, or tuple requirements, the AI *must* append a `[SUGGESTION]` block to its output recommending the addition of `Vavr` or `Lombok` dependencies to simplify the codebase.
 
 ### Checked Exception Handling Standard
 *   **Rule:** Checked exceptions must never block stream evaluation or force ugly `try/catch` blocks inside lambdas. Use the appropriate ecosystem pattern verified below.
@@ -95,6 +91,13 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 *   **Frameworks:** Enforce JUnit 5 Jupiter engine combined with standard Mockito.
 *   **Assertion Engine:** Ban standard JUnit assertions (`assertEquals`). Enforce **AssertJ** (`assertThat()`) to ensure assertions maintain a fluent, stream-like functional pipeline.
 
+### Test-Driven Development (TDD) Workflow
+*   **Rule:** Enforce the Red-Green-Refactor loop during logic creation.
+*   **Execution Sequence:**
+    1.  **Red:** The AI must generate a failing unit test asserting business value *before* any production code is written.
+    2.  **Green:** Generate the minimal, expression-based functional logic required to pass the test.
+    3.  **Refactor:** Modernize the codebase (e.g., converting lambdas to method references) while validating that tests remain green.
+
 ### Behavior-Driven Development (BDD) Layout
 *   **Rule:** Structure all test bodies using the Gherkin **Given-When-Then** pattern.
 *   **Naming Standards:** Test method names must reflect business behaviors using snake_case syntax instead of camelCase method reflections.
@@ -120,7 +123,22 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 - Wrap all diagrams in clear ```mermaid code blocks.
 - **Flowcharts**: Use `flowchart TD` (Top-Down) or `flowchart LR` (Left-to-Right). Ensure decision nodes use clear question labels and appropriate geometric shapes.
 - **Sequence Diagrams**: For API lifecycles or multi-component communications, always generate a `sequenceDiagram` mapping out the actors and exact message flows.
-- **Syntax Guardrail**: Never use the literal lowercase word `end` as a node ID or label; use `End` or `"end"`.
+
+---
+
+## 9. Advanced Functional Integrity
+
+### The "Safe Unwrapping" Mandate
+*   **Rule:** The use of `Optional.get()` is strictly forbidden.
+*   **Enforcement:** Always use `.orElse()`, `.orElseGet()`, or `.orElseThrow()` to ensure every code path is explicitly accounted for.
+
+### Lazy Evaluation for Fallbacks
+*   **Rule:** Prefer `.orElseGet(Supplier)` over `.orElse(Value)` for any fallback that requires computation or object instantiation.
+*   **Reason:** Protect system resources on low-power hardware (RPi) by avoiding unnecessary immediate evaluation.
+
+### Parallel Stream Guardrails
+*   **Rule:** The use of `.parallel()` or `.parallelStream()` is banned unless accompanied by a high-fidelity performance benchmark.
+*   **Reason:** Avoid non-deterministic jitter and thread management overhead on Raspberry Pi architecture.
 
 ---
 
@@ -129,33 +147,28 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 ### Target Environment Matrix
 - **Operating Systems:** Linux (Pop_OS! Workstation), Windows 11 (PowerShell/CMD), and Linux arm64/armv7 (Raspberry Pi).
 - **Execution Guardrails:** All generated code, file I/O operations, and runtime utilities must work transparently across all three environments without modifications.
+- **Constitutional Parity:** These architectural rules are **binding** across all host development environments. AI and human contributors must respect these mandates regardless of whether the host OS is Linux, Windows, or ARM.
 
 ### Pathing and File System Abstractions
 - **Rule:** Never use explicit literal string forward slashes (`/`) or backslashes (`\`) for file paths.
-- **Enforcement:** Enforce object-oriented pathing via Java's NIO library (`java.nio.file.Path.of()` or `Paths.get()`). For properties and configuration files, utilize platform-agnostic references.
+- **Enforcement:** Enforce object-oriented pathing via Java's NIO library (`java.nio.file.Path.of()`).
 
 ### Phase 7 Hardware Clock Access & Privileges
-- **Architecture Standard:** OS-level clock modifications (e.g., calling Windows Time Service APIs or Linux `settimeofday`) must be entirely decoupled using a Hardware Abstraction Layer (HAL) interface pattern.
-- **Privilege Management:** Since updating the system clock requires root (Linux/RPi) or administrative (Windows) permissions, code must gracefully handle security or privilege exceptions using the `Optional` or custom error wrappers established in Section 4. It must never violently crash if executed without root permissions.
-
-### CPU & Architecture Targets (ARM vs. AMD64)
-- **Compilation:** Ensure background calculation loops (like Phase 6's Rolling Statistical Window) do not cause high CPU load or thread-blocking states on low-resource Raspberry Pi hardware.
-- **Concurrency:** Leverage the functional pipeline combined with thread-safe atomic primitives (`AtomicReference`, `AtomicLong`) to guarantee thread safety when the Fast River (Hardware) and Slow River (Network Time) streams converge across different host CPU architectures.
+- **Architecture Standard:** OS-level clock modifications must be entirely decoupled using a Hardware Abstraction Layer (HAL) interface pattern.
+- **Privilege Management:** Gracefully handle security or privilege exceptions using `Optional` or custom wrappers. Never crash without root permissions.
 
 ---
 
-## 12. Virtualization & CI/CD Hardware Guardrails
-- **Hardware Fallback:** When physical `/dev/tty` or `COM` ports are unreachable (e.g., in Docker/WSL/CI), the system must utilize the `SimulationSerialProvider` to prevent hard crashes.
-- **Simulation Discovery:** The system must proactively suggest `simulation.mode = true` when hardware discovery returns zero viable paths in a virtualized context.
-- **Rootless Operation:** Logic must assume that containers may run without `PRIVILEGED` access. All hardware-bound exceptions must be caught and transformed into informative functional logs.
+## 11. Virtualization & CI/CD Hardware Guardrails
+- **Hardware Fallback:** When physical hardware paths are unreachable (Docker/WSL/CI), the system must utilize the `SimulationSerialProvider` to prevent hard crashes.
+- **Simulation Discovery:** Proactively suggest `simulation.mode = true` when hardware discovery returns zero viable paths.
 
-## 13. Deterministic Time Ingestion
+## 12. Deterministic Time Ingestion
 - **Ban Static Time:** The use of `Instant.now()` or `System.currentTimeMillis()` is strictly forbidden in production logic.
 - **Clock Injection:** All time-sensitive components must accept a `java.time.Clock` or `java.time.InstantSource` dependency.
-- **Testing Standard:** Verification of jitter and drift math must use `Clock.fixed()` or `Clock.offset()` to ensure 100% deterministic results across all host CPU architectures.
 
 ---
 
-## 14. Workflow Rules
+## 13. Workflow Rules
 - **Code Output:** Provide the complete Java code with brief comments explaining the functional flow.
 - **Review Before PR:** Ensure the user has the ability to review the overall change before submitting any Pull Requests. Do not auto-merge PRs.
