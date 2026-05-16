@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ConfigManagerTest extends BddTest {
 
     private static final int DEFAULT_BAUD = 9600;
+    private static final long DEFAULT_SYNC_THRESHOLD = 1000L;
 
     @TempDir
     private Path tempDir;
@@ -56,8 +57,8 @@ class ConfigManagerTest extends BddTest {
         java.nio.file.Files.writeString(configPath, "serial.baud=INVALID\nsync.threshold.ms=BAD");
         final ConfigManager manager = new ConfigManager(configPath);
         
-        assertThat(manager.getConfig().serialBaud()).isEqualTo(9600);
-        assertThat(manager.getConfig().syncThresholdMs()).isEqualTo(1000L);
+        assertThat(manager.getConfig().serialBaud()).isEqualTo(DEFAULT_BAUD);
+        assertThat(manager.getConfig().syncThresholdMs()).isEqualTo(DEFAULT_SYNC_THRESHOLD);
     }
 
     @Test

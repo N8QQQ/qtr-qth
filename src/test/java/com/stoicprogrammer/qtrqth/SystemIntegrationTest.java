@@ -59,7 +59,7 @@ class SystemIntegrationTest extends BddTest {
         fixture.then_calculated_time_is(java.time.LocalTime.of(RMC_HOUR, RMC_MIN, RMC_SEC));
     }
 
-    private final class SystemFixture {
+    private static final class SystemFixture {
         private final ISerialProvider mockProvider = mock(ISerialProvider.class);
         private final ISerialPort mockPort = mock(ISerialPort.class);
         private final ConfigManager mockConfig = mock(ConfigManager.class);

@@ -32,7 +32,7 @@ class GpsDataTest extends BddTest {
         fixture.then_latitude_is(TEST_LAT);
     }
 
-    private final class GpsDataFixture {
+    private static final class GpsDataFixture {
         private GpsData data;
 
         void given_data(final LocalTime time, final LocalDate date, final double lat, final double lon, final double alt, final int sats) {
