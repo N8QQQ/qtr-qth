@@ -1,6 +1,7 @@
 package com.stoicprogrammer.qtrqth.nmea;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -21,6 +22,14 @@ public final class NmeaSentenceAccumulator {
      * @return An Optional containing the sentence if finished, empty otherwise.
      */
     public Optional<String> process(final byte b) {
+        // [RULE COMPLIANT] Map non-null bytes to processing, skip null bytes.
+        return Map.<Boolean, Supplier<Optional<String>>>of(
+            true, () -> processValidByte(b),
+            false, Optional::empty
+        ).get(b != 0).get();
+    }
+
+    private Optional<String> processValidByte(final byte b) {
         final char c = (char) b;
 
         // Rule 1: Reset buffer on start of sentence
@@ -58,7 +67,6 @@ public final class NmeaSentenceAccumulator {
     private Optional<String> finalizeSentence() {
         final String sentence = buffer.toString().trim();
         buffer.setLength(0);
-        // Use Optional.of to return the trimmed sentence if it started with $
         return Optional.of(sentence).filter(s -> s.startsWith("$"));
     }
 }

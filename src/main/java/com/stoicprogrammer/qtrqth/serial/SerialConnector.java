@@ -92,13 +92,13 @@ public final class SerialConnector {
             public void serialEvent(final SerialPortEvent event) {
                 Optional.of(event)
                     .filter(e -> e.getEventType() == SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
-                    .map(e -> new byte[activePort.bytesAvailable()])
-                    .map(buf -> {
-                        activePort.readBytes(buf, buf.length);
-                        return buf;
+                    .map(e -> {
+                        final byte[] buf = new byte[activePort.bytesAvailable()];
+                        final int read = activePort.readBytes(buf, buf.length);
+                        return new SerialChunk(buf, read);
                     })
-                    .map(buf -> IntStream.range(0, buf.length).mapToObj(i -> buf[i]))
-                    .ifPresent(byteStream -> byteStream
+                    .ifPresent(chunk -> IntStream.range(0, chunk.length)
+                        .mapToObj(i -> chunk.data[i])
                         .map(accumulator::process)
                         .flatMap(Optional::stream)
                         .forEach(s -> {
@@ -127,6 +127,8 @@ public final class SerialConnector {
         }).takeWhile(Optional::isPresent)
           .map(Optional::get);
     }
+
+    private record SerialChunk(byte[] data, int length) {}
 
     public void disconnect() {
         Optional.ofNullable(activePort)
