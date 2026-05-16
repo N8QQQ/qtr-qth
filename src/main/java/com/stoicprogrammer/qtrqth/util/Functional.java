@@ -10,6 +10,9 @@ import java.util.function.Function;
  */
 public final class Functional {
 
+    // Default Operational Constants
+    private static final int DEFAULT_RADIX = 10;
+
     /**
      * Specialized functional interface for operations that may throw checked exceptions.
      */
@@ -32,7 +35,7 @@ public final class Functional {
      * @return An Optional containing the integer, or empty if malformed.
      */
     public static Optional<Integer> tryParseInt(final String s) {
-        return tryParseInt(s, 10);
+        return tryParseInt(s, DEFAULT_RADIX);
     }
 
     /**

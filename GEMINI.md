@@ -176,6 +176,16 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 
 ---
 
-## 14. Workflow Rules
+## 14. Task Safety & Timeouts
+- **Rule:** All asynchronous streams, external shell executions, and long-running integration tests must possess an explicit timeout or termination guard.
+- **Enforcement:**
+    - **Streams:** Must use `.takeWhile()` or similar terminal conditions based on an interrupt flag or a lifecycle `AtomicBoolean`.
+    - **Shell Commands:** AI-executed shell commands must include a `timeout` prefix or parameter if a hang is possible.
+    - **Integration Tests:** Must use JUnit 5 `assertTimeoutPreemptively` to fail fast and provide thread-dump analysis in the event of a hang.
+- **Analysis:** In the event of a hang, the system must produce enough log telemetry to identify the blocked 'River' or thread.
+
+---
+
+## 15. Workflow Rules
 - **Code Output:** Provide the complete Java code with brief comments explaining the functional flow.
 - **Review Before PR:** Ensure the user has the ability to review the overall change before submitting any Pull Requests. Do not auto-merge PRs.

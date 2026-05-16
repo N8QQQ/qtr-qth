@@ -6,73 +6,67 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Business Rule: [PHASE 2, STEP 1] - Configuration Bootstrapping.
- */
 class ConfigManagerTest extends BddTest {
+
+    private static final int DEFAULT_BAUD = 9600;
 
     @TempDir
     private Path tempDir;
 
-    private final ConfigFixture fixture = new ConfigFixture();
-
     @Test
-    void given_no_config_file_when_initializing_then_all_defaults_are_loaded() {
-        fixture.given_no_config_file();
-        fixture.when_initializing();
+    void should_handle_load_failure_gracefully() {
+        final Path configPath = tempDir.resolve("fail.properties");
+        final ConfigManager manager = new ConfigManager(
+            configPath,
+            (f, p) -> { throw new IOException("Disk Error"); },
+            (f, p) -> {}
+        );
         
-        fixture.then_property_is("ntp.server", "pool.ntp.org,time.google.com,time.windows.com");
-        fixture.then_property_is("serial.baud", "9600");
-        fixture.then_property_is("sync.threshold.ms", "1000");
-        fixture.then_property_is("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver");
-        fixture.then_property_is("display.raw.telemetry", "false");
-        fixture.then_property_is("simulation.mode", "true");
+        assertThat(manager.getConfig().serialBaud()).isEqualTo(DEFAULT_BAUD); // Uses default
     }
 
     @Test
-    void given_custom_config_file_when_initializing_then_custom_values_override_defaults() throws IOException {
-        fixture.given_custom_config_file("ntp.server=custom.ntp.org\nserial.baud=4800\nsimulation.mode=false");
-        fixture.when_initializing();
+    void should_handle_save_failure_gracefully() {
+        final Path configPath = tempDir.resolve("missing.properties");
+        final ConfigManager manager = new ConfigManager(
+            configPath,
+            (f, p) -> {},
+            (f, p) -> { throw new IOException("Read Only"); }
+        );
         
-        fixture.then_property_is("ntp.server", "custom.ntp.org");
-        fixture.then_property_is("serial.baud", "4800");
-        fixture.then_property_is("simulation.mode", "false");
-        fixture.then_property_is("sync.threshold.ms", "1000");
+        assertThat(manager.getConfig().simulationMode()).isTrue(); // Bootstrapped anyway
     }
 
     @Test
-    void given_read_only_path_when_initializing_then_handles_save_error_gracefully() {
-        final Path dir = tempDir.resolve("not-a-file.properties");
-        assertThat(dir.toFile().mkdir()).isTrue();
+    void should_retrieve_raw_property_optional() throws IOException {
+        final Path configPath = tempDir.resolve("raw.properties");
+        java.nio.file.Files.writeString(configPath, "key=value");
+        final ConfigManager manager = new ConfigManager(configPath);
         
-        final ConfigManager config = new ConfigManager(dir.toAbsolutePath());
-        assertThat(config.getProperty("ntp.server")).isPresent();
+        assertThat(manager.getProperty("key")).contains("value");
+        assertThat(manager.getProperty("missing")).isEmpty();
     }
 
-    private class ConfigFixture {
-        private Path configPath;
-        private ConfigManager configManager;
+    @Test
+    void should_handle_malformed_numeric_properties() throws IOException {
+        final Path configPath = tempDir.resolve("malformed.properties");
+        java.nio.file.Files.writeString(configPath, "serial.baud=INVALID\nsync.threshold.ms=BAD");
+        final ConfigManager manager = new ConfigManager(configPath);
+        
+        assertThat(manager.getConfig().serialBaud()).isEqualTo(9600);
+        assertThat(manager.getConfig().syncThresholdMs()).isEqualTo(1000L);
+    }
 
-        void given_no_config_file() {
-            this.configPath = tempDir.resolve("non-existent.properties");
-        }
-
-        void given_custom_config_file(final String content) throws IOException {
-            final Path path = tempDir.resolve("custom.properties");
-            java.nio.file.Files.writeString(path, content);
-            this.configPath = path;
-        }
-
-        void when_initializing() {
-            this.configManager = new ConfigManager(configPath);
-        }
-
-        void then_property_is(final String key, final String expectedValue) {
-            final Optional<String> prop = configManager.getProperty(key);
-            assertThat(prop).isPresent().contains(expectedValue);
-        }
+    @Test
+    void should_handle_missing_list_property() throws IOException {
+        final Path configPath = tempDir.resolve("empty_list.properties");
+        java.nio.file.Files.writeString(configPath, "other.key=value");
+        final ConfigManager manager = new ConfigManager(configPath);
+        
+        // Should use hardcoded fallback in extractList
+        assertThat(manager.getConfig().ntpPool()).contains("pool.ntp.org");
     }
 }

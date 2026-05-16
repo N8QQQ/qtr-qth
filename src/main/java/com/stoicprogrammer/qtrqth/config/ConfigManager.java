@@ -4,6 +4,7 @@ import com.stoicprogrammer.qtrqth.util.Functional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -22,51 +23,74 @@ public final class ConfigManager {
     private static final Logger logger = LoggerFactory.getLogger(ConfigManager.class);
     private final Properties properties = new Properties();
 
+    // Default Operational Constants
+    private static final int DEFAULT_BAUD = 9600;
+    private static final long DEFAULT_SYNC_THRESHOLD = 1000L;
+
+    /**
+     * Internal interface for mocking file operations.
+     */
+    @FunctionalInterface
+    public interface FileAction {
+        void run(File file, Properties props) throws IOException;
+    }
+
+    private final FileAction loader;
+    private final FileAction saver;
+
     public ConfigManager(final Path configPath) {
+        this(configPath, 
+             (f, p) -> { try (var is = new FileInputStream(f)) { p.load(is); } },
+             (f, p) -> { try (var os = new FileOutputStream(f)) { p.store(os, "qtr-qth"); } });
+    }
+
+    /**
+     * Injection constructor for high-fidelity testing of environmental failures.
+     */
+    public ConfigManager(final Path configPath, final FileAction loader, final FileAction saver) {
+        this.loader = loader;
+        this.saver = saver;
+
         // Load Defaults
         properties.setProperty("ntp.server", "pool.ntp.org,time.google.com,time.windows.com");
-        properties.setProperty("serial.baud", "9600");
-        properties.setProperty("sync.threshold.ms", "1000");
+        properties.setProperty("serial.baud", String.valueOf(DEFAULT_BAUD));
+        properties.setProperty("sync.threshold.ms", String.valueOf(DEFAULT_SYNC_THRESHOLD));
         properties.setProperty("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver");
         properties.setProperty("display.raw.telemetry", "false");
         properties.setProperty("simulation.mode", "true");
 
-        final java.io.File configFile = configPath.toFile();
+        final File configFile = configPath.toFile();
 
         // Declarative Strategy Mapping
-        Map.<Boolean, Consumer<java.io.File>>of(
+        Map.<Boolean, Consumer<File>>of(
             true, this::loadConfig,
             false, this::selfHeal
         ).get(configFile.exists()).accept(configFile);
     }
 
-    /**
-     * Evolves the raw properties into a high-fidelity, typed AppConfig record.
-     * @return The immutable application configuration.
-     */
     public AppConfig getConfig() {
         return new AppConfig(
             extractList("ntp.server", "pool.ntp.org"),
-            extractInt("serial.baud", 9600),
-            extractLong("sync.threshold.ms", 1000L),
+            extractInt("serial.baud", DEFAULT_BAUD),
+            extractLong("sync.threshold.ms", DEFAULT_SYNC_THRESHOLD),
             extractList("gps.discovery.keywords", "gps"),
             extractBoolean("display.raw.telemetry", false),
             extractBoolean("simulation.mode", true)
         );
     }
 
-    private void loadConfig(final java.io.File file) {
-        try (final FileInputStream fis = new FileInputStream(file)) {
-            properties.load(fis);
+    private void loadConfig(final File file) {
+        try {
+            loader.run(file, properties);
             logger.info("Configuration loaded from file: {}", file.getPath());
         } catch (final IOException e) {
             logger.error("Error loading properties file: {}. Using defaults.", e.getMessage());
         }
     }
 
-    private void selfHeal(final java.io.File file) {
-        try (final FileOutputStream fos = new FileOutputStream(file)) {
-            properties.store(fos, "qtr-qth Configuration - StoicProgrammer.com");
+    private void selfHeal(final File file) {
+        try {
+            saver.run(file, properties);
             logger.info("Default configuration file created at: {}", file.getPath());
         } catch (final IOException e) {
             logger.warn("Could not save default properties to {}: {}", file.getPath(), e.getMessage());

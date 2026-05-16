@@ -13,6 +13,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class AppConfigTest extends BddTest {
 
+    private static final int CUSTOM_BAUD = 4800;
+    private static final int DEFAULT_BAUD = 9600;
+
     @TempDir
     private Path tempDir;
 
@@ -22,7 +25,7 @@ class AppConfigTest extends BddTest {
     void should_load_typed_config_with_overrides_when_custom_file_provided() throws IOException {
         fixture.given_custom_config_file("ntp.server=custom.ntp.org\nserial.baud=4800\nsimulation.mode=false");
         fixture.when_loading_typed_config();
-        fixture.then_config_baud_is(4800);
+        fixture.then_config_baud_is(CUSTOM_BAUD);
         fixture.then_config_sim_mode_is(false);
         fixture.then_config_ntp_pool_contains("custom.ntp.org");
     }
@@ -31,10 +34,10 @@ class AppConfigTest extends BddTest {
     void should_fallback_to_defaults_when_config_is_malformed() throws IOException {
         fixture.given_custom_config_file("serial.baud=INVALID_NUMBER");
         fixture.when_loading_typed_config();
-        fixture.then_config_baud_is(9600); // Default
+        fixture.then_config_baud_is(DEFAULT_BAUD); // Default
     }
 
-    private class ConfigFixture {
+    private final class ConfigFixture {
         private Path configPath;
         private AppConfig config;
 

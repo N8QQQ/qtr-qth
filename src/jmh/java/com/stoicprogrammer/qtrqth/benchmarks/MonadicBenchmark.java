@@ -26,7 +26,7 @@ public class MonadicBenchmark {
     public Optional<Integer> nativeIntParsing() {
         try {
             return Optional.of(Integer.parseInt(validInt));
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             return Optional.empty();
         }
     }
@@ -40,7 +40,7 @@ public class MonadicBenchmark {
     public Optional<Double> nativeDoubleParsing() {
         try {
             return Optional.of(Double.parseDouble(validDouble));
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             return Optional.empty();
         }
     }
@@ -54,7 +54,7 @@ public class MonadicBenchmark {
     public Optional<Integer> nativeFailureHandling() {
         try {
             return Optional.of(Integer.parseInt(invalid));
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             return Optional.empty();
         }
     }

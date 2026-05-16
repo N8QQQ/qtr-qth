@@ -11,7 +11,13 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Integration test for the Main entry point.
+ */
 class MainIntegrationTest extends BddTest {
+
+    private static final int BOOT_DELAY_MS = 2000;
+    private static final int TERMINATION_TIMEOUT_SECONDS = 5;
 
     @TempDir
     private Path tempDir;
@@ -23,13 +29,17 @@ class MainIntegrationTest extends BddTest {
         
         // Use a thread to run the main loop so we can interrupt it
         final ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(() -> Main.run(configPath));
+        
+        // Use SystemOrchestrator directly since Main is a thin wrapper
+        final SystemOrchestrator orchestrator = new SystemOrchestrator(configPath);
+        executor.submit(() -> orchestrator.start(pulse -> {}));
         
         // Allow it to run for a few pulses
-        Thread.sleep(2000);
+        Thread.sleep(BOOT_DELAY_MS);
         
+        orchestrator.shutdown();
         executor.shutdownNow();
-        final boolean terminated = executor.awaitTermination(5, TimeUnit.SECONDS);
+        final boolean terminated = executor.awaitTermination(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         
         assertThat(terminated).isTrue();
     }

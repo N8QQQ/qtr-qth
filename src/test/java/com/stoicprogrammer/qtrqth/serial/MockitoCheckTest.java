@@ -1,16 +1,23 @@
 package com.stoicprogrammer.qtrqth.serial;
 
+import com.stoicprogrammer.qtrqth.base.BddTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
-import static org.mockito.Mockito.mock;
-import static org.mockito.BDDMockito.given;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.mockito.Mockito;
 
-class MockitoCheckTest {
+import java.util.List;
+
+/**
+ * Verification of Mockito environment.
+ */
+class MockitoCheckTest extends BddTest {
+
+    private static final int LIST_SIZE = 10;
+
     @Test
-    void should_return_mocked_size_when_list_is_queried() {
-        final List<?> mockList = mock(List.class);
-        given(mockList.size()).willReturn(10);
-        assertThat(mockList.size()).isEqualTo(10);
+    void should_verify_mockito_is_operational() {
+        final List<String> mockList = Mockito.mock(List.class);
+        Mockito.when(mockList.size()).thenReturn(LIST_SIZE);
+        
+        org.assertj.core.api.Assertions.assertThat(mockList.size()).isEqualTo(LIST_SIZE);
     }
 }

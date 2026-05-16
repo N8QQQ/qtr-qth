@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * The 'Pulse' is the fundamental domain model of the qtr-qth system.
  * It represents the high-fidelity confluence of GPS telemetry and NTP reference.
  */
-public record   TelemetryPulse(
+public record TelemetryPulse(
     String pulseId, 
     String sentence, 
     GpsData data, 
@@ -31,7 +31,14 @@ public record   TelemetryPulse(
      */
     public static TelemetryPulse start(final String sentence, final NtpResponse ntp) {
         final String id = String.format("%04X", (sentence.hashCode() & PULSE_ID_MASK));
-        return new TelemetryPulse(id, sentence, null, ntp);
+        return new TelemetryPulse(id, sentence, Optional.empty(), Optional.ofNullable(ntp));
+    }
+
+    /**
+     * Constructor for internal evolution of the pulse.
+     */
+    private TelemetryPulse(final String pulseId, final String sentence, final Optional<GpsData> data, final Optional<NtpResponse> reference) {
+        this(pulseId, sentence, data.orElse(null), reference.orElse(null));
     }
 
     /**
@@ -46,7 +53,7 @@ public record   TelemetryPulse(
      */
     public TelemetryPulse update(final NmeaParser parser, final AtomicReference<GpsData> state) {
         final GpsData next = state.updateAndGet(fix -> parser.parse(sentence, fix));
-        return new TelemetryPulse(pulseId, sentence, next, reference);
+        return new TelemetryPulse(pulseId, sentence, Optional.of(next), Optional.ofNullable(reference));
     }
 
     /**

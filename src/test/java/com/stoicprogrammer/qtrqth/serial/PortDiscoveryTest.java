@@ -37,12 +37,12 @@ class PortDiscoveryTest extends BddTest {
 
     @Test
     void given_hardware_with_multiple_ports_when_listing_then_all_port_names_are_returned() {
-        fixture.given_mock_hardware_has_ports(List.of("COM1", "COM2"));
+        fixture.given_hardware_has_ports(List.of("COM1", "COM2"));
         fixture.when_listing_ports();
         fixture.then_port_list_contains("COM1", "COM2");
     }
 
-    private class DiscoveryFixture {
+    private final class DiscoveryFixture {
         private final ISerialProvider mockProvider = mock(ISerialProvider.class);
         private final ConfigManager mockConfigManager = mock(ConfigManager.class);
         private final PortDiscovery discovery;
@@ -54,7 +54,7 @@ class PortDiscoveryTest extends BddTest {
             this.discovery = new PortDiscovery(mockProvider, mockConfigManager);
         }
 
-        void given_mock_hardware_has_ports(final List<String> names) {
+        void given_hardware_has_ports(final List<String> names) {
             final List<ISerialPort> ports = names.stream().map(name -> {
                 final ISerialPort mockPort = mock(ISerialPort.class);
                 given(mockPort.getSystemPortName()).willReturn(name);

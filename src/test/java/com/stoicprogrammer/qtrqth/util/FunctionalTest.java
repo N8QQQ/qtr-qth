@@ -9,6 +9,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class FunctionalTest extends BddTest {
 
+    private static final int TEST_INT = 123;
+    private static final int TEST_INT_HEX = 255;
+    private static final int RADIX_HEX = 16;
+    private static final int TEST_INT_MAPPED = 456;
+
     @ParameterizedTest
     @CsvSource({
         "123, 10, 123",
@@ -48,8 +53,8 @@ class FunctionalTest extends BddTest {
     @Test
     void should_wrap_throwing_function() {
         final java.util.function.Function<String, Integer> mapper = Functional.wrap(s -> Integer.parseInt(s.trim()));
-        assertThat(mapper.apply("123")).isEqualTo(123);
-        assertThat(mapper.apply("  456  ")).isEqualTo(456);
+        assertThat(mapper.apply("123")).isEqualTo(TEST_INT);
+        assertThat(mapper.apply("  456  ")).isEqualTo(TEST_INT_MAPPED);
     }
 
     @Test

@@ -28,6 +28,7 @@ public final class SerialConnector {
     // Operational Constants
     private static final int DEFAULT_BAUD = 9600;
     private static final int TELEMETRY_QUEUE_CAPACITY = 100;
+    private static final int DATA_BITS = 8;
 
     private final ConfigManager config;
     private final NmeaSentenceAccumulator accumulator;
@@ -61,7 +62,7 @@ public final class SerialConnector {
         logger.debug("Attempting to open port {} at {} baud...", portName, baudRate);
         activePort = provider.getPort(portName);
         activePort.setBaudRate(baudRate);
-        activePort.setNumDataBits(8);
+        activePort.setNumDataBits(DATA_BITS);
         activePort.setNumStopBits(SerialPort.ONE_STOP_BIT);
         activePort.setParity(SerialPort.NO_PARITY);
 
@@ -114,14 +115,17 @@ public final class SerialConnector {
             }
         });
 
+        // Use takeWhile with a presence check to ensure the stream terminates on interruption.
         return Stream.generate(() -> {
-            try { return queue.take(); } 
-            catch (final InterruptedException e) {
+            try { 
+                return Optional.ofNullable(queue.take()); 
+            } catch (final InterruptedException e) {
                 logger.warn("Telemetry stream interrupted.");
                 Thread.currentThread().interrupt();
-                return null;
+                return Optional.<String>empty();
             }
-        }).takeWhile(java.util.Objects::nonNull);
+        }).takeWhile(Optional::isPresent)
+          .map(Optional::get);
     }
 
     public void disconnect() {

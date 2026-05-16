@@ -58,6 +58,7 @@ public final class NmeaSentenceAccumulator {
     private Optional<String> finalizeSentence() {
         final String sentence = buffer.toString().trim();
         buffer.setLength(0);
+        // Use Optional.of to return the trimmed sentence if it started with $
         return Optional.of(sentence).filter(s -> s.startsWith("$"));
     }
 }

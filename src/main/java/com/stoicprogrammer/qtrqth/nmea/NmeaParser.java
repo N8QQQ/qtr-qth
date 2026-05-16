@@ -20,11 +20,13 @@ public final class NmeaParser {
 
     // Operational Constants
     private static final int MAX_SENTENCE_LENGTH = 128;
+    private static final int MAX_FIELDS = 20;
     private static final int MIN_FIELDS_GPRMC = 10;
     private static final int MIN_FIELDS_GPGGA = 10;
     private static final int MIN_FIELDS_GPZDA = 5;
     private static final int HEX_RADIX = 16;
     private static final int CHECKSUM_LENGTH = 2;
+    private static final int NMEA_TIME_STRING_LEN = 6;
 
     // Functional Routing Table: Logic treated as Data
     private final Map<String, BiFunction<String[], GpsData, GpsData>> parsers = Map.of(
@@ -59,7 +61,7 @@ public final class NmeaParser {
             .map(s -> s.replaceAll("[^\\x20-\\x7E]", "").trim())
             .filter(s -> !s.isEmpty() && s.startsWith("$") && s.length() <= MAX_SENTENCE_LENGTH)
             .filter(s -> !s.contains("*") || isValidChecksum(s))
-            .map(s -> s.split(",", 20))
+            .map(s -> s.split(",", MAX_FIELDS))
             .map(parts -> route(parts, previous))
             .orElse(previous);
     }
@@ -94,8 +96,8 @@ public final class NmeaParser {
             .filter(p -> p.length >= MIN_FIELDS_GPRMC)
             .map(p -> {
                 final LocalTime time = extractField(p, GPRMC_TIME)
-                    .filter(s -> s.length() >= 6)
-                    .map(s -> LocalTime.parse(s.substring(0, 6), DateTimeFormatter.ofPattern("HHmmss")))
+                    .filter(s -> s.length() >= NMEA_TIME_STRING_LEN)
+                    .map(s -> LocalTime.parse(s.substring(0, NMEA_TIME_STRING_LEN), DateTimeFormatter.ofPattern("HHmmss")))
                     .orElse(prev.utcTime());
 
                 final double lat = extractCoordinate(p, GPRMC_LAT, GPRMC_LAT_DIR).orElse(prev.latitude());

@@ -4,8 +4,8 @@
       <verify-metadata>true</verify-metadata>
       <verify-signatures>false</verify-signatures>
       <trusted-artifacts>
-         <trust group="org.junit" name="junit-bom" version=".*"/>
          <trust group="com.google.guava" name="guava-parent" version=".*"/>
+         <trust group="org.junit" name="junit-bom" version=".*"/>
       </trusted-artifacts>
    </configuration>
    <components>
