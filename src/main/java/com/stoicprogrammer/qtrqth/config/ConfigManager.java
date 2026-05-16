@@ -7,14 +7,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
 
 /**
- * Manages application configuration and defaults using purely functional dispatch.
- * All operations adhere to strict finality, immutability, and cross-platform pathing mandates.
+ * Manages application configuration using purely functional dispatch.
+ * Produces an immutable AppConfig record to ensure typed safety.
  */
 public final class ConfigManager {
     private static final Logger logger = LoggerFactory.getLogger(ConfigManager.class);
@@ -38,6 +39,21 @@ public final class ConfigManager {
         ).get(configFile.exists()).accept(configFile);
     }
 
+    /**
+     * Evolves the raw properties into a high-fidelity, typed AppConfig record.
+     * @return The immutable application configuration.
+     */
+    public AppConfig getConfig() {
+        return new AppConfig(
+            extractList("ntp.server", "pool.ntp.org"),
+            extractInt("serial.baud", 9600),
+            extractLong("sync.threshold.ms", 1000L),
+            extractList("gps.discovery.keywords", "gps"),
+            extractBoolean("display.raw.telemetry", false),
+            extractBoolean("simulation.mode", true)
+        );
+    }
+
     private void loadConfig(final java.io.File file) {
         try (final FileInputStream fis = new FileInputStream(file)) {
             properties.load(fis);
@@ -58,5 +74,46 @@ public final class ConfigManager {
 
     public Optional<String> getProperty(final String key) {
         return Optional.ofNullable(properties.getProperty(key));
+    }
+
+    private List<String> extractList(final String key, final String defaultVal) {
+        return java.util.Arrays.stream(getProperty(key).orElse(defaultVal).split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
+    }
+
+    private int extractInt(final String key, final int defaultVal) {
+        return getProperty(key)
+            .flatMap(this::tryParseInt)
+            .orElseGet(() -> {
+                logger.warn("Property {} is missing or malformed. Using default: {}", key, defaultVal);
+                return defaultVal;
+            });
+    }
+
+    private long extractLong(final String key, final long defaultVal) {
+        return getProperty(key)
+            .flatMap(this::tryParseLong)
+            .orElseGet(() -> {
+                logger.warn("Property {} is missing or malformed. Using default: {}", key, defaultVal);
+                return defaultVal;
+            });
+    }
+
+    private boolean extractBoolean(final String key, final boolean defaultVal) {
+        return getProperty(key)
+            .map(Boolean::parseBoolean)
+            .orElse(defaultVal);
+    }
+
+    private Optional<Integer> tryParseInt(final String s) {
+        try { return Optional.of(Integer.parseInt(s)); } 
+        catch (final NumberFormatException e) { return Optional.empty(); }
+    }
+
+    private Optional<Long> tryParseLong(final String s) {
+        try { return Optional.of(Long.parseLong(s)); } 
+        catch (final NumberFormatException e) { return Optional.empty(); }
     }
 }
