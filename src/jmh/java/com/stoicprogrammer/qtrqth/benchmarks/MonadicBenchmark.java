@@ -1,15 +1,19 @@
 package com.stoicprogrammer.qtrqth.benchmarks;
 
 import io.vavr.control.Try;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Performance Sentinel: Comparing Native vs Vavr monadic pipelines.
- * Measures the 'Galvanic' cost of our architectural abstractions.
- */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
@@ -18,12 +22,13 @@ import java.util.concurrent.TimeUnit;
 @Fork(1)
 public class MonadicBenchmark {
 
-    private final String validInt = "1234";
-    private final String validDouble = "4617.00579";
-    private final String invalid = "NOT_A_NUMBER";
+    private final String validInt = "123";
+    private final String validDouble = "123.456";
+    private final String invalid = "not_a_number";
 
     @Benchmark
-    public Optional<Integer> nativeIntParsing() {
+    @SuppressWarnings("java:S1166") // Raw JDK benchmark baseline
+    public Optional<Integer> imperativeSuccess() {
         try {
             return Optional.of(Integer.parseInt(validInt));
         } catch (final NumberFormatException e) {
@@ -32,12 +37,13 @@ public class MonadicBenchmark {
     }
 
     @Benchmark
-    public Optional<Integer> vavrIntParsing() {
+    public Optional<Integer> vavrSuccess() {
         return Try.of(() -> Integer.parseInt(validInt)).toJavaOptional();
     }
 
     @Benchmark
-    public Optional<Double> nativeDoubleParsing() {
+    @SuppressWarnings("java:S1166") // Raw JDK benchmark baseline
+    public Optional<Double> imperativeDoubleSuccess() {
         try {
             return Optional.of(Double.parseDouble(validDouble));
         } catch (final NumberFormatException e) {
@@ -46,12 +52,13 @@ public class MonadicBenchmark {
     }
 
     @Benchmark
-    public Optional<Double> vavrDoubleParsing() {
+    public Optional<Double> vavrDoubleSuccess() {
         return Try.of(() -> Double.parseDouble(validDouble)).toJavaOptional();
     }
 
     @Benchmark
-    public Optional<Integer> nativeFailureHandling() {
+    @SuppressWarnings("java:S1166") // Raw JDK benchmark baseline
+    public Optional<Integer> imperativeFailure() {
         try {
             return Optional.of(Integer.parseInt(invalid));
         } catch (final NumberFormatException e) {

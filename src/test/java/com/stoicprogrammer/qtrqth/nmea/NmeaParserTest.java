@@ -117,7 +117,7 @@ class NmeaParserTest extends BddTest {
         fixture.then_date_is(LocalDate.of(RMC_YEAR, RMC_MONTH, RMC_DAY));
     }
 
-    private final class NmeaParserFixture {
+    private static final class NmeaParserFixture {
         private String sentence;
         private final NmeaParser parser = new NmeaParser();
         private GpsData result = new GpsData(null, null, 0, 0, 0, 0);

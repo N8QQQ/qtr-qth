@@ -41,6 +41,7 @@ public final class Functional {
     /**
      * Pure functional wrapper for Integer parsing with radix.
      */
+    @SuppressWarnings("java:S1166") // Exception caught and handled monadically by Vavr
     public static Optional<Integer> tryParseInt(final String s, final int radix) {
         return Optional.ofNullable(s)
             .map(String::trim)
@@ -51,6 +52,7 @@ public final class Functional {
     /**
      * Pure functional wrapper for Double parsing.
      */
+    @SuppressWarnings("java:S1166") // Exception caught and handled monadically by Vavr
     public static Optional<Double> tryParseDouble(final String s) {
         return Optional.ofNullable(s)
             .map(String::trim)
@@ -61,6 +63,7 @@ public final class Functional {
     /**
      * Pure functional wrapper for Long parsing.
      */
+    @SuppressWarnings("java:S1166") // Exception caught and handled monadically by Vavr
     public static Optional<Long> tryParseLong(final String s) {
         return Optional.ofNullable(s)
             .map(String::trim)

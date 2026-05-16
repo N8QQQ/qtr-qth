@@ -174,6 +174,11 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 - **Standard:** All numeric values representing timeouts, buffer sizes, hardware parameters, or mathematical offsets must be extracted into well-named `static final` constants or configuration properties.
 - **Exceptions:** Zero (`0`), one (`1`), and mathematical constants in pure utility functions (where the name would be redundant) are permitted if they do not obscure intent.
 
+### 13.5 Grounded Parsing Mandate
+- **Rule:** The direct use of raw JDK parsing methods (e.g., `Integer.parseInt`, `Double.parseDouble`, `Long.parseLong`) is strictly forbidden.
+- **Standard:** All string-to-number conversions must utilize the monadic wrappers in `com.stoicprogrammer.qtrqth.util.Functional` (e.g., `Functional.tryParseInt`).
+- **Reason:** Enforce null-safety and exception-safe pipelines at the architectural level, ensuring no `NumberFormatException` can ever destabilize a stream.
+
 ---
 
 ## 14. Task Safety & Timeouts

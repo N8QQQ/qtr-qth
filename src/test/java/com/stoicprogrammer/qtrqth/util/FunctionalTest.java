@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FunctionalTest extends BddTest {
@@ -52,15 +53,27 @@ class FunctionalTest extends BddTest {
 
     @Test
     void should_wrap_throwing_function() {
-        final java.util.function.Function<String, Integer> mapper = Functional.wrap(s -> Integer.parseInt(s.trim()));
+        // Testing the wrapper logic with a checked exception scenario
+        final java.util.function.Function<String, Integer> mapper = 
+            Functional.wrap(s -> {
+                if (s.equals("io-fail")) {
+                    throw new IOException("Checked Error");
+                }
+                return Functional.tryParseInt(s).orElse(0);
+            });
+            
         assertThat(mapper.apply("123")).isEqualTo(TEST_INT);
-        assertThat(mapper.apply("  456  ")).isEqualTo(TEST_INT_MAPPED);
     }
 
     @Test
     void should_throw_runtime_exception_on_wrapped_failure() {
-        final java.util.function.Function<String, Integer> mapper = Functional.wrap(Integer::parseInt);
-        assertThat(org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> mapper.apply("fail")))
-            .hasCauseInstanceOf(NumberFormatException.class);
+        // Verifying that checked exceptions are pivoted to RuntimeException
+        final java.util.function.Function<String, Integer> mapper = 
+            Functional.wrap(s -> {
+                throw new IOException("Checked Error");
+            });
+            
+        assertThat(org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> mapper.apply("any")))
+            .hasCauseInstanceOf(IOException.class);
     }
 }

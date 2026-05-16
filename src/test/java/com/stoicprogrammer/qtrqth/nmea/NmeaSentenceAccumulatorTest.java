@@ -42,7 +42,7 @@ class NmeaSentenceAccumulatorTest extends BddTest {
         fixture.then_sentence_is("$B");
     }
 
-    private final class AccumulatorFixture {
+    private static final class AccumulatorFixture {
         private final NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
         private Optional<String> result = Optional.empty();
 
