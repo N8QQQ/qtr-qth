@@ -34,12 +34,18 @@ flowchart TD
 ## 📡 Authority & Stratum
 By directly connecting to GPS (Stratum 0), `qtr-qth` effectively operates as a **Stratum 1** authority for the local shack, using NTP as a "Second Opinion" for drift verification.
 
-## 📉 Stability & Drift Analysis (Phase 6)
-To certify the precision of the system clock, the system implements a secondary analytical pipeline:
+## 🛡️ Structural Hardening (Phase 6)
+To ensure the integrity of the confluence, the system implements strict structural guardrails:
 
-1.  **Differential Calculus:** The system calculates the high-precision delta between `Local Clock` and `Reference Clock` (GPS/NTP) at the exact moment of pulse arrival.
-2.  **Statistical Smoothing:** Real-time offsets are stored in a **Sliding Window Buffer**, where we calculate the arithmetic mean and standard deviation (Jitter).
-3.  **Heuristic Scoring:** A weighted heuristic is applied to the metadata (Stratum, RTT, Fix Quality) to assign a **Stability Grade** to the shack's time health.
+1.  **Typed Configuration:** All system parameters are parsed at the edge into immutable `AppConfig` records, eliminating "Stringly-Typed" logic.
+2.  **Numeric Purity:** Standardized monadic wrappers (`tryParseInt`, `tryParseDouble`) catch hardware noise and malformed telemetry before they reach the core logic.
+3.  **The Test Vault:** High-fidelity NMEA samples are externalized to ensure that the parsing engine is certified against real-world radio shack data.
+
+## 📉 Drift & Stability Analysis (Future Phase 9)
+Once the foundation is hardened, the system will implement an analytical pipeline to quantify system clock accuracy:
+
+1.  **Differential Calculus:** Calculating the high-precision delta between `Local Clock` and `Reference Clock`.
+2.  **Statistical Smoothing:** Using a Sliding Window Buffer to calculate jitter (standard deviation) and drift trends.
 
 ```mermaid
 flowchart LR
