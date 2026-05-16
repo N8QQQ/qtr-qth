@@ -80,3 +80,10 @@ This log tracks tactical development sessions, capturing duration, charters, and
 | 4 | 2026-05-14 | 3 | 1.0 | 3.00 | v0.3.1 Heritage Release |
 | 5 | 2026-05-14 | 1 | 0.5 | 2.00 | Phase 5 Initialization |
 | 5 | 2026-05-15 | 15 | 3.75 | 4.00 | Architectural Revolution + Linter + Portability |
+
+### Session 2026-05-15 (Session 2): Workspace Reorganization & Phase 6 Design
+- **Charter:** Reorganize project documentation into a dedicated hierarchy and finalize Phase 6 (Structural Hardening) technical details.
+- **Duration:** TBD
+- **Timeline:**
+    - **22:30:** Session Start. Storm cleared. Bridge powered up.
+    - **22:35:** Formulating documentation reorganization proposal.

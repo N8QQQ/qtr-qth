@@ -10,6 +10,12 @@
 - **Sim Mode:** Built-in GPS simulator for testing away from the radio shack.
 - **Observability:** Professional-grade logging with pulse-tracking for 24/7 reliability.
 
+## 📑 Documentation
+- **Architecture:** [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) - Deep dive into the "Two-River Confluence" model.
+- **Blueprint:** [PLAN.md](docs/roadmap/PLAN.md) - The tactical execution roadmap.
+- **Flight Log:** [SESSIONS.md](docs/roadmap/SESSIONS.md) - SBA velocity tracking and metrics.
+- **Developer Guide:** [DEVELOPER.md](docs/DEVELOPER.md) - Environment setup and release protocols.
+
 ## 🏃 Getting Started
 
 ### 1. Requirements
