@@ -2,6 +2,7 @@ package com.stoicprogrammer.qtrqth;
 
 import com.stoicprogrammer.qtrqth.config.AppConfig;
 import com.stoicprogrammer.qtrqth.config.ConfigManager;
+import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import com.stoicprogrammer.qtrqth.nmea.GpsData;
 import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
@@ -9,10 +10,8 @@ import com.stoicprogrammer.qtrqth.ntp.NtpClient;
 import com.stoicprogrammer.qtrqth.ntp.NtpResponse;
 import com.stoicprogrammer.qtrqth.serial.PortDiscovery;
 import com.stoicprogrammer.qtrqth.serial.SerialConnector;
-import com.stoicprogrammer.qtrqth.util.GridSquareCalculator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -32,7 +31,6 @@ public final class Main {
     // Operational Constants
     private static final int NTP_TIMEOUT_MS = 5000;
     private static final int NTP_POLL_INTERVAL_SECONDS = 60;
-    private static final int PULSE_ID_MASK = 0xFFFF;
     private static final String DEFAULT_CONFIG_FILENAME = "qtr-qth.properties";
 
     private Main() {
@@ -123,48 +121,5 @@ public final class Main {
             .map(p -> p.update(parser, currentFix))
             .filter(TelemetryPulse::hasValidFix)
             .forEach(p -> p.logFinal(logger));
-    }
-
-    static record TelemetryPulse(String pulseId, String sentence, GpsData data, NtpResponse reference) {
-        
-        static TelemetryPulse start(final String sentence, final NtpResponse ntp) {
-            final String id = String.format("%04X", (sentence.hashCode() & PULSE_ID_MASK));
-            return new TelemetryPulse(id, sentence, null, ntp);
-        }
-
-        void logRaw(final Logger log) {
-            runWithContext(() -> log.debug("[RAW] {}", sentence));
-        }
-
-        TelemetryPulse update(final NmeaParser parser, final AtomicReference<GpsData> state) {
-            final GpsData next = state.updateAndGet(fix -> parser.parse(sentence, fix));
-            return new TelemetryPulse(pulseId, sentence, next, reference);
-        }
-
-        boolean hasValidFix() {
-            return Optional.ofNullable(data)
-                .flatMap(d -> Optional.ofNullable(d.utcTime()))
-                .isPresent();
-        }
-
-        void logFinal(final Logger log) {
-            runWithContext(() -> {
-                final String grid = GridSquareCalculator.calculate(data.latitude(), data.longitude());
-                final String ntpStatus = Optional.ofNullable(reference)
-                    .map(r -> String.format("NTP: %s (RTT: %dms, Stratum: %d)", r.time(), r.rttMs(), r.stratum()))
-                    .orElse("NTP: No Reference");
-                
-                log.info("GPS Fix: {} | {} | Grid: {}", data, ntpStatus, grid);
-            });
-        }
-
-        private void runWithContext(final Runnable action) {
-            MDC.put("pulseId", pulseId);
-            try {
-                action.run();
-            } finally {
-                MDC.clear();
-            }
-        }
     }
 }

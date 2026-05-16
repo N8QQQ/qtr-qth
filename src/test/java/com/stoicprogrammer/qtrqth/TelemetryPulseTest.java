@@ -1,6 +1,7 @@
 package com.stoicprogrammer.qtrqth;
 
 import com.stoicprogrammer.qtrqth.base.BddTest;
+import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import com.stoicprogrammer.qtrqth.nmea.GpsData;
 import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
 import com.stoicprogrammer.qtrqth.ntp.NtpResponse;
@@ -50,7 +51,7 @@ class TelemetryPulseTest extends BddTest {
 
     private static class ConnectorFixture extends PulseFixture {
         private String sentence;
-        private Main.TelemetryPulse pulse;
+        private TelemetryPulse pulse;
         private final NmeaParser mockParser = mock(NmeaParser.class);
         private final AtomicReference<GpsData> state = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
         private final NtpResponse mockNtp = new NtpResponse(Instant.now(), 10, 1, 5.0);
@@ -62,7 +63,7 @@ class TelemetryPulseTest extends BddTest {
 
         @Override
         void given_starting_pulse() {
-            this.pulse = Main.TelemetryPulse.start(sentence, mockNtp);
+            this.pulse = TelemetryPulse.start(sentence, mockNtp);
         }
 
         @Override
@@ -72,7 +73,7 @@ class TelemetryPulseTest extends BddTest {
 
         @Override
         void when_starting_pulse() {
-            this.pulse = Main.TelemetryPulse.start(sentence, mockNtp);
+            this.pulse = TelemetryPulse.start(sentence, mockNtp);
         }
 
         @Override

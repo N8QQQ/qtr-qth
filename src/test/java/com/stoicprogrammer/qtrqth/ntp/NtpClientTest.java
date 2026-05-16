@@ -1,4 +1,4 @@
-package com.stoicprogrammer.qtrqth.ntp.network;
+package com.stoicprogrammer.qtrqth.ntp;
 
 import com.stoicprogrammer.qtrqth.ntp.NtpClient;
 import com.stoicprogrammer.qtrqth.ntp.NtpResponse;
