@@ -1,6 +1,7 @@
 package com.stoicprogrammer.qtrqth.serial;
 
 import com.stoicprogrammer.qtrqth.base.BddTest;
+import com.stoicprogrammer.qtrqth.config.AppConfig;
 import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
@@ -43,14 +44,14 @@ class PortDiscoveryTest extends BddTest {
 
     private class DiscoveryFixture {
         private final ISerialProvider mockProvider = mock(ISerialProvider.class);
-        private final ConfigManager mockConfig = mock(ConfigManager.class);
-        private final PortDiscovery discovery = new PortDiscovery(mockProvider, mockConfig);
+        private final ConfigManager mockConfigManager = mock(ConfigManager.class);
+        private final PortDiscovery discovery;
         private Optional<String> result;
         private List<String> portList;
 
         DiscoveryFixture() {
-            given(mockConfig.getProperty("gps.discovery.keywords"))
-                .willReturn(Optional.of("gps,u-blox,prolific,silicon labs,gnss,receiver"));
+            given(mockConfigManager.getConfig()).willReturn(AppConfig.DEFAULT);
+            this.discovery = new PortDiscovery(mockProvider, mockConfigManager);
         }
 
         void given_mock_hardware_has_ports(final List<String> names) {

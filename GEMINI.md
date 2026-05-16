@@ -169,6 +169,13 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 
 ---
 
-## 13. Workflow Rules
+## 13. Elimination of Magic Numbers
+- **Rule:** The use of "magic numbers" (unnamed numeric literals) is strictly forbidden in production logic.
+- **Standard:** All numeric values representing timeouts, buffer sizes, hardware parameters, or mathematical offsets must be extracted into well-named `static final` constants or configuration properties.
+- **Exceptions:** Zero (`0`), one (`1`), and mathematical constants in pure utility functions (where the name would be redundant) are permitted if they do not obscure intent.
+
+---
+
+## 14. Workflow Rules
 - **Code Output:** Provide the complete Java code with brief comments explaining the functional flow.
 - **Review Before PR:** Ensure the user has the ability to review the overall change before submitting any Pull Requests. Do not auto-merge PRs.

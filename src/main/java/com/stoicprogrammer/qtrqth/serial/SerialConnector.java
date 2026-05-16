@@ -7,6 +7,7 @@ import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
+import com.stoicprogrammer.qtrqth.util.Functional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,11 +24,16 @@ import java.util.stream.Stream;
  */
 public final class SerialConnector {
     private static final Logger logger = LoggerFactory.getLogger(SerialConnector.class);
+
+    // Operational Constants
+    private static final int DEFAULT_BAUD = 9600;
+    private static final int TELEMETRY_QUEUE_CAPACITY = 100;
+
     private final ConfigManager config;
     private final NmeaSentenceAccumulator accumulator;
     private final ISerialProvider provider;
     private ISerialPort activePort;
-    private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>(100);
+    private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>(TELEMETRY_QUEUE_CAPACITY);
 
     private record ConnectionRule(boolean condition, Supplier<Stream<String>> action) {}
     private record QueueRule(boolean condition, Runnable action) {}
@@ -45,12 +51,12 @@ public final class SerialConnector {
      */
     public Stream<String> connect(final String portName) {
         final int baudRate = config.getProperty("serial.baud")
-            .flatMap(this::tryParseInt)
+            .flatMap(Functional::tryParseInt)
             .or(() -> {
-                logger.warn("Invalid or missing serial.baud in config. Defaulting to 9600.");
-                return Optional.of(9600);
+                logger.warn("Invalid or missing serial.baud in config. Defaulting to {}.", DEFAULT_BAUD);
+                return Optional.of(DEFAULT_BAUD);
             })
-            .orElse(9600);
+            .orElse(DEFAULT_BAUD);
         
         logger.debug("Attempting to open port {} at {} baud...", portName, baudRate);
         activePort = provider.getPort(portName);
@@ -127,13 +133,5 @@ public final class SerialConnector {
                 port.closePort();
                 logger.info("Serial port closed.");
             });
-    }
-
-    private Optional<Integer> tryParseInt(final String s) {
-        try {
-            return Optional.of(Integer.parseInt(s));
-        } catch (final NumberFormatException e) {
-            return Optional.empty();
-        }
     }
 }

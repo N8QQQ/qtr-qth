@@ -1,5 +1,6 @@
 package com.stoicprogrammer.qtrqth.config;
 
+import com.stoicprogrammer.qtrqth.util.Functional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public final class ConfigManager {
 
     private int extractInt(final String key, final int defaultVal) {
         return getProperty(key)
-            .flatMap(this::tryParseInt)
+            .flatMap(Functional::tryParseInt)
             .orElseGet(() -> {
                 logger.warn("Property {} is missing or malformed. Using default: {}", key, defaultVal);
                 return defaultVal;
@@ -94,7 +95,7 @@ public final class ConfigManager {
 
     private long extractLong(final String key, final long defaultVal) {
         return getProperty(key)
-            .flatMap(this::tryParseLong)
+            .flatMap(Functional::tryParseLong)
             .orElseGet(() -> {
                 logger.warn("Property {} is missing or malformed. Using default: {}", key, defaultVal);
                 return defaultVal;
@@ -105,15 +106,5 @@ public final class ConfigManager {
         return getProperty(key)
             .map(Boolean::parseBoolean)
             .orElse(defaultVal);
-    }
-
-    private Optional<Integer> tryParseInt(final String s) {
-        try { return Optional.of(Integer.parseInt(s)); } 
-        catch (final NumberFormatException e) { return Optional.empty(); }
-    }
-
-    private Optional<Long> tryParseLong(final String s) {
-        try { return Optional.of(Long.parseLong(s)); } 
-        catch (final NumberFormatException e) { return Optional.empty(); }
     }
 }

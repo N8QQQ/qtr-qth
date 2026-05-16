@@ -1,0 +1,22 @@
+{
+    "title": "qtr-qth: High-Precision GPS Time & Location Hub",
+    "description": "A cross-platform, branchless functional application for Amateur Radio operators, providing Stratum 1 precision time synchronization and Maidenhead Grid Square telemetry.",
+    "creators": [
+        {
+            "name": "Ustick, Nicholas R.",
+            "orcid": "0009-0001-9211-8000",
+            "affiliation": "The Stoic Programmer"
+        }
+    ],
+    "access_right": "open",
+    "license": "GPL-3.0-only",
+    "keywords": [
+        "Amateur Radio",
+        "GPS",
+        "NTP",
+        "Telemetry",
+        "Maidenhead",
+        "Functional Programming",
+        "Java"
+    ]
+}
