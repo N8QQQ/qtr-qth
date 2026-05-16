@@ -108,9 +108,10 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 *   **Rule:** When adding new components, enforce dependency configurations using Gradle's `implementation` and `testImplementation` separation scopes.
 *   **Enforcement:** Never use legacy `testCompile` or `compile` syntax.
 
-### GitHub Actions Pipeline Awareness
-*   **Rule:** Assume that code modifications will trigger a GitHub Actions CI pipeline running under JDK 21 and Node.js 24.
-*   **Compilation Guardrails:** Because the CI server enforces `ignoreFailures = false` on Checkstyle, any generated code that includes implicit variable mutations or omitted `final` keywords will break the pipeline.
+### Build Performance & Caching
+*   **Rule:** Enable Gradle's high-performance caching mechanisms to minimize feedback loops.
+*   **Enforcement:** Maintain `org.gradle.configuration-cache=true`, `org.gradle.parallel=true`, and `org.gradle.caching=true` in the project's `gradle.properties`.
+*   **CI Awareness:** Ensure GitHub Actions utilizing `setup-java` have `cache: gradle` enabled to preserve the dependency cache across workflow runs.
 
 ---
 
