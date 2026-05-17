@@ -193,4 +193,9 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 
 ## 15. Workflow Rules
 - **Code Output:** Provide the complete Java code with brief comments explaining the functional flow.
-- **Review Before PR:** Ensure the user has the ability to review the overall change before submitting any Pull Requests. Do not auto-merge PRs.
+---
+
+## 16. Git Standards
+- **Rule:** The deletion or overwriting of existing git tags is strictly forbidden.
+- **Enforcement:** If a release artifact or tag is found to be incorrect, the issue must be resolved by issuing a new incremental version (e.g., v0.4.2) rather than mutating the history of an existing tag.
+- **Reason:** Preserve the immutable integrity of the project's archival history and ensure deterministic traceability for scientific citations (Zenodo).
