@@ -6,8 +6,8 @@ FROM jekyll/jekyll:4.2.2
 # 1. Set Workspace
 WORKDIR /srv/jekyll
 
-# 2. Copy Gemfile and install dependencies first (caching)
-COPY ./docs/Gemfile .
+# 2. Copy Gemfile/Lock and install dependencies first (caching)
+COPY ./docs/Gemfile* .
 RUN bundle install
 
 # 3. Copy Documentation Source
