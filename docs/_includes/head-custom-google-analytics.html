@@ -2,6 +2,16 @@
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Standardize Mermaid fenced blocks from Kramdown
+    const codeBlocks = document.querySelectorAll('pre > code.language-mermaid');
+    codeBlocks.forEach(code => {
+      const pre = code.parentElement;
+      const mermaidDiv = document.createElement('div');
+      mermaidDiv.className = 'mermaid';
+      mermaidDiv.textContent = code.textContent;
+      pre.replaceWith(mermaidDiv);
+    });
+
     mermaid.initialize({
       startOnLoad: true,
       theme: 'default',
