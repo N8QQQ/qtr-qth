@@ -4,6 +4,7 @@ import com.stoicprogrammer.qtrqth.base.BddTest;
 import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -22,6 +23,8 @@ class SystemOrchestratorTest extends BddTest {
     private static final int MAX_POLL_ATTEMPTS = 120; // 60 seconds total
     private static final int SHUTDOWN_WAIT_MS = 10000;
 
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(SystemOrchestratorTest.class);
+
     @TempDir
     private Path tempDir;
 
@@ -36,7 +39,7 @@ class SystemOrchestratorTest extends BddTest {
 
         // Start the engine with a simple list collector as the 'View'
         final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {
-            System.out.println("Captured Pulse: " + pulse.pulseId());
+            logger.info("Captured Pulse: {}", pulse.pulseId());
             capturedPulses.add(pulse);
         }));
         engineThread.setDaemon(true);

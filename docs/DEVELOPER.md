@@ -53,6 +53,23 @@ To ensure archival integrity and high-fidelity handovers, the following protocol
 - [ ] **Automation:** Allow GitHub Actions to complete all CI/CD checks.
 - [ ] **Manual Inspection:** Hand over the PR for Nick's manual review.
 
+## 🛠️ Local CI Virtualization (Docker)
+To accelerate the feedback loop and ensure high-fidelity certification before pushing to GitHub, you can run the full Quality Gate locally using Docker. This environment mirrors the official GitHub Actions runner.
+
+### Running Local CI
+Ensure Docker is running, then execute the provided PowerShell script:
+```powershell
+./verify-local-ci.ps1
+```
+
+This will:
+1.  Build the `qtr-qth-ci` image (Ubuntu + JDK 21).
+2.  Execute Checkstyle rules.
+3.  Run all BDD and Unit tests.
+4.  Verify distribution artifact generation (`distZip`).
+
+---
+
 ### 5. Final Archival
 - [ ] **Merge:** Squash and merge into `main` after approval.
 - [ ] **Tagging (Cryptographic Seal):** Create an annotated, signed git tag using `git tag -s v[version] -m "[message]"`.
