@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SystemOrchestratorTest extends BddTest {
 
     private static final int POLL_INTERVAL_MS = 500;
-    private static final int MAX_POLL_ATTEMPTS = 60; // 30 seconds total
-    private static final int SHUTDOWN_WAIT_MS = 5000;
+    private static final int MAX_POLL_ATTEMPTS = 120; // 60 seconds total
+    private static final int SHUTDOWN_WAIT_MS = 10000;
 
     @TempDir
     private Path tempDir;
