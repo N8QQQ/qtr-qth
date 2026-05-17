@@ -205,5 +205,6 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
     2.  **Certification:** Run `./gradlew clean test` to ensure green status.
     3.  **Artifact Generation:** Run `./gradlew distZip` to produce the distribution binary.
     4.  **Verification:** Confirm the existence of `build/distributions/qtr-qth-[version].zip`.
-    5.  **Archival:** Use `gh release create` and **MANDATORILY** attach the generated `.zip` as a release asset.
+    5.  **Tagging (Cryptographic Seal):** Create an annotated, signed git tag using `git tag -s v[version] -m "[message]"`. This environment is configured for **SSH-based signing** (Ed25519). Ensure your SSH agent is active.
+    6.  **Archival:** Push the signed tag to origin (`git push origin v[version]`), then use `gh release create` and **MANDATORILY** attach the generated `.zip` as a release asset.
 - **Reference:** For detailed environment setup and security audit steps, always refer to `docs/DEVELOPER.md`.
