@@ -133,3 +133,24 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **Estimated SP:** 25 (Audit + Templates + CI + Virtualization + 13 Bumps)
     - **Actual Hours:** 4.5
     - **Velocity:** 5.5 SP/Hour
+
+### Session 2026-05-17: Documentation Visibility & Governance Enshrinement
+- **Charter:** Resolve GitHub Pages 404, consolidate Dependabot PRs, and formalize branching governance.
+- **Duration:** 1.5 Hours
+- **Timeline:**
+    - **16:00:** Session Start. Diagnosed GitHub Pages 404 (Missing Jekyll rendering).
+    - **16:15:** Implementation: Integrated Jekyll build and Mermaid.js support into `docs.yml`.
+    - **16:30:** Audit: Identified 3 pending Dependabot PRs for Pages infrastructure.
+    - **16:45:** Consolidation: Manually merged action versions (v6/v5) and hardened supply chain.
+    - **17:00:** Certification: Identified `gradlew` CRLF friction in Docker; deployed Dockerized `sed` operative to sanitize environment.
+    - **17:15:** Governance: Enshrined Section 20 "Feature Branch Mandate" in `GEMINI.md`.
+    - **17:30:** Finalization: Staged all changes to `feat/unified-modernization` and verified green status.
+- **Outcome:** 
+    - [x] Documentation Hub visibility restored (Jekyll + Mermaid).
+    - [x] Supply chain fully patched and consolidated.
+    - [x] Cross-platform portability certified (Docker/Linux ready).
+    - [x] Feature Branch Mandate formalized as project policy.
+- **Calibration:**
+    - **Estimated SP:** 8
+    - **Actual Hours:** 1.5
+    - **Velocity:** 5.3 SP/Hour

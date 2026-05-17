@@ -1,5 +1,7 @@
 # qtr-qth Documentation Hub
 
+<div id="p5-flare"></div>
+
 Welcome to the official technical documentation for `qtr-qth`, a high-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.
 
 ## 📑 Core Documentation
@@ -7,6 +9,7 @@ Welcome to the official technical documentation for `qtr-qth`, a high-precision 
 - **[System Architecture](architecture/ARCHITECTURE.md)**: A deep dive into the "Two-River Confluence" model and functional design patterns.
 - **[Developer Guide](DEVELOPER.md)**: Environment setup, build instructions, and the **Heritage Release Protocol**.
 - **[Project Roadmap](roadmap/PLAN.md)**: Tactical execution phases and current project status.
+- **[Modernization Plan](roadmap/MODERNIZATION_PLAN.md)**: Intermediate phase repo hardening and standards audit.
 - **[Flight Log](roadmap/SESSIONS.md)**: Historical session tracking and metrics.
 
 ## 🏗️ Technical Design Phases
