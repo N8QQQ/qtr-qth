@@ -1,3 +1,8 @@
+title: qtr-qth Documentation Hub
+description: High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.
+repository: N8QQQ/qtr-qth
+remote_theme: pages-themes/minimal
+
 # URL settings
 url: "https://n8qqq.github.io"
 baseurl: "/qtr-qth"
@@ -7,6 +12,9 @@ permalink: pretty
 plugins:
   - jekyll-relative-links
   - jekyll-seo-tag
+  - jekyll-gist
+  - jekyll-feed
+  - jekyll-remote-theme
 
 # Markdown settings
 markdown: kramdown
