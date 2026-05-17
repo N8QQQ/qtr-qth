@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Technical Design: Phase 4 - Network Time Reference (v0.3.0) | qtr-qth Documentation Hub</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="Technical Design: Phase 4 - Network Time Reference (v0.3.0)" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<meta property="og:description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<link rel="canonical" href="https://n8qqq.github.io/qtr-qth/design/DESIGN_PHASE_4.html" />
+<meta property="og:url" content="https://n8qqq.github.io/qtr-qth/design/DESIGN_PHASE_4.html" />
+<meta property="og:site_name" content="qtr-qth Documentation Hub" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Technical Design: Phase 4 - Network Time Reference (v0.3.0)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.","headline":"Technical Design: Phase 4 - Network Time Reference (v0.3.0)","url":"https://n8qqq.github.io/qtr-qth/design/DESIGN_PHASE_4.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/qtr-qth/assets/css/style.css?v=">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+<!-- Mermaid.js for Technical Diagrams -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+  });
+</script>
+
+<!-- p5.js for Documentation Flare -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+<script src="/qtr-qth/assets/js/flare.js" defer></script>
+<style>
+  .mermaid {
+    background-color: white !important;
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    margin: 1.5rem 0;
+  }
+  #p5-flare {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.2;
+  }
+</style>
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/qtr-qth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="https://n8qqq.github.io/qtr-qth/">qtr-qth Documentation Hub</a></h1>
+
+        
+
+        <p>High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.</p>
+
+        
+        <p class="view"><a href="https://github.com/N8QQQ/qtr-qth">View the Project on GitHub <small>N8QQQ/qtr-qth</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="technical-design-phase-4---network-time-reference-v030">Technical Design: Phase 4 - Network Time Reference (v0.3.0)</h1>
+
+<h2 id="-objective">🎯 Objective</h2>
+<p>Establish a high-precision network time baseline (NTP) to serve as a secondary authority for drift comparison.</p>
+
+<h2 id="️-architectural-components">🏗️ Architectural Components</h2>
+
+<h3 id="1-ntp-client-comstoicprogrammerqtrqthntpntpclient">1. NTP Client (<code class="language-plaintext highlighter-rouge">com.stoicprogrammer.qtrqth.ntp.NtpClient</code>)</h3>
+<p>A resilient client capable of polling pools of Stratum 1/2 servers with automated fallback.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    Start[Poll Request] --&gt; Pool[Iterate NTP Pool]
+    Pool --&gt; Attempt[Fetch TimeInfo]
+    Attempt --&gt; Success{Success?}
+    Success --&gt; |Yes| Response[Extract Metadata]
+    Success --&gt; |No| Fallback{More Servers?}
+    Fallback --&gt; |Yes| Pool
+    Fallback --&gt; |No| Empty[Return Empty Optional]
+</code></pre>
+
+<h3 id="2-the-ntp-hal-comstoicprogrammerqtrqthntpapiintpprovider">2. The NTP HAL (<code class="language-plaintext highlighter-rouge">com.stoicprogrammer.qtrqth.ntp.api.INtpProvider</code>)</h3>
+<p>Decoupling the transport layer (Apache Commons Net) to allow 100% hermetic CI testing.</p>
+
+<pre><code class="language-mermaid">classDiagram
+    class INtpProvider {
+        &lt;&lt;interface&gt;&gt;
+        +getTime(String host, int timeout) Optional~NtpResponse~
+    }
+    class NetworkNtpProvider {
+        +getTime()
+    }
+    class SimulationNtpProvider {
+        +getTime()
+    }
+    INtpProvider &lt;|-- NetworkNtpProvider
+    INtpProvider &lt;|-- SimulationNtpProvider
+</code></pre>
+
+<h3 id="3-precision-metadata">3. Precision Metadata</h3>
+<p>Capturing Round Trip Time (RTT), Stratum, and Root Dispersion to quantify the “Authority” of the network reference.</p>
+
+<h2 id="-verification-strategy">🧪 Verification Strategy</h2>
+<ul>
+  <li><strong>CI Stabilization:</strong> Assert that NTP tests pass in headless GitHub environments without live network access.</li>
+  <li><strong>Metadata Integrity:</strong> Verify that RTT and Stratum are correctly mapped from the <code class="language-plaintext highlighter-rouge">TimeInfo</code> message.</li>
+</ul>
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/N8QQQ">N8QQQ</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/qtr-qth/assets/js/scale.fix.js"></script>
+  </body>
+</html>

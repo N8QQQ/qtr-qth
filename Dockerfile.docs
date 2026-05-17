@@ -5,15 +5,14 @@ RUN apt-get update && apt-get install -y build-essential git && rm -rf /var/lib/
 
 WORKDIR /srv/jekyll
 
-# Install dependencies into the root of the workspace
-COPY Gemfile* .
+# Install dependencies directly in the workspace
+COPY docs/Gemfile* .
 RUN bundle install
 
-# Create a sub-directory for content to avoid volume masking
-RUN mkdir -p /srv/jekyll/content
-COPY docs/ /srv/jekyll/content/
+# Copy source
+COPY docs/ .
 
 EXPOSE 4000
 
-# Run Jekyll pointing to the 'content' sub-directory
-CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling", "--source", "content", "--destination", "_site"]
+# Run Jekyll from the workspace root
+CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling"]

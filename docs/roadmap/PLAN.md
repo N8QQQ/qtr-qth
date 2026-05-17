@@ -7,7 +7,7 @@ title: Project Roadmap
 `qtr-qth` is a high-precision GPS Time (QTR) and Location (QTH) hub designed for mission-critical synchronization in Amateur Radio and technical shacks.
 
 ## 🏛️ Technical Design
-For details on the concurrency model, functional pipeline, and architectural decisions, see [ARCHITECTURE.md]({% link architecture/ARCHITECTURE.md %}).
+For details on the concurrency model, functional pipeline, and architectural decisions, see [ARCHITECTURE.md](../architecture/ARCHITECTURE.md).
 
 ---
 

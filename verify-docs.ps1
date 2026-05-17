@@ -15,5 +15,5 @@ Write-Host "`n--- 🚀 Launching Documentation Hub (Local) ---" -ForegroundColor
 Write-Host "View your changes at: http://localhost:4000/qtr-qth/" -ForegroundColor Green
 Write-Host "Press Ctrl+C in this terminal to stop the server.`n" -ForegroundColor Yellow
 
-# Run the container with a volume mount to the 'content' sub-directory
-docker run --rm -it -p 4000:4000 -v "${PWD}/docs:/srv/jekyll/content" $ImageName
+# Run the container with a volume mount to allow real-time editing of the /docs folder
+docker run --rm -it -p 4000:4000 -v "${PWD}/docs:/srv/jekyll" $ImageName

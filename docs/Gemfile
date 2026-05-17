@@ -1,6 +1,5 @@
 source "https://rubygems.org"
 
-gem "jekyll", "~> 4.2.2"
-gem "jekyll-theme-minimal"
-gem "jekyll-relative-links"
-gem "webrick" # Required for Ruby 3.0+
+# Mirror the GitHub Pages environment exactly
+gem "github-pages", "~> 231", group: :jekyll_plugins
+gem "webrick"

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Modernization Plan | qtr-qth Documentation Hub</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="Modernization Plan" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<meta property="og:description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<link rel="canonical" href="https://n8qqq.github.io/qtr-qth/roadmap/MODERNIZATION_PLAN.html" />
+<meta property="og:url" content="https://n8qqq.github.io/qtr-qth/roadmap/MODERNIZATION_PLAN.html" />
+<meta property="og:site_name" content="qtr-qth Documentation Hub" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Modernization Plan" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.","headline":"Modernization Plan","url":"https://n8qqq.github.io/qtr-qth/roadmap/MODERNIZATION_PLAN.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/qtr-qth/assets/css/style.css?v=">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+<!-- Mermaid.js for Technical Diagrams -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+  });
+</script>
+
+<!-- p5.js for Documentation Flare -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+<script src="/qtr-qth/assets/js/flare.js" defer></script>
+<style>
+  .mermaid {
+    background-color: white !important;
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    margin: 1.5rem 0;
+  }
+  #p5-flare {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.2;
+  }
+</style>
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/qtr-qth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="https://n8qqq.github.io/qtr-qth/">qtr-qth Documentation Hub</a></h1>
+
+        
+
+        <p>High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.</p>
+
+        
+        <p class="view"><a href="https://github.com/N8QQQ/qtr-qth">View the Project on GitHub <small>N8QQQ/qtr-qth</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="modernization-plan-qtr-qth-intermediate-phase">Modernization Plan: qtr-qth (Intermediate Phase)</h1>
+
+<p><strong>Objective:</strong> Transition the repository from a raw source tree into a high-fidelity, heritage-grade open-source project with full visibility and security compliance.</p>
+
+<hr />
+
+<h2 id="-phase-a-infrastructure-modernization">✅ Phase A: Infrastructure Modernization</h2>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>A.1: Identity Enshrinement:</strong> Implement <code class="language-plaintext highlighter-rouge">CODEOWNERS</code> and <code class="language-plaintext highlighter-rouge">CITATION.cff</code>.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>A.2: Community Standards:</strong> Create <code class="language-plaintext highlighter-rouge">ISSUE_TEMPLATE</code> (Bug/Feature) and <code class="language-plaintext highlighter-rouge">PULL_REQUEST_TEMPLATE.md</code>.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>A.3: Governance:</strong> Finalize <code class="language-plaintext highlighter-rouge">GEMINI.md</code> and <code class="language-plaintext highlighter-rouge">docs/DEVELOPER.md</code> as binding mandates.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>A.4: Feature Branch Mandate:</strong> Enforce isolated development via Section 20 of <code class="language-plaintext highlighter-rouge">GEMINI.md</code>.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>A.5: Scholarly Identity:</strong> Integrate ORCiD badge for academic traceability.</li>
+</ul>
+
+<h2 id="-phase-b-security--supply-chain-hardening">✅ Phase B: Security &amp; Supply Chain Hardening</h2>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>B.1: Static Analysis:</strong> Implement CodeQL Advanced scanning.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>B.2: Dependency Management:</strong> Configure Dependabot for weekly automation.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>B.4: Supply Chain Consolidation:</strong> Review and merge remaining Dependabot PRs to ensure v0.4.x baseline is fully patched.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>B.3: Integrity:</strong> Enforce SLSA Level 3 standards and SBOM generation.</li>
+</ul>
+
+<h2 id="-phase-c-cicd-virtualization">✅ Phase C: CI/CD Virtualization</h2>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>C.1: Environment Parity:</strong> Create <code class="language-plaintext highlighter-rouge">Dockerfile.ci</code> for high-fidelity local runs.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>C.2: Local Certification:</strong> Implement <code class="language-plaintext highlighter-rouge">verify-local-ci.ps1</code> for PowerShell/Windows users.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>C.3: Multi-Platform Sync:</strong> Ensure Gradle caching is active across all runners.</li>
+</ul>
+
+<h2 id="-phase-d-documentation-visibility-the-final-pillar">🚧 Phase D: Documentation Visibility (The Final Pillar)</h2>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>D.1: GitHub Pages Restoration:</strong> Integrate Jekyll build into <code class="language-plaintext highlighter-rouge">docs.yml</code> to resolve 404 errors.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>D.4: Visual Excellence:</strong> Integrate p5.js for generative ‘flare’ and interactive telemetry visualizations.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>D.2: Link Integrity Audit:</strong> Verify all cross-links in the documentation hub function in the rendered HTML environment.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>D.3: Mermaid.js Certification:</strong> Ensure architectural diagrams render correctly in the browser.</li>
+</ul>
+
+<hr />
+<p><em>Created by JARVIS for the Heritage Grade Standard.</em></p>
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/N8QQQ">N8QQQ</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/qtr-qth/assets/js/scale.fix.js"></script>
+  </body>
+</html>

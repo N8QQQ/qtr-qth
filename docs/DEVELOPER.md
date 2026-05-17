@@ -7,7 +7,7 @@ title: Developer Guide
 This document outlines the technical environment, build workflows, and formal release procedures for the `qtr-qth` project. 
 
 ## 🏗️ Technical Architecture
-For details on the functional pipeline, concurrency model, and system design, refer to the **[System Architecture (ARCHITECTURE.md)]({% link architecture/ARCHITECTURE.md %})**.
+For details on the functional pipeline, concurrency model, and system design, refer to the **[System Architecture (ARCHITECTURE.md)](architecture/ARCHITECTURE.md)**.
 
 ## 🛠️ Development Workflow
 
@@ -23,7 +23,7 @@ For details on the functional pipeline, concurrency model, and system design, re
 ## 🤖 AI-Integrated Development
 This project follows an **AI-first workflow** (Nicholas R. Ustick + JARVIS). All refactoring must follow the **"Heritage Grade"** standard: Zero mutable logic in core components and strictly decoupled hardware abstractions. 
 
-**Note:** The strict functional programming constraints (Streams, Immutability, Optional) and the Senior Java Architect persona are formalized in [`GEMINI.md`]({% link GEMINI.md %}). Both AI agents and human contributors are expected to adhere to these mandates.
+**Note:** The strict functional programming constraints (Streams, Immutability, Optional) and the Senior Java Architect persona are formalized in [`GEMINI.md`](GEMINI.md). Both AI agents and human contributors are expected to adhere to these mandates.
 
 
 ## 🧪 Engineering Standards
