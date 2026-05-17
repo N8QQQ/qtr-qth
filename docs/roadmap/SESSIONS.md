@@ -106,22 +106,23 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **Actual Hours:** 3.5
     - **Velocity:** 2.85 SP/Hour
 
-## 📅 Sprint 6: Structural Hardening (v0.4.2)
+## 📅 Sprint 6: Structural Hardening (v0.4.3)
 **Goal:** Finalize the functional baseline and execute the "Galvanic Grounding" release.
 
 ### Session 2026-05-16: Release Protocol & Logic Consolidation
-- **Charter:** Finalize logic consolidation, update project metadata, and execute v0.4.2 release protocol.
-- **Duration:** 1.0 Hours
+- **Charter:** Finalize logic consolidation, update project metadata, and execute v0.4.3 release protocol.
+- **Duration:** 1.5 Hours
 - **Timeline:**
     - **10:00:** Session Start. Verified logic consolidation across `NmeaParser` and `ConfigManager`.
     - **10:15:** Metadata Sync: Updated `CITATION.cff` and `build.gradle.kts` to v0.4.1.
     - **10:20:** Roadmap Finalization: Marked Phase 6 as COMPLETED in `PLAN.md`.
     - **10:45:** Pivot: Issued v0.4.2 to resolve v0.4.1 metadata inconsistency and enshrined Section 16 (No Tag Deletion).
-    - **11:00:** Session Complete.
+    - **11:15:** Pivot 2: Issued v0.4.3 to satisfy Section 17 (Heritage Release Protocol) and attach distribution binaries.
+    - **11:30:** Session Complete.
 - **Outcome:** 
     - [x] Phase 6 officially COMPLETED.
-    - [x] v0.4.2 metadata synchronized and ready for tagging.
+    - [x] v0.4.3 metadata synchronized and release assets attached.
 - **Calibration:**
-    - **Estimated SP:** 4
-    - **Actual Hours:** 1.0
+    - **Estimated SP:** 6
+    - **Actual Hours:** 1.5
     - **Velocity:** 4.0 SP/Hour
