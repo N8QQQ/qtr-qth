@@ -1,5 +1,7 @@
 # qtr-qth Documentation Hub
 
+<div id="p5-flare"></div>
+
 Welcome to the official technical documentation for `qtr-qth`, a high-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.
 
 ## 📑 Core Documentation

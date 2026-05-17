@@ -23,6 +23,7 @@
 
 ## 🚧 Phase D: Documentation Visibility (The Final Pillar)
 - [x] **D.1: GitHub Pages Restoration:** Integrate Jekyll build into `docs.yml` to resolve 404 errors.
+- [x] **D.4: Visual Excellence:** Integrate p5.js for generative 'flare' and interactive telemetry visualizations.
 - [ ] **D.2: Link Integrity Audit:** Verify all cross-links in the documentation hub function in the rendered HTML environment.
 - [ ] **D.3: Mermaid.js Certification:** Ensure architectural diagrams render correctly in the browser.
 
