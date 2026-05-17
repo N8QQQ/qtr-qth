@@ -6,12 +6,15 @@ FROM jekyll/jekyll:4.2.2
 # 1. Set Workspace
 WORKDIR /srv/jekyll
 
-# 2. Copy Documentation Source
+# 2. Copy Gemfile and install dependencies first (caching)
+COPY ./docs/Gemfile .
+RUN bundle install
+
+# 3. Copy Documentation Source
 COPY ./docs .
 
-# 3. Expose Jekyll Default Port
+# 4. Expose Jekyll Default Port
 EXPOSE 4000
 
-# 4. Run Jekyll Server with Live Reload
-# We use --incremental for faster iteration and --host 0.0.0.0 for accessibility from the host machine
-CMD ["jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling"]
+# 5. Run Jekyll Server with Live Reload
+CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling"]
