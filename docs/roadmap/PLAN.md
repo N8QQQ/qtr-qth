@@ -40,7 +40,7 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 5.3: Automated Linter Integration**
 - [x] **Phase 5.4: Test Suite Reconciliation**
 
-### Phase 6: Structural Hardening (v0.4.1)
+### Phase 6: Structural Hardening (COMPLETED - v0.4.1)
 **Objective:** Final polish of the functional baseline before entering complex telemetry analysis.
 **Branch:** `feat/galvanic-ground-plane`
 - [x] **Phase 6.1: Typed Configuration Pipeline:** Parse properties into an immutable `AppConfig` record to eliminate Stringly-Typed logic.
@@ -50,7 +50,7 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 6.5: Performance Certification (JMH & Vavr):** Implement the Java Microbenchmark Harness to certify nanosecond-level stability of hot paths.
 - [x] **Phase 6.6: The Test Data Vault:** Externalize all raw NMEA test literals into `/src/test/resources/telemetry` for high-fidelity BDD.
 - [x] **Phase 6.7: Zenodo Metadata Weaving:** Implement `.zenodo.json` to ensure automated high-fidelity versioned citations.
-- [ ] **Phase 6.8: Logic Consolidation:** Perform a codebase-wide sweep to eliminate duplicate parsing logic and optimize functional pipelines.
+- [x] **Phase 6.8: Logic Consolidation:** Perform a codebase-wide sweep to eliminate duplicate parsing logic and optimize functional pipelines.
 
 ### Phase 7: The Virtual Shack (v0.5.0)
 **Objective:** Cross-platform simulation of Linux/ARM64 and physical hardware.

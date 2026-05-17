@@ -80,10 +80,12 @@ This log tracks tactical development sessions, capturing duration, charters, and
 | 4 | 2026-05-14 | 3 | 1.0 | 3.00 | v0.3.1 Heritage Release |
 | 5 | 2026-05-14 | 1 | 0.5 | 2.00 | Phase 5 Initialization |
 | 5 | 2026-05-15 | 15 | 3.75 | 4.00 | Architectural Revolution + Linter + Portability |
+| 5 | 2026-05-15 | 10 | 3.5 | 2.85 | Galvanic Grounding + documentation migration |
+| 6 | 2026-05-16 | 3 | 0.5 | 6.00 | v0.4.1 Release Protocol |
 
 ### Session 2026-05-15 (Session 2): Galvanic Grounding & Phase 6 Initiation
 - **Charter:** Reorganize project documentation, finalize Phase 6 (Structural Hardening) design, and integrate Vavr/JMH.
-- **Duration:** TBD
+- **Duration:** 3.5 Hours
 - **Timeline:**
     - **22:30:** Session Start. Storm cleared. Bridge powered up.
     - **22:45:** Documentation Reorganization: Migrated to `/docs` hierarchy and reconstructed historical designs (Mermaid.js).
@@ -94,10 +96,31 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **01:00:** Phase 6.5: Mathematically certified 'Hybrid Weaver' path via JMH microbenchmarks.
     - **01:15:** Phase 6.6: Externalized test literals into the 'Test Data Vault' and refactored BDD suite.
     - **01:30:** Phase 6.7: Implemented `.zenodo.json` for high-fidelity versioned citations.
+    - **02:00:** Session Complete.
 - **Outcome:** 
     - [x] Phase 6.5 officially COMPLETED. Nanosecond-level performance certified.
     - [x] Phase 6.6 officially COMPLETED. Test data decoupled from source.
     - [x] Phase 6.7 officially COMPLETED. Zenodo metadata weave finalized.
 - **Calibration:**
     - **Estimated SP:** 10 (Build + 6.1 + 6.2 + 6.5 + 6.6 + 6.7)
-    - **Actual Hours:** TBD
+    - **Actual Hours:** 3.5
+    - **Velocity:** 2.85 SP/Hour
+
+## 📅 Sprint 6: Structural Hardening (v0.4.1)
+**Goal:** Finalize the functional baseline and execute the "Galvanic Grounding" release.
+
+### Session 2026-05-16: Release Protocol & Logic Consolidation
+- **Charter:** Finalize logic consolidation, update project metadata, and execute v0.4.1 release protocol.
+- **Duration:** 0.5 Hours
+- **Timeline:**
+    - **10:00:** Session Start. Verified logic consolidation across `NmeaParser` and `ConfigManager`.
+    - **10:15:** Metadata Sync: Updated `CITATION.cff` and `build.gradle.kts` to v0.4.1.
+    - **10:20:** Roadmap Finalization: Marked Phase 6 as COMPLETED in `PLAN.md`.
+    - **10:30:** Session Complete.
+- **Outcome:** 
+    - [x] Phase 6 officially COMPLETED.
+    - [x] v0.4.1 metadata synchronized and ready for tagging.
+- **Calibration:**
+    - **Estimated SP:** 3
+    - **Actual Hours:** 0.5
+    - **Velocity:** 6.0 SP/Hour
