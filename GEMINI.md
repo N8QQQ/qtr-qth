@@ -198,4 +198,12 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 ## 16. Git Standards
 - **Rule:** The deletion or overwriting of existing git tags is strictly forbidden.
 - **Enforcement:** If a release artifact or tag is found to be incorrect, the issue must be resolved by issuing a new incremental version (e.g., v0.4.2) rather than mutating the history of an existing tag.
-- **Reason:** Preserve the immutable integrity of the project's archival history and ensure deterministic traceability for scientific citations (Zenodo).
+## 17. Heritage Release Protocol
+- **Rule:** Every GitHub release must be a "High-Fidelity" event.
+- **Mandatory Checklist:**
+    1.  **Metadata Sync:** Bump `build.gradle.kts` and `CITATION.cff` (version and date).
+    2.  **Certification:** Run `./gradlew clean test` to ensure green status.
+    3.  **Artifact Generation:** Run `./gradlew distZip` to produce the distribution binary.
+    4.  **Verification:** Confirm the existence of `build/distributions/qtr-qth-[version].zip`.
+    5.  **Archival:** Use `gh release create` and **MANDATORILY** attach the generated `.zip` as a release asset.
+- **Reference:** For detailed environment setup and security audit steps, always refer to `docs/DEVELOPER.md`.
