@@ -62,4 +62,4 @@ flowchart LR
 ```
 
 ---
-*For historical tactical details, see the [Phase Designs](../design/DESIGN_PHASE_1.md).*
+*For historical tactical details, see the [Phase Designs]({% link design/DESIGN_PHASE_1.md %}).*
