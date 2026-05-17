@@ -1,0 +1,17 @@
+# Heritage Grade Documentation Staging
+# High-fidelity mirror of GitHub Pages (Jekyll + p5.js)
+
+FROM jekyll/jekyll:4.2.2
+
+# 1. Set Workspace
+WORKDIR /srv/jekyll
+
+# 2. Copy Documentation Source
+COPY ./docs .
+
+# 3. Expose Jekyll Default Port
+EXPOSE 4000
+
+# 4. Run Jekyll Server with Live Reload
+# We use --incremental for faster iteration and --host 0.0.0.0 for accessibility from the host machine
+CMD ["jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling"]

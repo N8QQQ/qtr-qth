@@ -62,6 +62,19 @@ Ensure Docker is running, then execute the provided PowerShell script:
 ./verify-local-ci.ps1
 ```
 
+## 🎨 Local Documentation Staging (Preview)
+To iterate on the Documentation Hub (including p5.js visuals and Mermaid diagrams) without pushing to GitHub, you can launch a local staging server.
+
+### Launching the Preview
+```powershell
+./verify-docs.ps1
+```
+
+This will:
+1.  Build a high-fidelity Jekyll container (`qtr-qth-docs`).
+2.  Serve the `/docs` folder at **http://localhost:4000/qtr-qth/**.
+3.  Support **Live Reload**: Any changes you make to Markdown or JS files in `/docs` will refresh automatically in the browser.
+
 This will:
 1.  Build the `qtr-qth-ci` image (Ubuntu + JDK 21).
 2.  Execute Checkstyle rules.
