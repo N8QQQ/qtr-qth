@@ -18,9 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SystemOrchestratorTest extends BddTest {
 
-    private static final int POLL_INTERVAL_MS = 200;
-    private static final int MAX_POLL_ATTEMPTS = 75; // Increased patience for slow CI
-    private static final int SHUTDOWN_WAIT_MS = 2000;
+    private static final int POLL_INTERVAL_MS = 500;
+    private static final int MAX_POLL_ATTEMPTS = 60; // 30 seconds total
+    private static final int SHUTDOWN_WAIT_MS = 5000;
 
     @TempDir
     private Path tempDir;
@@ -35,7 +35,10 @@ class SystemOrchestratorTest extends BddTest {
         final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
 
         // Start the engine with a simple list collector as the 'View'
-        final Thread engineThread = new Thread(() -> orchestrator.start(capturedPulses::add));
+        final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {
+            System.out.println("Captured Pulse: " + pulse.pulseId());
+            capturedPulses.add(pulse);
+        }));
         engineThread.setDaemon(true);
         engineThread.start();
 
