@@ -1,7 +1,19 @@
+param (
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("cayman", "dinky", "hacker", "midnight")]
+    [string]$Theme = "cayman"
+)
+
 # qtr-qth: Local Documentation Staging Script
 # This script launches a high-fidelity Jekyll environment for documentation preview.
 
 $ImageName = "qtr-qth-docs"
+
+Write-Host "--- 🎨 Applying Theme: $Theme ---" -ForegroundColor Cyan
+$ConfigFile = "docs/_config.yml"
+$ConfigContent = Get-Content $ConfigFile -Raw
+$ConfigContent = $ConfigContent -replace "remote_theme: pages-themes/.*", "remote_theme: pages-themes/$Theme"
+Set-Content $ConfigFile $ConfigContent
 
 Write-Host "--- 🏗️ Building Documentation Staging Environment ---" -ForegroundColor Cyan
 docker build -f Dockerfile.docs -t $ImageName .

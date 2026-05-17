@@ -25,6 +25,22 @@ function setup() {
   }
 }
 
+function setPalette(theme) {
+  switch(theme) {
+    case 'hacker':
+      themeColor = color(0, 255, 100); // Matrix Green
+      break;
+    case 'midnight':
+      themeColor = color(0, 200, 255); // Deep Cyan
+      break;
+    case 'dinky':
+      themeColor = color(100, 100, 100); // Slate Gray
+      break;
+    default:
+      themeColor = color(0, 150, 255); // Heritage Blue
+  }
+}
+
 function draw() {
   clear();
   
@@ -47,7 +63,7 @@ function drawPulse() {
 
   for (let i = elements.length - 1; i >= 0; i--) {
     let p = elements[i];
-    stroke(0, 150, 255, p.alpha);
+    stroke(red(themeColor), green(themeColor), blue(themeColor), p.alpha);
     circle(p.x, p.y, p.r);
     p.r += 2;
     p.alpha -= 2;
@@ -56,7 +72,8 @@ function drawPulse() {
 }
 
 function drawConstellation() {
-  stroke(0, 150, 255, 80);
+  const c = themeColor;
+  stroke(red(c), green(c), blue(c), 80);
   for (let i = 0; i < elements.length; i++) {
     let e = elements[i];
     e.pos.add(e.vel);
@@ -65,12 +82,12 @@ function drawConstellation() {
     if (e.pos.x < 0 || e.pos.x > width) e.vel.x *= -1;
     if (e.pos.y < 0 || e.pos.y > height) e.vel.y *= -1;
     
-    fill(0, 150, 255, 100);
+    fill(red(c), green(c), blue(c), 100);
     noStroke();
     circle(e.pos.x, e.pos.y, e.size);
     
     // Draw lines to nearby nodes
-    stroke(0, 150, 255, 30);
+    stroke(red(c), green(c), blue(c), 30);
     for (let j = i + 1; j < elements.length; j++) {
       let d = dist(e.pos.x, e.pos.y, elements[j].pos.x, elements[j].pos.y);
       if (d < 200) line(e.pos.x, e.pos.y, elements[j].pos.x, elements[j].pos.y);
