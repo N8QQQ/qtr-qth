@@ -40,7 +40,7 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 5.3: Automated Linter Integration**
 - [x] **Phase 5.4: Test Suite Reconciliation**
 
-### Phase 6: Structural Hardening (COMPLETED - v0.4.1)
+### Phase 6: Structural Hardening (COMPLETED - v0.4.2)
 **Objective:** Final polish of the functional baseline before entering complex telemetry analysis.
 **Branch:** `feat/galvanic-ground-plane`
 - [x] **Phase 6.1: Typed Configuration Pipeline:** Parse properties into an immutable `AppConfig` record to eliminate Stringly-Typed logic.

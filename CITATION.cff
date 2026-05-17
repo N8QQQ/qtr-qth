@@ -10,5 +10,5 @@ repository-code: "https://github.com/N8QQQ/qtr-qth"
 abstract: "A high-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks and scientific synchronization."
 doi: 10.5281/zenodo.20114280
 license: "GPL-3.0-only"
-version: 0.4.1
+version: 0.4.2
 date-released: "2026-05-16"
