@@ -1,3 +1,7 @@
+---
+layout: default
+title: README
+---
 # qtr-qth : GPS Time & Location Hub
 
 [![Build Status](https://github.com/n8qqq/qtr-qth/actions/workflows/ci.yml/badge.svg)](https://github.com/n8qqq/qtr-qth/actions/workflows/ci.yml)
@@ -17,10 +21,10 @@
 - **Observability:** Professional-grade logging with pulse-tracking for 24/7 reliability.
 
 ## 📑 Documentation
-- **Architecture:** [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) - Deep dive into the "Two-River Confluence" model.
-- **Blueprint:** [PLAN.md](docs/roadmap/PLAN.md) - The tactical execution roadmap.
-- **Flight Log:** [SESSIONS.md](docs/roadmap/SESSIONS.md) - SBA velocity tracking and metrics.
-- **Developer Guide:** [DEVELOPER.md](docs/DEVELOPER.md) - Environment setup and release protocols.
+- **Architecture:** [ARCHITECTURE.md](architecture/ARCHITECTURE.md) - Deep dive into the "Two-River Confluence" model.
+- **Blueprint:** [PLAN.md](roadmap/PLAN.md) - The tactical execution roadmap.
+- **Flight Log:** [SESSIONS.md](roadmap/SESSIONS.md) - SBA velocity tracking and metrics.
+- **Developer Guide:** [DEVELOPER.md](DEVELOPER.md) - Environment setup and release protocols.
 
 ## 🏃 Getting Started
 
