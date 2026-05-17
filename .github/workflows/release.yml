@@ -43,7 +43,7 @@ jobs:
 
     - name: Create GitHub Release
       id: create_release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         files: |
           build/distributions/*.zip
@@ -58,7 +58,7 @@ jobs:
   # SLSA Provenance Generation (Level 3)
   provenance:
     needs: [build-and-release]
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: "${{ needs.build-and-release.outputs.hashes }}"
       upload-assets: true # Optional: Upload to a new release

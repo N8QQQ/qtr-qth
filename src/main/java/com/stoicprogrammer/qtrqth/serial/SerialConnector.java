@@ -90,6 +90,7 @@ public final class SerialConnector {
 
             @Override
             public void serialEvent(final SerialPortEvent event) {
+                logger.trace("Serial event received: {}", event.getEventType());
                 Optional.of(event)
                     .filter(e -> e.getEventType() == SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
                     .map(e -> {

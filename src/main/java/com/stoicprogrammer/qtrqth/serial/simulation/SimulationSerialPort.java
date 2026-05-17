@@ -65,8 +65,12 @@ public final class SimulationSerialPort implements ISerialPort {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                // Use a proxy handle to avoid JSerialComm null-source hazards
-                final SerialPort proxy = SerialPort.getCommPort("SIM_INTERNAL");
+                // Use a valid system descriptor to avoid library-level instantiation hazards.
+                final String proxyDescriptor = System.getProperty("os.name").toLowerCase().contains("win") 
+                    ? "COM1" 
+                    : "/dev/null";
+                
+                final SerialPort proxy = SerialPort.getCommPort(proxyDescriptor);
                 Optional.ofNullable(listener).ifPresent(l -> 
                     l.serialEvent(new SerialPortEvent(proxy, SerialPort.LISTENING_EVENT_DATA_AVAILABLE)));
             }

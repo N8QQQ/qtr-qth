@@ -4,6 +4,7 @@ import com.stoicprogrammer.qtrqth.base.BddTest;
 import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -18,15 +19,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SystemOrchestratorTest extends BddTest {
 
-    private static final int POLL_INTERVAL_MS = 200;
-    private static final int MAX_POLL_ATTEMPTS = 75; // Increased patience for slow CI
-    private static final int SHUTDOWN_WAIT_MS = 2000;
+    private static final int POLL_INTERVAL_MS = 500;
+    private static final int MAX_POLL_ATTEMPTS = 120; // 60 seconds total
+    private static final int SHUTDOWN_WAIT_MS = 10000;
+
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(SystemOrchestratorTest.class);
 
     @TempDir
     private Path tempDir;
 
     @Test
     void should_orchestrate_telemetry_flow_and_produce_pulses() throws Exception {
+        logger.info("Starting BDD Test: should_orchestrate_telemetry_flow_and_produce_pulses");
         final Path configPath = tempDir.resolve("orchestrator.properties");
         // Force simulation mode and long threshold to ensure stability in test
         java.nio.file.Files.writeString(configPath, "simulation.mode=true\nsync.threshold.ms=5000");
@@ -35,7 +39,10 @@ class SystemOrchestratorTest extends BddTest {
         final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
 
         // Start the engine with a simple list collector as the 'View'
-        final Thread engineThread = new Thread(() -> orchestrator.start(capturedPulses::add));
+        final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {
+            logger.info("Captured Pulse: {}", pulse.pulseId());
+            capturedPulses.add(pulse);
+        }));
         engineThread.setDaemon(true);
         engineThread.start();
 

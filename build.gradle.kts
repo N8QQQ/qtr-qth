@@ -3,7 +3,7 @@ plugins {
     application
     jacoco
     checkstyle
-    id("me.champeau.jmh") version "0.7.2"
+    id("me.champeau.jmh") version "0.7.3"
 }
 
 group = "com.stoicprogrammer"
@@ -27,8 +27,8 @@ checkstyle {
 
 dependencies {
     // Logging Facade & Engine
-    implementation("org.slf4j:slf4j-api:2.0.12")
-    runtimeOnly("ch.qos.logback:logback-classic:1.5.3")
+    implementation("org.slf4j:slf4j-api:2.0.18")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.32")
 
     // Serial Communication
     implementation("com.fazecast:jSerialComm:2.11.4")
@@ -39,11 +39,11 @@ dependencies {
     implementation("io.vavr:vavr:1.0.1")
 
     // Testing
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation(platform("org.junit:junit-bom:6.0.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core:3.25.3")
-    testImplementation("org.mockito:mockito-core:5.11.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
+    testImplementation("org.assertj:assertj-core:3.27.7")
+    testImplementation("org.mockito:mockito-core:5.23.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.23.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -61,6 +61,11 @@ java {
 tasks.test {
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
     finalizedBy(tasks.jacocoTestReport)
 }
 

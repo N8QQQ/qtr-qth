@@ -61,6 +61,7 @@ public final class SystemOrchestrator {
      */
     public void start(final Consumer<TelemetryPulse> pulseConsumer) {
         final AppConfig config = configManager.getConfig();
+        logger.info("System bootstrapping... (Simulation: {})", config.simulationMode());
         
         // 1. Hardware Provider Selection
         final ISerialProvider serialProvider = config.simulationMode() 
