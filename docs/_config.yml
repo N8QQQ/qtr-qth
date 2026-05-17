@@ -10,6 +10,16 @@ kramdown:
   input: GFM
   hard_wrap: false
 
+# Plugins
+plugins:
+  - jekyll-relative-links
+  - jekyll-seo-tag
+
+# Relative Links settings
+relative_links:
+  enabled: true
+  collections: true
+
 # Exclude files from processing
 exclude:
   - vendor/
