@@ -8,6 +8,7 @@
 - [x] **A.1: Identity Enshrinement:** Implement `CODEOWNERS` and `CITATION.cff`.
 - [x] **A.2: Community Standards:** Create `ISSUE_TEMPLATE` (Bug/Feature) and `PULL_REQUEST_TEMPLATE.md`.
 - [x] **A.3: Governance:** Finalize `GEMINI.md` and `docs/DEVELOPER.md` as binding mandates.
+- [x] **A.4: Feature Branch Mandate:** Enforce isolated development via Section 20 of `GEMINI.md`.
 
 ## ✅ Phase B: Security & Supply Chain Hardening
 - [x] **B.1: Static Analysis:** Implement CodeQL Advanced scanning.

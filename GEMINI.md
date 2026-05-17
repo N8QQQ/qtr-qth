@@ -229,11 +229,8 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 
 ---
 
-## 19. Supply Chain Security
-- **Rule:** The project must maintain SLSA Level 3 integrity.
-- **Requirements:**
-    - **SBOM:** Every release must include a Software Bill of Materials (SBOM) in SPDX format.
-    - **Provenance:** Every release must be accompanied by non-falsifiable SLSA provenance generated via GitHub Actions.
-    - **Scanning:** Dependabot and CodeQL must remain active to scan for dependency vulnerabilities and static code flaws.
-- **Integrity:** Never disable or bypass security scanning in CI/CD pipelines.
+## 20. Branching & Session Management
+- **Rule:** Direct work on the `main` branch is strictly forbidden.
+- **Enforcement:** Every session must operate within a dedicated feature branch (e.g., `feat/[task-name]` or `fix/[bug-name]`) corresponding to the active phase or task.
+- **Initialization:** Upon session start, the AI must verify the current branch and proactively suggest creating a new one if the system is currently pointing at `main`.
 
