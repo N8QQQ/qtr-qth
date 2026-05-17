@@ -7,7 +7,7 @@ url: "https://n8qqq.github.io"
 baseurl: "/qtr-qth"
 
 # Theme settings
-remote_theme: pages-themes/cayman
+remote_theme: pages-themes/dinky
 
 # Plugins
 plugins:

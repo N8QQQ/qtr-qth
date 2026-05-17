@@ -26,6 +26,15 @@
 
 <!-- p5.js for Documentation Flare -->
 <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!document.getElementById('p5-flare')) {
+      const flareDiv = document.createElement('div');
+      flareDiv.id = 'p5-flare';
+      document.body.prepend(flareDiv);
+    }
+  });
+</script>
 <script src="{{ '/assets/js/flare.js' | relative_url }}" defer></script>
 <style>
   .mermaid {
