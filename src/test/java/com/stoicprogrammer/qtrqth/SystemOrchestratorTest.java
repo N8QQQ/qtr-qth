@@ -30,6 +30,7 @@ class SystemOrchestratorTest extends BddTest {
 
     @Test
     void should_orchestrate_telemetry_flow_and_produce_pulses() throws Exception {
+        logger.info("Starting BDD Test: should_orchestrate_telemetry_flow_and_produce_pulses");
         final Path configPath = tempDir.resolve("orchestrator.properties");
         // Force simulation mode and long threshold to ensure stability in test
         java.nio.file.Files.writeString(configPath, "simulation.mode=true\nsync.threshold.ms=5000");
