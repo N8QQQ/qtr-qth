@@ -1,28 +1,19 @@
 # Heritage Grade Documentation Staging (Stable)
-# Using Official Ruby for 100% environment control
-
 FROM ruby:3.2-slim
 
-# 1. Install Build Dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y build-essential git && rm -rf /var/lib/apt/lists/*
 
-# 2. Set Workspace
 WORKDIR /srv/jekyll
 
-# 3. Install Jekyll and Bundler
-RUN gem install jekyll bundler
-
-# 4. Copy Gemfile and install dependencies
-# Note: Gemfile.lock is ignored to prevent permission friction
-COPY ./docs/Gemfile .
+# Install dependencies into the root of the workspace
+COPY Gemfile* .
 RUN bundle install
 
-# 5. Expose Jekyll Default Port
+# Create a sub-directory for content to avoid volume masking
+RUN mkdir -p /srv/jekyll/content
+COPY docs/ /srv/jekyll/content/
+
 EXPOSE 4000
 
-# 6. Run Jekyll Server
-# --force_polling is essential for Windows-to-Linux live reload
-CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling", "--source", ".", "--destination", "_site"]
+# Run Jekyll pointing to the 'content' sub-directory
+CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling", "--source", "content", "--destination", "_site"]
