@@ -1,3 +1,7 @@
+---
+layout: default
+title: System Architecture
+---
 # System Architecture: qtr-qth
 
 `qtr-qth` is designed as a high-precision, event-driven telemetry hub. The architecture prioritizes functional purity, thread-safety, and observability.

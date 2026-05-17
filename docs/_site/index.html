@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Home | qtr-qth Documentation Hub</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="Home" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<meta property="og:description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<link rel="canonical" href="https://n8qqq.github.io/qtr-qth/" />
+<meta property="og:url" content="https://n8qqq.github.io/qtr-qth/" />
+<meta property="og:site_name" content="qtr-qth Documentation Hub" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Home" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","description":"High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.","headline":"Home","name":"qtr-qth Documentation Hub","url":"https://n8qqq.github.io/qtr-qth/"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" as="style" type="text/css" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#157878">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="/qtr-qth/assets/css/style.css?v=">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+<!-- Mermaid.js for Technical Diagrams -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Standardize Mermaid fenced blocks from Kramdown
+    const codeBlocks = document.querySelectorAll('pre > code.language-mermaid');
+    codeBlocks.forEach(code => {
+      const pre = code.parentElement;
+      const mermaidDiv = document.createElement('div');
+      mermaidDiv.className = 'mermaid';
+      mermaidDiv.textContent = code.textContent;
+      pre.replaceWith(mermaidDiv);
+    });
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+  });
+</script>
+
+<!-- p5.js for Documentation Flare -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+<script src="/qtr-qth/assets/js/flare.js" defer></script>
+<style>
+  .mermaid {
+    background-color: white !important;
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    margin: 1.5rem 0;
+  }
+  #p5-flare {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+</style>
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/qtr-qth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <a id="skip-to-content" href="#content">Skip to the content.</a>
+
+    <header class="page-header" role="banner">
+      <h1 class="project-name">Home</h1>
+      <h2 class="project-tagline">High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.</h2>
+      
+        <a href="https://github.com/N8QQQ/qtr-qth" class="btn">View on GitHub</a>
+      
+      
+    </header>
+
+    <main id="content" class="main-content" role="main">
+      <h1 id="qtr-qth-documentation-hub">qtr-qth Documentation Hub</h1>
+
+<div id="p5-flare"></div>
+
+<p>Welcome to the official technical documentation for <code class="language-plaintext highlighter-rouge">qtr-qth</code>, a high-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.</p>
+
+<h2 id="-core-documentation">📑 Core Documentation</h2>
+
+<ul>
+  <li><strong><a href="/qtr-qth/architecture/ARCHITECTURE.html">System Architecture</a></strong>: A deep dive into the “Two-River Confluence” model and functional design patterns.</li>
+  <li><strong><a href="/qtr-qth/DEVELOPER.html">Developer Guide</a></strong>: Environment setup, build instructions, and the <strong>Heritage Release Protocol</strong>.</li>
+  <li><strong><a href="/qtr-qth/roadmap/PLAN.html">Project Roadmap</a></strong>: Tactical execution phases and current project status.</li>
+  <li><strong><a href="/qtr-qth/roadmap/MODERNIZATION_PLAN.html">Modernization Plan</a></strong>: Intermediate phase repo hardening and standards audit.</li>
+  <li><strong><a href="/qtr-qth/roadmap/SESSIONS.html">Flight Log</a></strong>: Historical session tracking and metrics.</li>
+</ul>
+
+<h2 id="️-technical-design-phases">🏗️ Technical Design Phases</h2>
+
+<ul>
+  <li><strong><a href="/qtr-qth/design/DESIGN_PHASE_1.html">Phase 1: Foundation</a></strong></li>
+  <li><strong><a href="/qtr-qth/design/DESIGN_PHASE_2.html">Phase 2: Serial Plumbing</a></strong></li>
+  <li><strong><a href="/qtr-qth/design/DESIGN_PHASE_3.html">Phase 3: Observability</a></strong></li>
+  <li><strong><a href="/qtr-qth/design/DESIGN_PHASE_4.html">Phase 4: Network Time</a></strong></li>
+  <li><strong><a href="/qtr-qth/design/DESIGN_PHASE_5.html">Phase 5: Functional Blueprint</a></strong></li>
+  <li><strong><a href="/qtr-qth/design/DESIGN_PHASE_6.html">Phase 6: Structural Hardening</a></strong></li>
+</ul>
+
+<h2 id="️-identity--scholarly-record">⚖️ Identity &amp; Scholarly Record</h2>
+
+<p><a href="https://orcid.org/0009-0001-9211-8000"><img src="https://img.shields.io/badge/ORCiD-0009--0001--9211--8000-A6CE39?logo=orcid&amp;logoColor=white" alt="ORCiD" /></a></p>
+<ul>
+  <li><strong>Developer:</strong> Nicholas R. Ustick (N8QQQ)</li>
+  <li><strong>Archival:</strong> This project is indexed on <strong>Zenodo</strong> for persistent citation.</li>
+  <li><strong>DOI:</strong> <a href="https://doi.org/10.5281/zenodo.20114280">10.5281/zenodo.20114280</a></li>
+</ul>
+
+
+      <footer class="site-footer">
+        
+          <span class="site-footer-owner"><a href="https://github.com/N8QQQ/qtr-qth">qtr-qth</a> is maintained by <a href="https://github.com/N8QQQ">N8QQQ</a>.</span>
+        
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
+      </footer>
+    </main>
+  </body>
+</html>

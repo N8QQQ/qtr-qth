@@ -1,9 +1,13 @@
+---
+layout: default
+title: Developer Guide
+---
 # Developer Documentation: qtr-qth
 
 This document outlines the technical environment, build workflows, and formal release procedures for the `qtr-qth` project. 
 
 ## 🏗️ Technical Architecture
-For details on the functional pipeline, concurrency model, and system design, refer to the **[System Architecture (ARCHITECTURE.md)](ARCHITECTURE.md)**.
+For details on the functional pipeline, concurrency model, and system design, refer to the **[System Architecture (ARCHITECTURE.md)](architecture/ARCHITECTURE.md)**.
 
 ## 🛠️ Development Workflow
 
@@ -61,6 +65,19 @@ Ensure Docker is running, then execute the provided PowerShell script:
 ```powershell
 ./verify-local-ci.ps1
 ```
+
+## 🎨 Local Documentation Staging (Preview)
+To iterate on the Documentation Hub (including p5.js visuals and Mermaid diagrams) without pushing to GitHub, you can launch a local staging server.
+
+### Launching the Preview
+```powershell
+./verify-docs.ps1
+```
+
+This will:
+1.  Build a high-fidelity Jekyll container (`qtr-qth-docs`).
+2.  Serve the `/docs` folder at **http://localhost:4000/qtr-qth/**.
+3.  Support **Live Reload**: Any changes you make to Markdown or JS files in `/docs` will refresh automatically in the browser.
 
 This will:
 1.  Build the `qtr-qth-ci` image (Ubuntu + JDK 21).

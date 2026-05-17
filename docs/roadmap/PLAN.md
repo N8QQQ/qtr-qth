@@ -1,3 +1,7 @@
+---
+layout: default
+title: Project Roadmap
+---
 # Project Blueprint: qtr-qth
 
 `qtr-qth` is a high-precision GPS Time (QTR) and Location (QTH) hub designed for mission-critical synchronization in Amateur Radio and technical shacks.

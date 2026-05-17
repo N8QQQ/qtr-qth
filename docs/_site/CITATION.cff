@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "qtr-qth: GPS Time & Location Hub"
+message: "If you use this software in your research or technical publications, please cite it as below."
+type: software
+authors:
+  - family-names: "Ustick"
+    given-names: "Nicholas R."
+    orcid: "https://orcid.org/0009-0001-9211-8000"
+repository-code: "https://github.com/N8QQQ/qtr-qth"
+abstract: "A high-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks and scientific synchronization."
+doi: 10.5281/zenodo.20114280
+license: "GPL-3.0-only"
+version: 0.4.4
+date-released: "2026-05-16"

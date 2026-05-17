@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Project Roadmap | qtr-qth Documentation Hub</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="Project Roadmap" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<meta property="og:description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<link rel="canonical" href="https://n8qqq.github.io/qtr-qth/roadmap/PLAN.html" />
+<meta property="og:url" content="https://n8qqq.github.io/qtr-qth/roadmap/PLAN.html" />
+<meta property="og:site_name" content="qtr-qth Documentation Hub" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Project Roadmap" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.","headline":"Project Roadmap","url":"https://n8qqq.github.io/qtr-qth/roadmap/PLAN.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" as="style" type="text/css" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#157878">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="/qtr-qth/assets/css/style.css?v=">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+<!-- Mermaid.js for Technical Diagrams -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Standardize Mermaid fenced blocks from Kramdown
+    const codeBlocks = document.querySelectorAll('pre > code.language-mermaid');
+    codeBlocks.forEach(code => {
+      const pre = code.parentElement;
+      const mermaidDiv = document.createElement('div');
+      mermaidDiv.className = 'mermaid';
+      mermaidDiv.textContent = code.textContent;
+      pre.replaceWith(mermaidDiv);
+    });
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+  });
+</script>
+
+<!-- p5.js for Documentation Flare -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+<script src="/qtr-qth/assets/js/flare.js" defer></script>
+<style>
+  .mermaid {
+    background-color: white !important;
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    margin: 1.5rem 0;
+  }
+  #p5-flare {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+</style>
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/qtr-qth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <a id="skip-to-content" href="#content">Skip to the content.</a>
+
+    <header class="page-header" role="banner">
+      <h1 class="project-name">Project Roadmap</h1>
+      <h2 class="project-tagline">High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.</h2>
+      
+        <a href="https://github.com/N8QQQ/qtr-qth" class="btn">View on GitHub</a>
+      
+      
+    </header>
+
+    <main id="content" class="main-content" role="main">
+      <h1 id="project-blueprint-qtr-qth">Project Blueprint: qtr-qth</h1>
+
+<p><code class="language-plaintext highlighter-rouge">qtr-qth</code> is a high-precision GPS Time (QTR) and Location (QTH) hub designed for mission-critical synchronization in Amateur Radio and technical shacks.</p>
+
+<h2 id="️-technical-design">🏛️ Technical Design</h2>
+<p>For details on the concurrency model, functional pipeline, and architectural decisions, see <a href="/qtr-qth/architecture/ARCHITECTURE.html">ARCHITECTURE.md</a>.</p>
+
+<hr />
+
+<h2 id="️-execution-roadmap">🗺️ Execution Roadmap</h2>
+
+<h3 id="phase-1-foundation-completed---v010">Phase 1: Foundation (COMPLETED - v0.1.0)</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 1.1: Project Skeleton (Gradle/Java 21)</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 1.2: NMEA Sentence Capture</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 1.3: GPS Data Records (Immutable)</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 1.4: Grid Square Calculator</strong></li>
+</ul>
+
+<h3 id="phase-2-serial-plumbing-completed---v020">Phase 2: Serial Plumbing (COMPLETED - v0.2.0)</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 2.1: jSerialComm Integration</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 2.2: Hardware Abstraction Layer (ISerialProvider)</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 2.3: Port Auto-Discovery</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 2.4: Data Streaming Pipeline</strong></li>
+</ul>
+
+<h3 id="phase-3-observability-completed---v020">Phase 3: Observability (COMPLETED - v0.2.0)</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 3.1: Logback Integration</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 3.2: Mapped Diagnostic Context (MDC) for Pulse ID</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 3.3: High-Fidelity Console UI</strong></li>
+</ul>
+
+<h3 id="phase-4-network-time-reference-completed---v030">Phase 4: Network Time Reference (COMPLETED - v0.3.0)</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 4.1: Supply Chain &amp; Console UX</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 4.2: Baseline NTP Client</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 4.3: Precision Metadata</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 4.4: Pipeline Integration</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 4.5: Resilience &amp; Multi-Pooling</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 4.6: Test HAL &amp; CI Stabilization</strong></li>
+</ul>
+
+<h3 id="phase-5-the-functional-blueprint-completed---v040">Phase 5: The Functional Blueprint (COMPLETED - v0.4.0)</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 5.1: Functional Purity Refactor</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 5.2: Immutability Enforcement</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 5.3: Automated Linter Integration</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 5.4: Test Suite Reconciliation</strong></li>
+</ul>
+
+<h3 id="phase-6-structural-hardening-completed---v043">Phase 6: Structural Hardening (COMPLETED - v0.4.3)</h3>
+<p><strong>Objective:</strong> Final polish of the functional baseline before entering complex telemetry analysis.
+<strong>Branch:</strong> <code class="language-plaintext highlighter-rouge">feat/galvanic-ground-plane</code></p>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 6.1: Typed Configuration Pipeline:</strong> Parse properties into an immutable <code class="language-plaintext highlighter-rouge">AppConfig</code> record to eliminate Stringly-Typed logic.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 6.2: Numeric Purity:</strong> Wrap parsing mechanisms (like <code class="language-plaintext highlighter-rouge">Double.parseDouble</code>) in <code class="language-plaintext highlighter-rouge">Optional</code> wrappers via <code class="language-plaintext highlighter-rouge">Functional.java</code> to prevent hardware noise exceptions.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 6.3: Supply Chain Synchronization:</strong> Refine <code class="language-plaintext highlighter-rouge">verification-metadata.xml</code> to include multi-platform checksums and trust-keys (Windows/Linux/ARM).</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 6.4: CI Action Refresh:</strong> Update <code class="language-plaintext highlighter-rouge">gradle/actions/wrapper-validation</code> to latest major version to silence Node.js 20 deprecation.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 6.5: Performance Certification (JMH &amp; Vavr):</strong> Implement the Java Microbenchmark Harness to certify nanosecond-level stability of hot paths.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 6.6: The Test Data Vault:</strong> Externalize all raw NMEA test literals into <code class="language-plaintext highlighter-rouge">/src/test/resources/telemetry</code> for high-fidelity BDD.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 6.7: Zenodo Metadata Weaving:</strong> Implement <code class="language-plaintext highlighter-rouge">.zenodo.json</code> to ensure automated high-fidelity versioned citations.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" /><strong>Phase 6.8: Logic Consolidation:</strong> Perform a codebase-wide sweep to eliminate duplicate parsing logic and optimize functional pipelines.</li>
+</ul>
+
+<h3 id="phase-7-the-virtual-shack-v050">Phase 7: The Virtual Shack (v0.5.0)</h3>
+<p><strong>Objective:</strong> Cross-platform simulation of Linux/ARM64 and physical hardware.
+<strong>Branch:</strong> <code class="language-plaintext highlighter-rouge">feat/phantom-shack</code></p>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 7.1: Multi-Arch Dockerization:</strong> amd64/arm64 build profiles.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 7.2: Hardware Spoofing (socat):</strong> Simulated <code class="language-plaintext highlighter-rouge">/dev/ttyUSB0</code> in container.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 7.3: Graceful Hardware Fallback:</strong> Change boot default to hardware mode; auto-failover to <code class="language-plaintext highlighter-rouge">SimulationSerialProvider</code> if no viable ports are found.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 7.4: GitHub CI Hardening:</strong> Integration of QEMU and ARM64 verification.</li>
+</ul>
+
+<h3 id="phase-8-temporal-virtualization-v060">Phase 8: Temporal Virtualization (v0.6.0)</h3>
+<p><strong>Objective:</strong> Decouple time-awareness for deterministic math verification.
+<strong>Branch:</strong> <code class="language-plaintext highlighter-rouge">feat/chrono-tesseract</code></p>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 8.1: Clock Dependency Injection:</strong> Eliminate <code class="language-plaintext highlighter-rouge">Instant.now()</code>.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 8.2: Jitter Testing Baseline:</strong> Verify math using <code class="language-plaintext highlighter-rouge">Clock.fixed()</code>.</li>
+</ul>
+
+<h3 id="phase-9-drift--offset-analysis-v070">Phase 9: Drift &amp; Offset Analysis (v0.7.0)</h3>
+<p><strong>Objective:</strong> Quantify the accuracy of the system clock.
+<strong>Branch:</strong> <code class="language-plaintext highlighter-rouge">feat/jitter-bug</code></p>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 9.1: The Offset Engine (The “Math”)</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 9.2: Jitter &amp; Statistics (The “Stability”)</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 9.3: Observability Update (The “Report”)</strong></li>
+</ul>
+
+<h3 id="phase-10-precision-clock-synchronization-v100">Phase 10: Precision Clock Synchronization (v1.0.0)</h3>
+<p><strong>Objective:</strong> Update the system clock with precision and authority.</p>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 10.1: OS Permission HAL</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 10.2: Windows Time Service Provider</strong></li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" /><strong>Phase 10.3: Linux/Pi Time Service Provider</strong></li>
+</ul>
+
+<h3 id="phase-11-the-qth-hub-v200">Phase 11: The “QTH Hub” (v2.0.0)</h3>
+<p><strong>Objective:</strong> Broadcast live telemetry to 3rd party shack tools.</p>
+
+<h3 id="phase-12-dashboard---embedded-web-scribe-v300">Phase 12: Dashboard - Embedded Web Scribe (v3.0.0)</h3>
+<h3 id="phase-13-dashboard---restful-pulse-api-v310">Phase 13: Dashboard - RESTful Pulse API (v3.1.0)</h3>
+<h3 id="phase-14-dashboard---shack-view-html-v400">Phase 14: Dashboard - “Shack-View” HTML (v4.0.0)</h3>
+<h3 id="phase-15-heritage-stabilization-v500">Phase 15: Heritage Stabilization (v5.0.0)</h3>
+
+<hr />
+<h2 id="-current-quality-status">🧪 Current Quality Status</h2>
+<ul>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><strong>Test Coverage:</strong> 92.7%</td>
+          <td><strong>Logic Integrity:</strong> Certified High Fidelity.</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><strong>Supply Chain:</strong> Gradle Verification Enabled (SHA-256).</li>
+  <li><strong>Architecture:</strong> Pure Functional Assembly Line.</li>
+  <li><strong>Portability:</strong> NIO-based pathing (Win/Linux/RPi ready).</li>
+</ul>
+
+<h2 id="️-legal--identity">⚖️ Legal &amp; Identity</h2>
+<ul>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><strong>Developer:</strong> Nicholas R. Ustick (N8QQQ)</td>
+          <td><strong>License:</strong> GNU GPL v3.0</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+
+
+      <footer class="site-footer">
+        
+          <span class="site-footer-owner"><a href="https://github.com/N8QQQ/qtr-qth">qtr-qth</a> is maintained by <a href="https://github.com/N8QQQ">N8QQQ</a>.</span>
+        
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
+      </footer>
+    </main>
+  </body>
+</html>

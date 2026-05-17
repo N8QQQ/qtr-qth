@@ -1,3 +1,7 @@
+---
+layout: default
+title: Home
+---
 # qtr-qth Documentation Hub
 
 <div id="p5-flare"></div>
@@ -21,5 +25,9 @@ Welcome to the official technical documentation for `qtr-qth`, a high-precision 
 - **[Phase 5: Functional Blueprint](design/DESIGN_PHASE_5.md)**
 - **[Phase 6: Structural Hardening](design/DESIGN_PHASE_6.md)**
 
----
-*Maintained by JARVIS for the Heritage Grade Standard.*
+## ⚖️ Identity & Scholarly Record
+
+[![ORCiD](https://img.shields.io/badge/ORCiD-0009--0001--9211--8000-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0001-9211-8000)
+- **Developer:** Nicholas R. Ustick (N8QQQ)
+- **Archival:** This project is indexed on **Zenodo** for persistent citation.
+- **DOI:** [10.5281/zenodo.20114280](https://doi.org/10.5281/zenodo.20114280)

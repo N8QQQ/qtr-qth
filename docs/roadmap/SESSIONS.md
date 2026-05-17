@@ -1,3 +1,7 @@
+---
+layout: default
+title: Flight Log
+---
 # Project Flight Log: qtr-qth SESSIONS
 
 This log tracks tactical development sessions, capturing duration, charters, and quality metrics to calibrate our "Session-Based Agile" velocity.
@@ -71,7 +75,9 @@ This log tracks tactical development sessions, capturing duration, charters, and
     - **Velocity:** 3.0 SP/Hour
 
 ---
+
 ## 📈 Calibration History
+
 | Sprint | Date | Total SP | Total Hours | SP/Hour | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 3 | 2026-05-10 | 5 | 4.0 | 1.25 | Refactored pipeline + Hardening |

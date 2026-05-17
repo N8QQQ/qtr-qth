@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>System Architecture | qtr-qth Documentation Hub</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="System Architecture" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<meta property="og:description" content="High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks." />
+<link rel="canonical" href="https://n8qqq.github.io/qtr-qth/architecture/ARCHITECTURE.html" />
+<meta property="og:url" content="https://n8qqq.github.io/qtr-qth/architecture/ARCHITECTURE.html" />
+<meta property="og:site_name" content="qtr-qth Documentation Hub" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="System Architecture" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.","headline":"System Architecture","url":"https://n8qqq.github.io/qtr-qth/architecture/ARCHITECTURE.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" as="style" type="text/css" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#157878">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="/qtr-qth/assets/css/style.css?v=">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+<!-- Mermaid.js for Technical Diagrams -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Standardize Mermaid fenced blocks from Kramdown
+    const codeBlocks = document.querySelectorAll('pre > code.language-mermaid');
+    codeBlocks.forEach(code => {
+      const pre = code.parentElement;
+      const mermaidDiv = document.createElement('div');
+      mermaidDiv.className = 'mermaid';
+      mermaidDiv.textContent = code.textContent;
+      pre.replaceWith(mermaidDiv);
+    });
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+  });
+</script>
+
+<!-- p5.js for Documentation Flare -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+<script src="/qtr-qth/assets/js/flare.js" defer></script>
+<style>
+  .mermaid {
+    background-color: white !important;
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    margin: 1.5rem 0;
+  }
+  #p5-flare {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+</style>
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/qtr-qth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <a id="skip-to-content" href="#content">Skip to the content.</a>
+
+    <header class="page-header" role="banner">
+      <h1 class="project-name">System Architecture</h1>
+      <h2 class="project-tagline">High-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks.</h2>
+      
+        <a href="https://github.com/N8QQQ/qtr-qth" class="btn">View on GitHub</a>
+      
+      
+    </header>
+
+    <main id="content" class="main-content" role="main">
+      <h1 id="system-architecture-qtr-qth">System Architecture: qtr-qth</h1>
+
+<p><code class="language-plaintext highlighter-rouge">qtr-qth</code> is designed as a high-precision, event-driven telemetry hub. The architecture prioritizes functional purity, thread-safety, and observability.</p>
+
+<h2 id="️-the-two-river-confluence-model">🏛️ The “Two-River Confluence” Model</h2>
+
+<p>The core of the system is based on two asynchronous streams of data merging into a unified telemetry pulse.</p>
+
+<pre><code class="language-mermaid">flowchart TD
+    subgraph "The Slow River (Network)"
+        NTP[NTP Pool] --&gt; |Poll 60s| NC[NtpClient]
+        NC --&gt; |NtpResponse| AR[AtomicReference: lastNtp]
+    end
+
+    subgraph "The Fast River (Hardware)"
+        GPS[GPS Hardware] --&gt; |Stream 1Hz| SC[SerialConnector]
+        SC --&gt; |Byte Stream| AC[NmeaSentenceAccumulator]
+        AC --&gt; |NMEA Sentence| ML[Main Pipeline]
+    end
+
+    AR -.-&gt; |Merge| TP[TelemetryPulse::start]
+    ML --&gt; TP
+    TP --&gt; |Parse| NP[NmeaParser]
+    NP --&gt; |GpsData| CF[AtomicReference: currentFix]
+    CF --&gt; |Grid| GS[GridSquareCalculator]
+    GS --&gt; |Log| LOG[High-Fidelity Console UI]
+</code></pre>
+
+<ol>
+  <li><strong>The Slow River (NTP):</strong> A background heartbeat that polls high-stratum network time servers every 60 seconds to provide a reliable “second opinion” on time drift.</li>
+  <li><strong>The Fast River (GPS):</strong> A high-frequency stream of NMEA sentences direct from the serial hardware, providing Stratum 0 precision and location context.</li>
+  <li><strong>The Confluence:</strong> Every time a GPS sentence arrives, it captures the latest known NTP reference to create a <code class="language-plaintext highlighter-rouge">TelemetryPulse</code>, ensuring end-to-end traceability across threads.</li>
+</ol>
+
+<h2 id="-authority--stratum">📡 Authority &amp; Stratum</h2>
+<p>By directly connecting to GPS (Stratum 0), <code class="language-plaintext highlighter-rouge">qtr-qth</code> effectively operates as a <strong>Stratum 1</strong> authority for the local shack, using NTP as a “Second Opinion” for drift verification.</p>
+
+<h2 id="️-structural-hardening-phase-6">🛡️ Structural Hardening (Phase 6)</h2>
+<p>To ensure the integrity of the confluence, the system implements strict structural guardrails:</p>
+
+<ol>
+  <li><strong>Typed Configuration:</strong> All system parameters are parsed at the edge into immutable <code class="language-plaintext highlighter-rouge">AppConfig</code> records, eliminating “Stringly-Typed” logic.</li>
+  <li><strong>Numeric Purity:</strong> Standardized monadic wrappers (<code class="language-plaintext highlighter-rouge">tryParseInt</code>, <code class="language-plaintext highlighter-rouge">tryParseDouble</code>) catch hardware noise and malformed telemetry before they reach the core logic.</li>
+  <li><strong>The Test Vault:</strong> High-fidelity NMEA samples are externalized to ensure that the parsing engine is certified against real-world radio shack data.</li>
+</ol>
+
+<h2 id="-drift--stability-analysis-future-phase-9">📉 Drift &amp; Stability Analysis (Future Phase 9)</h2>
+<p>Once the foundation is hardened, the system will implement an analytical pipeline to quantify system clock accuracy:</p>
+
+<ol>
+  <li><strong>Differential Calculus:</strong> Calculating the high-precision delta between <code class="language-plaintext highlighter-rouge">Local Clock</code> and <code class="language-plaintext highlighter-rouge">Reference Clock</code>.</li>
+  <li><strong>Statistical Smoothing:</strong> Using a Sliding Window Buffer to calculate jitter (standard deviation) and drift trends.</li>
+</ol>
+
+<pre><code class="language-mermaid">flowchart LR
+    P[Pulse Arrival] --&gt; |System.nanoTime| OE[Offset Engine]
+    REF[Ref: GPS/NTP] --&gt; OE
+    OE --&gt; |Duration| SWB[Sliding Window Buffer]
+    SWB --&gt; |Stream| SE[Stability Engine]
+    SE --&gt; |Stats| SG[Stability Grade]
+    SG --&gt; |Metadata| LOG[Final Telemetry Log]
+</code></pre>
+
+<hr />
+<p><em>For historical tactical details, see the <a href="/qtr-qth/design/DESIGN_PHASE_1.html">Phase Designs</a>.</em></p>
+
+
+      <footer class="site-footer">
+        
+          <span class="site-footer-owner"><a href="https://github.com/N8QQQ/qtr-qth">qtr-qth</a> is maintained by <a href="https://github.com/N8QQQ">N8QQQ</a>.</span>
+        
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
+      </footer>
+    </main>
+  </body>
+</html>
