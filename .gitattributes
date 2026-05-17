@@ -1,0 +1,10 @@
+# Enforce LF line endings for shell scripts
+gradlew text eol=lf
+*.sh text eol=lf
+
+# Enforce CRLF for Windows batch files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Default behavior for all other text files
+* text=auto

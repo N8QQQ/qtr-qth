@@ -1,5 +1,8 @@
 # qtr-qth : GPS Time & Location Hub
 
+[![Build Status](https://github.com/n8qqq/qtr-qth/actions/workflows/ci.yml/badge.svg)](https://github.com/n8qqq/qtr-qth/actions/workflows/ci.yml)
+[![Security: CodeQL](https://github.com/n8qqq/qtr-qth/actions/workflows/codeql.yml/badge.svg)](https://github.com/n8qqq/qtr-qth/actions/workflows/codeql.yml)
+[![Documentation](https://github.com/n8qqq/qtr-qth/actions/workflows/docs.yml/badge.svg)](https://n8qqq.github.io/qtr-qth/)
 [![DOI](https://zenodo.org/badge/1200462693.svg)](https://doi.org/10.5281/zenodo.20114280)
 
 `qtr-qth` is a cross-platform application for Amateur Radio operators.
