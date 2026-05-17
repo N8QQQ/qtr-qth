@@ -1,3 +1,7 @@
+---
+layout: default
+title: Modernization Plan
+---
 # Modernization Plan: qtr-qth (Intermediate Phase)
 
 **Objective:** Transition the repository from a raw source tree into a high-fidelity, heritage-grade open-source project with full visibility and security compliance.

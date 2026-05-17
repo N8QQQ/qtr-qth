@@ -1,3 +1,7 @@
+---
+layout: default
+title: Developer Guide
+---
 # Developer Documentation: qtr-qth
 
 This document outlines the technical environment, build workflows, and formal release procedures for the `qtr-qth` project. 

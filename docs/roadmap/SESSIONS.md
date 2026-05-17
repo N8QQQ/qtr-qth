@@ -1,3 +1,7 @@
+---
+layout: default
+title: Flight Log
+---
 # Project Flight Log: qtr-qth SESSIONS
 
 This log tracks tactical development sessions, capturing duration, charters, and quality metrics to calibrate our "Session-Based Agile" velocity.

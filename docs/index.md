@@ -1,3 +1,7 @@
+---
+layout: default
+title: Home
+---
 # qtr-qth Documentation Hub
 
 <div id="p5-flare"></div>
