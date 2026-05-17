@@ -232,5 +232,8 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 ## 20. Branching & Session Management
 - **Rule:** Direct work on the `main` branch is strictly forbidden.
 - **Enforcement:** Every session must operate within a dedicated feature branch (e.g., `feat/[task-name]` or `fix/[bug-name]`) corresponding to the active phase or task.
+- **Tooling Standard:** Use MCP tools for read-only repository inspection. Use the host's **`gh` CLI** for all mutating operations (PR creation, merging, labeling) to ensure compliance with organization security policies.
 - **Initialization:** Upon session start, the AI must verify the current branch and proactively suggest creating a new one if the system is currently pointing at `main`.
+
+ting at `main`.
 
