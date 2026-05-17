@@ -1,0 +1,64 @@
+name: Heritage Release Protocol
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  actions: read
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Codebase
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Set Up JDK 21
+      uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Build Distribution ZIP
+      run: ./gradlew distZip
+
+    - name: Generate SBOM (SPDX)
+      uses: anchore/sbom-action@v0
+      with:
+        artifact-name: qtr-qth-sbom.spdx.json
+        output-format: spdx-json
+
+    - name: Generate Binary Hashes
+      id: hash
+      run: |
+        cd build/distributions/
+        echo "hashes=$(sha256sum *.zip | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          build/distributions/*.zip
+          qtr-qth-sbom.spdx.json
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+
+  # SLSA Provenance Generation (Level 3)
+  provenance:
+    needs: [build-and-release]
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: "${{ needs.build-and-release.outputs.hashes }}"
+      upload-assets: true # Optional: Upload to a new release

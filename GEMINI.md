@@ -208,3 +208,32 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
     5.  **Tagging (Cryptographic Seal):** Create an annotated, signed git tag using `git tag -s v[version] -m "[message]"`. This environment is configured for **SSH-based signing** (Ed25519). Ensure your SSH agent is active.
     6.  **Archival:** Push the signed tag to origin (`git push origin v[version]`), then use `gh release create` and **MANDATORILY** attach the generated `.zip` as a release asset.
 - **Reference:** For detailed environment setup and security audit steps, always refer to `docs/DEVELOPER.md`.
+
+---
+
+## 18. Conventional Commits
+- **Rule:** Every commit message must follow the Conventional Commits specification.
+- **Format:** `<type>(<scope>): <description>`
+- **Types:**
+    - `feat`: A new feature.
+    - `fix`: A bug fix.
+    - `docs`: Documentation only changes.
+    - `style`: Changes that do not affect the meaning of the code (white-space, formatting, etc.).
+    - `refactor`: A code change that neither fixes a bug nor adds a feature.
+    - `perf`: A code change that improves performance.
+    - `test`: Adding missing tests or correcting existing tests.
+    - `build`: Changes that affect the build system or external dependencies.
+    - `ci`: Changes to CI configuration files and scripts.
+    - `release`: Version bumps and release-related metadata.
+- **Enforcement:** Non-compliant commit messages must be refactored before being pushed to origin.
+
+---
+
+## 19. Supply Chain Security
+- **Rule:** The project must maintain SLSA Level 3 integrity.
+- **Requirements:**
+    - **SBOM:** Every release must include a Software Bill of Materials (SBOM) in SPDX format.
+    - **Provenance:** Every release must be accompanied by non-falsifiable SLSA provenance generated via GitHub Actions.
+    - **Scanning:** Dependabot and CodeQL must remain active to scan for dependency vulnerabilities and static code flaws.
+- **Integrity:** Never disable or bypass security scanning in CI/CD pipelines.
+

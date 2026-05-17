@@ -1,0 +1,11 @@
+# CODEOWNERS
+# This file defines the individuals or teams that are responsible for code in the repository.
+
+# Everything by default
+*       @N8QQQ
+
+# Specialized paths
+/docs/  @N8QQQ
+/src/   @N8QQQ
+/config/ @N8QQQ
+/.github/ @N8QQQ
