@@ -48,3 +48,19 @@ services:
       - "/dev/ttyUSB0:/dev/ttyUSB0" # Mapping physical GPS (Adjust as needed)
     cap_add:
       - SYS_TIME
+
+  # 4. The Stress Tester: ARM64 Emulation (Local Pi Parity)
+  stress-test:
+    build:
+      context: .
+      dockerfile: docker/ci/Dockerfile
+    platform: linux/arm64
+    container_name: qtr-qth-stress-test
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5' # Mimic an older Pi or heavy load
+          memory: 512M
