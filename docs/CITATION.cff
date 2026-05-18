@@ -6,7 +6,7 @@ authors:
   - family-names: "Ustick"
     given-names: "Nicholas R."
     orcid: "https://orcid.org/0009-0001-9211-8000"
-    affiliation: "The Stoic Programmer"
+    affiliation: "Stoic Programmer"
 repository-code: "https://github.com/N8QQQ/qtr-qth"
 abstract: "A cross-platform, branchless functional application for Amateur Radio operators, providing Stratum 1 precision time synchronization and Maidenhead Grid Square telemetry."
 doi: 10.5281/zenodo.20257593
