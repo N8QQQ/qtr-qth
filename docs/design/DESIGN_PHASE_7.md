@@ -26,9 +26,38 @@
 - **Utility:** A standalone CLI tool built into the `serial` package.
 - **Function:** Enumerate USB/Serial devices and apply fuzzy-matching logic to auto-identify physical GPS receivers.
 
-### 7.3: Multi-Arch Build Pipeline
-- **Parity:** Ensure `Dockerfile.ci` and `Dockerfile.phantom` can build for both `amd64` and `arm64`.
-- **Stress Testing:** Implement an optional `stress-test` profile in Compose to execute the full gate under ARM64 emulation.
+### 7.3: Adaptive Hardware Fallback
+- **Logic:** Refactor `SystemOrchestrator` to prioritize physical discovery while ensuring zero-crash continuity.
+- **Process Flow:**
+    1.  **Intent Check:** Read `simulation.mode` from configuration.
+    2.  **Hardware Audit:** Regardless of intent, scan for available physical serial ports.
+    3.  **Dynamic Selection:**
+        -   If `simulation.mode=false` AND hardware is found: **Engage Hardware Path**.
+        -   If `simulation.mode=false` AND NO hardware is found: **Log Warning & Engage Adaptive Fallback**.
+        -   If `simulation.mode=true`: **Engage Simulation Path**.
+
+#### Bootstrap State Machine
+```mermaid
+flowchart TD
+    START([System Boot]) --> INIT[Initialize ConfigManager]
+    INIT --> CHECK_INTENT{simulation.mode?}
+    
+    CHECK_INTENT -- true --> SIM_MODE[Engage Simulation Mode]
+    CHECK_INTENT -- false --> AUDIT[Audit Physical Serial Ports]
+    
+    AUDIT --> PORTS_FOUND{Ports Detected?}
+    
+    PORTS_FOUND -- yes --> HW_MODE[Engage Hardware Mode]
+    PORTS_FOUND -- no --> FAILOVER[Log Discovery Failure]
+    
+    FAILOVER --> SIM_MODE
+    
+    SIM_MODE --> V_PROV[Simulation Providers Active]
+    HW_MODE --> P_PROV[Physical Providers Active]
+    
+    V_PROV --> CONFLUENCE([Initiate Telemetry Confluence])
+    P_PROV --> CONFLUENCE
+```
 
 ### 7.4: Live GPS Coordinator
 - **Bridge:** Update the `phantom` entrypoint to support a TCP/UDP listener.
