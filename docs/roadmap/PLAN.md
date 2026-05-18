@@ -58,7 +58,7 @@ For details on the concurrency model, functional pipeline, and architectural dec
 
 ### Phase 7: The Virtual Shack (v0.5.0) - IN PROGRESS
 **Objective:** Cross-platform simulation of Linux/ARM64 and physical hardware.
-**Branch:** `feat/phase-7-logic-fallback`
+**Branch:** `feat/phantom-shack-logic`
 - [x] **Phase 7.1: Universal Orchestration:** Implemented `docker-compose.yml` for platform-agnostic development.
 - [x] **Phase 7.2: Hardware Spoofing (socat):** Certified virtual TTY (`/dev/ttyUSB99`) with NMEA background streaming.
 - [ ] **Phase 7.3: Graceful Hardware Fallback:** Refactor `SystemOrchestrator` to prioritize hardware mode; implement auto-failover to `SimulationSerialProvider` if discovery fails.
