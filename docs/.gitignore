@@ -1,0 +1,8 @@
+# Jekyll Build Artifacts
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# Dependency Cache
+vendor/
+.bundle/
