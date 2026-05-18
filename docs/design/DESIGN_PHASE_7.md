@@ -30,6 +30,10 @@
 - **Parity:** Ensure `Dockerfile.ci` and `Dockerfile.phantom` can build for both `amd64` and `arm64`.
 - **Stress Testing:** Implement an optional `stress-test` profile in Compose to execute the full gate under ARM64 emulation.
 
+### 7.4: Live GPS Coordinator
+- **Bridge:** Update the `phantom` entrypoint to support a TCP/UDP listener.
+- **Function:** Allow the host machine (or a separate coordinator script) to stream live NMEA data into the `/dev/ttyUSB99` device in real-time.
+
 ---
 
 ## 📂 Repository Reorganization

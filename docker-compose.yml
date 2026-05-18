@@ -31,6 +31,11 @@ services:
       context: .
       dockerfile: docker/phantom/Dockerfile
     container_name: ${PHANTOM_CONTAINER_NAME:-qtr-qth-phantom}
+    privileged: true # Required for TTY creation and USB access
+    ports:
+      - "9999:9999" # GPS Coordinator Bridge
+    environment:
+      - SIM_MODE=${SIM_MODE:-true}
     deploy:
       resources:
         limits:
@@ -40,6 +45,6 @@ services:
       - .:/workspace
     working_dir: /workspace
     devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0" # Optional: Physical Passthrough
+      - "/dev/ttyUSB0:/dev/ttyUSB0" # Mapping physical GPS (Adjust as needed)
     cap_add:
-      - SYS_TIME # For future OS clock adjustments
+      - SYS_TIME
