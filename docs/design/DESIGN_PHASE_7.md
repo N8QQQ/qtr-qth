@@ -59,9 +59,17 @@ flowchart TD
     P_PROV --> CONFLUENCE
 ```
 
-### 7.4: Live GPS Coordinator
+### 7.5: Live GPS Coordinator
 - **Bridge:** Update the `phantom` entrypoint to support a TCP/UDP listener.
 - **Function:** Allow the host machine (or a separate coordinator script) to stream live NMEA data into the `/dev/ttyUSB99` device in real-time.
+
+### 7.6: Infrastructure Decommissioning
+- **Protocol:** Enforce a "Stateless Lifecycle" for all virtualization services.
+- **Cleanup Strategy:**
+    -   **Ephemeral CI:** All Quality Gate runs must utilize the `--rm` flag to ensure containers are purged upon task completion.
+    -   **The 'Scrub' Routine:** Implement a standard `docker-compose down` sequence to neutralize the Phantom Shack and reclaim host ports/memory.
+    -   **Orphan Mitigation:** Utilize `--remove-orphans` during startup to clear any lingering ghosts from previous failed sessions.
+
 
 ---
 
