@@ -15,4 +15,4 @@ COPY docs/ .
 EXPOSE 4000
 
 # Run Jekyll from the workspace root
-CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling"]
+CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--incremental", "--force_polling", "--source", ".", "--destination", "_site"]
