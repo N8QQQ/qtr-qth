@@ -55,3 +55,13 @@ bin/
 !src/test/resources/*.properties
 !src/main/resources/**/*.properties
 !src/test/resources/**/*.properties
+
+### Docker & Infrastructure ###
+.env
+.env.local
+.docker-metadata/
+docker-compose.override.yml
+
+### OS Clutter ###
+Thumbs.db
+.DS_Store
