@@ -19,6 +19,8 @@
 - **Service: `ci`** - The Quality Gate (Testing, Linting, Artifacts).
 - **Service: `docs`** - The Staging Hub (Jekyll Hub with p5.js flare).
 - **Service: `phantom`** - The Virtual Shack (Interactive Dev Mirror + Hardware).
+    - **Base OS:** Debian-slim (Raspbian Parity).
+    - **Resource Hardening:** Enforce memory limits (e.g., 1GB) and CPU capping to simulate Raspberry Pi 4/5 hardware envelopes.
 
 ### 7.2: The Hardware Discovery Probe
 - **Utility:** A standalone CLI tool built into the `serial` package.
@@ -26,6 +28,7 @@
 
 ### 7.3: Multi-Arch Build Pipeline
 - **Parity:** Ensure `Dockerfile.ci` and `Dockerfile.phantom` can build for both `amd64` and `arm64`.
+- **Stress Testing:** Implement an optional `stress-test` profile in Compose to execute the full gate under ARM64 emulation.
 
 ---
 

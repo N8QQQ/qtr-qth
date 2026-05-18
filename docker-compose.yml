@@ -1,0 +1,45 @@
+# Universal Orchestration: qtr-qth
+# Supports Windows, Linux, Mac, and RPi via Docker Compose.
+
+services:
+  # 1. The Quality Gate: Stateless Testing & Linting
+  ci:
+    build:
+      context: .
+      dockerfile: docker/ci/Dockerfile
+    container_name: ${CI_CONTAINER_NAME:-qtr-qth-ci}
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+
+  # 2. The Documentation Hub: Staging & Flare Iteration
+  docs:
+    build:
+      context: .
+      dockerfile: docker/docs/Dockerfile
+    container_name: ${DOCS_CONTAINER_NAME:-qtr-qth-docs}
+    ports:
+      - "${STAGING_PORT:-4000}:4000"
+    volumes:
+      - ./docs:/srv/jekyll/content
+    environment:
+      - PAGES_REPO_NWO=N8QQQ/qtr-qth
+
+  # 3. The Phantom Shack: Resource-Constrained Virtual Pi
+  phantom:
+    build:
+      context: .
+      dockerfile: docker/phantom/Dockerfile
+    container_name: ${PHANTOM_CONTAINER_NAME:-qtr-qth-phantom}
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0" # Optional: Physical Passthrough
+    cap_add:
+      - SYS_TIME # For future OS clock adjustments
