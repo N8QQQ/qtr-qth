@@ -23,8 +23,9 @@ echo "--- 🔍 Hardware Audit: Enumerating Serial Devices ---"
 ls -l /dev/tty* | grep "USB" || echo "⚠️ No physical USB/Serial devices detected."
 
 # 3. Execution
-# We run a build and then execute a custom Gradle task for hardware discovery (to be implemented)
+# We run a build and then execute the hardware discovery probe
 ./gradlew --no-daemon build
+./gradlew --no-daemon probeHardware
 
 echo "--- 🚀 Launching Phantom Shack ---"
 # For now, we tail the log to keep the container alive and the TTY open

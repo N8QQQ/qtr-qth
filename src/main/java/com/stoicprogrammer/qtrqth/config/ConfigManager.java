@@ -55,7 +55,7 @@ public final class ConfigManager {
         properties.setProperty("ntp.server", "pool.ntp.org,time.google.com,time.windows.com");
         properties.setProperty("serial.baud", String.valueOf(DEFAULT_BAUD));
         properties.setProperty("sync.threshold.ms", String.valueOf(DEFAULT_SYNC_THRESHOLD));
-        properties.setProperty("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver");
+        properties.setProperty("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver,ttyusb");
         properties.setProperty("display.raw.telemetry", "false");
         properties.setProperty("simulation.mode", "true");
 

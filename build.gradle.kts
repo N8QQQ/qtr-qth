@@ -86,3 +86,11 @@ tasks.jacocoTestReport {
         }
     }))
 }
+
+tasks.register<JavaExec>("probeHardware") {
+    group = "Verification"
+    description = "Scans for physical and virtual GPS serial hardware."
+    mainClass.set("com.stoicprogrammer.qtrqth.serial.HardwareProbe")
+    classpath = sourceSets["main"].runtimeClasspath
+    standardInput = System.`in`
+}
