@@ -1,14 +1,23 @@
 cff-version: 1.2.0
-title: "qtr-qth: GPS Time & Location Hub"
-message: "If you use this software in your research or technical publications, please cite it as below."
+title: "qtr-qth: High-Precision GPS Time & Location Hub"
+message: "If you use this software, please cite it using the metadata from this file."
 type: software
 authors:
   - family-names: "Ustick"
     given-names: "Nicholas R."
     orcid: "https://orcid.org/0009-0001-9211-8000"
+    affiliation: "The Stoic Programmer"
 repository-code: "https://github.com/N8QQQ/qtr-qth"
-abstract: "A high-precision GPS Time (QTR) and Location (QTH) hub for technical radio shacks and scientific synchronization."
+abstract: "A cross-platform, branchless functional application for Amateur Radio operators, providing Stratum 1 precision time synchronization and Maidenhead Grid Square telemetry."
 doi: 10.5281/zenodo.20257593
 license: "GPL-3.0-only"
+keywords:
+  - "Amateur Radio"
+  - "GPS"
+  - "NTP"
+  - "Telemetry"
+  - "Maidenhead"
+  - "Functional Programming"
+  - "Java"
 version: 0.4.4
-date-released: "2026-05-16"
+date-released: "2026-05-17"
