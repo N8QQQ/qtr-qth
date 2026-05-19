@@ -48,9 +48,10 @@ To ensure the integrity of the confluence, the system implements strict structur
 ## 🛰️ Hardware Abstraction & Virtualization (Phase 7)
 To ensure high-fidelity testing and platform-agnostic development, the system decouples its data sources through a formal Hardware Abstraction Layer (HAL).
 
-1.  **Provider Routing:** During the bootstrap phase, the `SystemOrchestrator` utilizes a dynamic selection strategy. It prioritizes physical hardware (`JSerialCommProvider`, `NetworkNtpProvider`) but maintains a seamless fallback to high-fidelity simulation components.
-2.  **Stateless Quality Gate:** By leveraging Docker virtualization, the entire telemetry pipeline is certified in a stateless environment where physical GPS signals are replaced by deterministic `socat` pipes or file-based simulation streams.
-3.  **Deterministic Math:** This abstraction ensures that future drift and offset calculations (Phase 9) can be verified with mathematical certainty by injecting known reference signals into the virtualized rivers.
+1.  **Adaptive Bootstrap (State-Lock):** During the boot sequence, the `SystemOrchestrator` determines its **Operational Mode** (HARDWARE vs SIMULATION). Once established, this mode is **locked for the duration of the run**. The system will attempt to discover physical hardware first, falling back to simulation only if discovery fails or is manually mandated.
+2.  **Runtime Resilience (Health Signaling):** Within a locked mode, the system monitors the health of both the **Fast River** (GPS) and **Slow River** (NTP). If a stream is interrupted (e.g., GPS unplugged), the river enters a `RECOVERY` state.
+3.  **High-Fidelity Fail-Safe:** During a `RECOVERY` state, the confluence maintains data integrity by signaling the stream's status via a `HealthStatus` metadata packet in each pulse. It will maintain the last known good state for missing rivers (e.g., locking location coordinates) while utilizing available rivers (e.g., NTP time) for functional continuity.
+4.  **Deterministic Math:** This abstraction ensures that future drift and offset calculations (Phase 9) can be verified with mathematical certainty by injecting known reference signals into the virtualized rivers.
 
 ## 📉 Drift & Stability Analysis (Future Phase 9)
 Once the foundation is hardened, the system will implement an analytical pipeline to quantify system clock accuracy:
