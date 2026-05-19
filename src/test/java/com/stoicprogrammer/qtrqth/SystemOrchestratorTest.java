@@ -63,6 +63,38 @@ class SystemOrchestratorTest extends BddTest {
     }
 
     @Test
+    void should_automatically_fallback_to_simulation_when_hardware_missing() throws Exception {
+        logger.info("Starting BDD Test: should_automatically_fallback_to_simulation_when_hardware_missing");
+        final Path configPath = tempDir.resolve("fallback.properties");
+        
+        // GIVEN: Intent is Hardware Mode, but no physical hardware will be found in CI
+        java.nio.file.Files.writeString(configPath, "simulation.mode=false\nsync.threshold.ms=5000");
+        
+        final SystemOrchestrator orchestrator = new SystemOrchestrator(configPath);
+        final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
+
+        // WHEN: The system boots
+        final Thread engineThread = new Thread(() -> orchestrator.start(capturedPulses::add));
+        engineThread.setDaemon(true);
+        engineThread.start();
+
+        // THEN: Adaptive Fallback should engage and produce pulses from the simulation provider
+        Stream.generate(() -> {
+            try { 
+                Thread.sleep(POLL_INTERVAL_MS); 
+            } catch (final InterruptedException e) { 
+                Thread.currentThread().interrupt(); 
+            }
+            return capturedPulses.isEmpty();
+        }).limit(MAX_POLL_ATTEMPTS).takeWhile(empty -> empty).count();
+
+        orchestrator.shutdown();
+        engineThread.join(SHUTDOWN_WAIT_MS);
+
+        assertThat(capturedPulses).as("System should have failed over to simulation and produced pulses").isNotEmpty();
+    }
+
+    @Test
     void should_handle_shutdown_gracefully_even_if_not_started() {
         final SystemOrchestrator orchestrator = new SystemOrchestrator(tempDir.resolve("empty.properties"));
         orchestrator.shutdown();
