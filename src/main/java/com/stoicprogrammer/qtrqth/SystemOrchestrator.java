@@ -2,6 +2,7 @@ package com.stoicprogrammer.qtrqth;
 
 import com.stoicprogrammer.qtrqth.config.AppConfig;
 import com.stoicprogrammer.qtrqth.config.ConfigManager;
+import com.stoicprogrammer.qtrqth.model.ConfluenceHealth;
 import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import com.stoicprogrammer.qtrqth.nmea.GpsData;
 import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
@@ -43,6 +44,7 @@ public final class SystemOrchestrator {
     private final ScheduledExecutorService ntpExecutor;
     private final AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
     private final AtomicReference<GpsData> currentFix = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
+    private final AtomicReference<ConfluenceHealth> healthState = new AtomicReference<>();
     
     private SerialConnector connector;
 
@@ -61,43 +63,68 @@ public final class SystemOrchestrator {
      */
     public void start(final Consumer<TelemetryPulse> pulseConsumer) {
         final AppConfig config = configManager.getConfig();
-        logger.info("System bootstrapping... (Target: {})", config.simulationMode() ? "Simulation" : "Hardware");
         
-        // 1. Adaptive Hardware Strategy
-        // We attempt to discover physical hardware first. If none is found, we fallback.
-        final ISerialProvider physicalProvider = new JSerialCommProvider();
-        final PortDiscovery discovery = new PortDiscovery(physicalProvider, configManager);
-        final List<String> physicalPorts = discovery.getAvailablePorts();
-
-        final boolean useSimulation = config.simulationMode() || physicalPorts.isEmpty();
+        // 1. Resolve Operational Mode (State-Lock)
+        final ConfluenceHealth.OperationalMode mode = resolveMode(config);
         
-        if (!config.simulationMode() && physicalPorts.isEmpty()) {
-            logger.warn("STRATUM 0 DISCOVERY FAILURE: No physical serial hardware identified.");
-            logger.info("ADAPTIVE FALLBACK: Engaging Simulation Mode for functional continuity.");
-        }
+        this.healthState.set(new ConfluenceHealth(
+            ConfluenceHealth.RiverStatus.ACTIVE, 
+            ConfluenceHealth.RiverStatus.ACTIVE, 
+            mode
+        ));
 
-        final ISerialProvider activeProvider = useSimulation 
-            ? new SimulationSerialProvider() 
-            : physicalProvider;
+        logger.info("System bootstrapping... (Mode: {})", mode);
 
         // 2. Network Time Heartbeat
-        final INtpProvider ntpProvider = useSimulation
-            ? new SimulationNtpProvider()
-            : new NetworkNtpProvider();
-
-        final NtpClient ntpClient = new NtpClient(ntpProvider, NTP_TIMEOUT_MS);
-        ntpExecutor.scheduleAtFixedRate(() -> 
-            ntpClient.pollDetailed(config.ntpPool()).ifPresent(lastNtp::set), 
-            0, NTP_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        initNtpHeartbeat(config, mode == ConfluenceHealth.OperationalMode.SIMULATION_LOCK);
 
         // 3. Final Confluence
-        final PortDiscovery activeDiscovery = new PortDiscovery(activeProvider, configManager);
+        initConfluence(mode == ConfluenceHealth.OperationalMode.SIMULATION_LOCK, pulseConsumer);
+    }
+
+    private ConfluenceHealth.OperationalMode resolveMode(final AppConfig config) {
+        if (config.simulationMode()) {
+            return ConfluenceHealth.OperationalMode.SIMULATION_LOCK;
+        }
+
+        final List<String> physicalPorts = new PortDiscovery(new JSerialCommProvider(), configManager).getAvailablePorts();
+        if (physicalPorts.isEmpty()) {
+            logger.warn("STRATUM 0 DISCOVERY FAILURE: No physical serial hardware identified.");
+            logger.info("ADAPTIVE FALLBACK: Locking into Simulation Mode for this run.");
+            return ConfluenceHealth.OperationalMode.SIMULATION_LOCK;
+        }
+
+        return ConfluenceHealth.OperationalMode.HARDWARE_LOCK;
+    }
+
+    private void initNtpHeartbeat(final AppConfig config, final boolean useSimulation) {
+        final INtpProvider provider = useSimulation ? new SimulationNtpProvider() : new NetworkNtpProvider();
+        final NtpClient client = new NtpClient(provider, NTP_TIMEOUT_MS);
         
-        activeDiscovery.findLikelyGpsPort()
-            .or(() -> activeDiscovery.getAvailablePorts().stream().findFirst())
+        ntpExecutor.scheduleAtFixedRate(() -> {
+            final Optional<NtpResponse> response = client.pollDetailed(config.ntpPool());
+            updateNtpHealth(response.isPresent());
+            response.ifPresent(lastNtp::set);
+        }, 0, NTP_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    }
+
+    private void updateNtpHealth(final boolean active) {
+        healthState.updateAndGet(h -> new ConfluenceHealth(
+            h.gpsStatus(),
+            active ? ConfluenceHealth.RiverStatus.ACTIVE : ConfluenceHealth.RiverStatus.RECOVERY,
+            h.mode()
+        ));
+    }
+
+    private void initConfluence(final boolean useSimulation, final Consumer<TelemetryPulse> pulseConsumer) {
+        final ISerialProvider provider = useSimulation ? new SimulationSerialProvider() : new JSerialCommProvider();
+        final PortDiscovery discovery = new PortDiscovery(provider, configManager);
+        
+        discovery.findLikelyGpsPort()
+            .or(() -> discovery.getAvailablePorts().stream().findFirst())
             .ifPresentOrElse(
-                port -> runPipeline(port, activeProvider, pulseConsumer),
-                () -> logger.error("CRITICAL FAILURE: No viable serial paths (Physical or Virtual) identified.")
+                port -> runPipeline(port, provider, pulseConsumer),
+                () -> logger.error("CRITICAL FAILURE: No viable serial paths identified.")
             );
     }
 
@@ -109,7 +136,9 @@ public final class SystemOrchestrator {
         logger.info("Telemetry Confluence initiated on port {}...", port);
 
         connector.connect(port)
-            .map(sentence -> TelemetryPulse.start(sentence, lastNtp.get()))
+            .peek(this::updateGpsHealth)
+            .filter(this::isRiverFlowing)
+            .map(sentence -> TelemetryPulse.start(sentence, lastNtp.get(), healthState.get()))
             .peek(pulse -> Map.<Boolean, Runnable>of(
                 true, () -> pulse.logRaw(logger),
                 false, () -> {}
@@ -117,6 +146,21 @@ public final class SystemOrchestrator {
             .map(pulse -> pulse.update(parser, currentFix))
             .filter(TelemetryPulse::hasValidFix)
             .forEach(consumer);
+    }
+
+    private void updateGpsHealth(final String sentence) {
+        final boolean signalLoss = SerialConnector.SIGNAL_LOSS.equals(sentence);
+        healthState.updateAndGet(h -> new ConfluenceHealth(
+            signalLoss ? ConfluenceHealth.RiverStatus.RECOVERY : ConfluenceHealth.RiverStatus.ACTIVE,
+            h.ntpStatus(),
+            h.mode()
+        ));
+    }
+
+    private boolean isRiverFlowing(final String sentence) {
+        final ConfluenceHealth h = healthState.get();
+        return h.gpsStatus() == ConfluenceHealth.RiverStatus.ACTIVE 
+            || h.ntpStatus() == ConfluenceHealth.RiverStatus.ACTIVE;
     }
 
     /**

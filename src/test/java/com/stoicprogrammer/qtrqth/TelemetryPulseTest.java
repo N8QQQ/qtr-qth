@@ -107,12 +107,12 @@ class TelemetryPulseTest extends BddTest {
 
         @Override
         void given_starting_pulse() {
-            this.pulse = TelemetryPulse.start(sentence, mockNtp);
+            this.pulse = TelemetryPulse.start(sentence, mockNtp, com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE);
         }
 
         @Override
         void given_pulse_without_ntp() {
-            this.pulse = TelemetryPulse.start(sentence, null);
+            this.pulse = TelemetryPulse.start(sentence, null, com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE);
         }
 
         @Override
@@ -122,7 +122,7 @@ class TelemetryPulseTest extends BddTest {
 
         @Override
         void when_starting_pulse() {
-            this.pulse = TelemetryPulse.start(sentence, mockNtp);
+            this.pulse = TelemetryPulse.start(sentence, mockNtp, com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE);
         }
 
         @Override
@@ -152,7 +152,7 @@ class TelemetryPulseTest extends BddTest {
 
         @Override
         void then_logger_was_called() {
-            verify(mockLogger, atLeastOnce()).info(anyString(), any(), any(), any());
+            verify(mockLogger, atLeastOnce()).info(anyString(), any(), any(), any(), any());
         }
 
         @Override

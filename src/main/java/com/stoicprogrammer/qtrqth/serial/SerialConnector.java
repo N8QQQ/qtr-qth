@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -25,8 +26,14 @@ import java.util.stream.Stream;
 public final class SerialConnector {
     private static final Logger logger = LoggerFactory.getLogger(SerialConnector.class);
 
+    /**
+     * Sentinel value emitted by the stream when the Watchdog monitor detects signal loss.
+     */
+    public static final String SIGNAL_LOSS = "__SIGNAL_LOSS__";
+
     // Operational Constants
     private static final int DEFAULT_BAUD = 9600;
+    private static final int WATCHDOG_TIMEOUT_SECONDS = 5;
     private static final int TELEMETRY_QUEUE_CAPACITY = 100;
     private static final int DATA_BITS = 8;
 
@@ -119,7 +126,8 @@ public final class SerialConnector {
         // Use takeWhile with a presence check to ensure the stream terminates on interruption.
         return Stream.generate(() -> {
             try { 
-                return Optional.ofNullable(queue.take()); 
+                return Optional.ofNullable(queue.poll(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+                    .or(() -> Optional.of(SIGNAL_LOSS)); 
             } catch (final InterruptedException e) {
                 logger.warn("Telemetry stream interrupted.");
                 Thread.currentThread().interrupt();
