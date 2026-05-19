@@ -67,7 +67,6 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [ ] **Phase 7.6: Infrastructure Decommissioning:** Implement automated cleanup protocols and stateless container lifecycles.
 - [ ] **Phase 7.7: Runtime Resilience:** Implement Watchdog monitors and "Signal Loss Hold" patterns (No auto-sim failover).
 - [ ] **Phase 7.8: Repository Branding:** Generate high-fidelity Open Graph social preview image via p5.js.
-- [ ] **Phase 7.8: Repository Branding:** Generate high-fidelity Open Graph social preview image via p5.js.
 
 ### Phase 8: Temporal Virtualization (v0.6.0)
 **Objective:** Decouple time-awareness for deterministic math verification.
