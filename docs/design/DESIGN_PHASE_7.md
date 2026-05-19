@@ -70,10 +70,16 @@ flowchart TD
     -   **The 'Scrub' Routine:** Implement a standard `docker-compose down` sequence to neutralize the Phantom Shack and reclaim host ports/memory.
     -   **Orphan Mitigation:** Utilize `--remove-orphans` during startup to clear any lingering ghosts from previous failed sessions.
 
-### 7.7: Runtime Resilience & Hot-Swap Support
-- **Watchdog Monitor:** Implement a timeout-based monitor on the serial stream. If no NMEA sentences arrive within a defined window (e.g., 5 seconds), the system must flag a "Signal Loss."
-- **Graceful Re-entry:** Upon signal loss, the system must trigger the Adaptive Bootstrap to attempt a re-discovery of the hardware or fall back to simulation.
-- **Non-Blocking NTP:** Ensure that network failures or NTP timeouts never block the processing of the GPS river.
+### 7.7: Runtime Resilience & Signal Integrity
+- **Watchdog Monitor:** A 5-second timeout on the serial stream. If breached, the system enters a `SIGNAL_LOSS` state.
+- **Data Integrity (No Auto-Failover):** Mid-run failures **must not** trigger simulation mode. The system will continue to pulse but will flag telemetry as `STALE` and maintain the last known valid coordinates.
+- **Background Re-Discovery:** While in `SIGNAL_LOSS`, the system executes a low-priority background scan for the identified hardware port. Upon restoration, the confluence resumes seamlessly.
+- **NTP Resilience:** Network failures will transition the system to `LOCAL_CLOCK_ONLY` status, recovering automatically on the next successful poll.
+
+### 7.8: Repository Branding (Social Preview)
+- **Objective:** Generate a high-fidelity Open Graph (OG) image for the GitHub repository.
+- **Technical Path:** Implement a p5.js "Branding Generator" utilizing the Phase 7 Constellation engine.
+- **Dimensions:** 1280x640px (GitHub Standard).
 
 
 ---
