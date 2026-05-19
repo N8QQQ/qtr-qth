@@ -65,7 +65,8 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 7.4: Multi-Arch & Resource Hardening:** Certified ARM64 Pi-parity and enforced hardware-accurate resource constraints.
 - [x] **Phase 7.5: Live GPS Coordinator:** Implemented TCP bridge (Port 9999) for host-to-container hardware streaming.
 - [ ] **Phase 7.6: Infrastructure Decommissioning:** Implement automated cleanup protocols and stateless container lifecycles.
-- [ ] **Phase 7.7: Runtime Resilience:** Implement Watchdog monitors and "Signal Loss Hold" patterns (No auto-sim failover).
+- [ ] **Phase 7.7: Runtime Resilience:** Implement Watchdog monitors and "Signal Loss Hold" patterns. 
+    - *Blocker:* System detects loss but fails to re-acquire hardware on re-entry (Defect 7.7.A).
 - [ ] **Phase 7.8: Repository Branding:** Generate high-fidelity Open Graph social preview image via p5.js.
 
 ### Phase 8: Temporal Virtualization (v0.6.0)

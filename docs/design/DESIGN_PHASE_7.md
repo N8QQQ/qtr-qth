@@ -106,4 +106,9 @@ flowchart TD
 - [ ] **Spoof Integrity:** `NmeaParser` processes data from a virtual TTY pipe with zero-jitter.
 
 ---
-*Maintained by JARVIS for the Heritage Grade Standard.*
+
+## 🛑 Unresolved Tactical Defects (Handover Notes)
+- **Defect 7.7.A: Restoration Stall**
+    - **Symptom:** System successfully detects `SIGNAL LOSS` and enters the `executeConfluenceCycle` recovery loop. However, upon re-plugging the physical GPS, the system fails to re-acquire the lock.
+    - **Current Hypothesis:** The `JSerialCommProvider` or the underlying `SerialPort` instance may be holding a stale reference to the previous (now invalid) system handle, preventing the new hardware instance from being bound.
+    - **Next Action:** Investigate port-level cleanup and handle neutralization during the `RECOVERY` backoff phase.
