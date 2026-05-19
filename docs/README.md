@@ -59,7 +59,7 @@ If your device is not detected, check the `logs/qtr-qth.log` file. For deep hard
 
 ## ⚖️ License & Copyright
 
-Developed by **Nicholas R. Ustick (N8QQQ)** - [StoicProgrammer.com](https://StoicProgrammer.com)
+Developed by **Nicholas R. Ustick ([N8QQQ](https://www.qrz.com/db/N8QQQ))** - [StoicProgrammer.com](https://StoicProgrammer.com)
 
 Copyright (c) 2026 Nicholas R. Ustick. This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for full details.
 

@@ -101,4 +101,4 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - **Portability:** NIO-based pathing (Win/Linux/RPi ready).
 
 ## ⚖️ Legal & Identity
-- **Developer:** Nicholas R. Ustick (N8QQQ) | **License:** GNU GPL v3.0
+- **Developer:** Nicholas R. Ustick ([N8QQQ](https://www.qrz.com/db/N8QQQ)) | **License:** GNU GPL v3.0

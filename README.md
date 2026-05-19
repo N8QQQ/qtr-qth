@@ -57,7 +57,7 @@ docker-compose run --rm phantom
 
 ## ⚖️ License & Identity
 
-- **Developer:** Nicholas R. Ustick (N8QQQ) - [StoicProgrammer.com](https://StoicProgrammer.com)
+- **Developer:** Nicholas R. Ustick ([N8QQQ](https://www.qrz.com/db/N8QQQ)) - [StoicProgrammer.com](https://StoicProgrammer.com)
 - **Affiliation:** Stoic Programmer
 - **License:** [GNU GPL v3.0](LICENSE)
 
