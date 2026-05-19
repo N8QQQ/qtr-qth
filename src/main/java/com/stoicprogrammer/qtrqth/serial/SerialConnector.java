@@ -123,11 +123,11 @@ public final class SerialConnector {
             }
         });
 
-        // Use takeWhile with a presence check to ensure the stream terminates on interruption.
+        // Use takeWhile to terminate the stream upon signal loss.
+        // This allows the orchestrator to detect a 'River Collapse' and trigger re-discovery.
         return Stream.generate(() -> {
             try { 
-                return Optional.ofNullable(queue.poll(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS))
-                    .or(() -> Optional.of(SIGNAL_LOSS)); 
+                return Optional.ofNullable(queue.poll(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS));
             } catch (final InterruptedException e) {
                 logger.warn("Telemetry stream interrupted.");
                 Thread.currentThread().interrupt();

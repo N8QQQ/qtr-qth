@@ -17,7 +17,8 @@ WORKDIR /workspace
 
 # 3. Entrypoint
 COPY docker/phantom/entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY docker/phantom/cycle_hardware.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/cycle_hardware.sh
 
 # We run as root to allow socat to create /dev entries
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

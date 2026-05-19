@@ -27,8 +27,10 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * High-fidelity orchestrator for the qtr-qth telemetry hub.
@@ -39,12 +41,14 @@ public final class SystemOrchestrator {
 
     private static final int NTP_TIMEOUT_MS = 5000;
     private static final int NTP_POLL_INTERVAL_SECONDS = 60;
+    private static final int RECOVERY_BACKOFF_MS = 2000;
 
     private final ConfigManager configManager;
     private final ScheduledExecutorService ntpExecutor;
     private final AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
     private final AtomicReference<GpsData> currentFix = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
     private final AtomicReference<ConfluenceHealth> healthState = new AtomicReference<>();
+    private final AtomicBoolean running = new AtomicBoolean(true);
     
     private SerialConnector connector;
 
@@ -58,7 +62,7 @@ public final class SystemOrchestrator {
     }
 
     /**
-     * Executes the full telemetry confluence pipeline.
+     * Executes the full telemetry confluence pipeline with self-healing recovery.
      * @param pulseConsumer A consumer for processed pulses (e.g., logging or UI updates).
      */
     public void start(final Consumer<TelemetryPulse> pulseConsumer) {
@@ -78,8 +82,22 @@ public final class SystemOrchestrator {
         // 2. Network Time Heartbeat
         initNtpHeartbeat(config, mode == ConfluenceHealth.OperationalMode.SIMULATION_LOCK);
 
-        // 3. Final Confluence
+        // 3. Adaptive Recovery Stream
+        // We use a generating stream to replace the forbidden 'while' loop.
+        Stream.generate(running::get)
+            .takeWhile(Boolean::booleanValue)
+            .forEach(r -> executeConfluenceCycle(mode, pulseConsumer));
+    }
+
+    private void executeConfluenceCycle(final ConfluenceHealth.OperationalMode mode, final Consumer<TelemetryPulse> pulseConsumer) {
         initConfluence(mode == ConfluenceHealth.OperationalMode.SIMULATION_LOCK, pulseConsumer);
+        
+        // If we reach this point, the serial stream has collapsed.
+        if (running.get()) {
+            logger.warn("SIGNAL LOSS DETECTED: Entering Adaptive Recovery...");
+            updateGpsHealth(true);
+            sleep(RECOVERY_BACKOFF_MS);
+        }
     }
 
     private ConfluenceHealth.OperationalMode resolveMode(final AppConfig config) {
@@ -124,7 +142,11 @@ public final class SystemOrchestrator {
             .or(() -> discovery.getAvailablePorts().stream().findFirst())
             .ifPresentOrElse(
                 port -> runPipeline(port, provider, pulseConsumer),
-                () -> logger.error("CRITICAL FAILURE: No viable serial paths identified.")
+                () -> {
+                    if (!useSimulation) {
+                        logger.debug("Monitoring for hardware restoration...");
+                    }
+                }
             );
     }
 
@@ -134,22 +156,20 @@ public final class SystemOrchestrator {
         this.connector = new SerialConnector(configManager, new NmeaSentenceAccumulator(), provider);
 
         logger.info("Telemetry Confluence initiated on port {}...", port);
+        updateGpsHealth(false);
 
         connector.connect(port)
-            .peek(this::updateGpsHealth)
             .map(sentence -> TelemetryPulse.start(sentence, lastNtp.get(), healthState.get()))
             .peek(pulse -> Map.<Boolean, Runnable>of(
                 true, () -> pulse.logRaw(logger),
                 false, () -> {}
             ).get(config.displayRawTelemetry()).run())
             .map(pulse -> pulse.update(parser, currentFix))
-            // Adaptive Recovery: Allow pulses through if they are heartbeats OR have a valid fix
-            .filter(pulse -> pulse.isHeartbeat() || pulse.hasValidFix())
+            .filter(TelemetryPulse::hasValidFix)
             .forEach(consumer);
     }
 
-    private void updateGpsHealth(final String sentence) {
-        final boolean signalLoss = SerialConnector.SIGNAL_LOSS.equals(sentence);
+    private void updateGpsHealth(final boolean signalLoss) {
         healthState.updateAndGet(h -> new ConfluenceHealth(
             signalLoss ? ConfluenceHealth.RiverStatus.RECOVERY : ConfluenceHealth.RiverStatus.ACTIVE,
             h.ntpStatus(),
@@ -157,11 +177,20 @@ public final class SystemOrchestrator {
         ));
     }
 
+    private void sleep(final int ms) {
+        try { 
+            Thread.sleep(ms); 
+        } catch (final InterruptedException e) { 
+            Thread.currentThread().interrupt(); 
+        }
+    }
+
     /**
      * Gracefully shuts down the rivers.
      */
     public void shutdown() {
         logger.info("System shutdown sequence initiated...");
+        running.set(false);
         Optional.ofNullable(connector).ifPresent(SerialConnector::disconnect);
         ntpExecutor.shutdown();
         logger.info("System stopped.");
