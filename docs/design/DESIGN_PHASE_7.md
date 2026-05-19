@@ -70,6 +70,11 @@ flowchart TD
     -   **The 'Scrub' Routine:** Implement a standard `docker-compose down` sequence to neutralize the Phantom Shack and reclaim host ports/memory.
     -   **Orphan Mitigation:** Utilize `--remove-orphans` during startup to clear any lingering ghosts from previous failed sessions.
 
+### 7.7: Runtime Resilience & Hot-Swap Support
+- **Watchdog Monitor:** Implement a timeout-based monitor on the serial stream. If no NMEA sentences arrive within a defined window (e.g., 5 seconds), the system must flag a "Signal Loss."
+- **Graceful Re-entry:** Upon signal loss, the system must trigger the Adaptive Bootstrap to attempt a re-discovery of the hardware or fall back to simulation.
+- **Non-Blocking NTP:** Ensure that network failures or NTP timeouts never block the processing of the GPS river.
+
 
 ---
 

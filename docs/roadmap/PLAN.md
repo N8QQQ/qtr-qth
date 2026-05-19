@@ -65,6 +65,7 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 7.4: Multi-Arch & Resource Hardening:** Certified ARM64 Pi-parity and enforced hardware-accurate resource constraints.
 - [x] **Phase 7.5: Live GPS Coordinator:** Implemented TCP bridge (Port 9999) for host-to-container hardware streaming.
 - [ ] **Phase 7.6: Infrastructure Decommissioning:** Implement automated cleanup protocols and stateless container lifecycles.
+- [ ] **Phase 7.7: Runtime Resilience:** Implement Watchdog monitors and auto-recovery for hot-swappable hardware.
 
 ### Phase 8: Temporal Virtualization (v0.6.0)
 **Objective:** Decouple time-awareness for deterministic math verification.
