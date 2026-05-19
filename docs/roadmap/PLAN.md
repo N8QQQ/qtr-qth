@@ -56,14 +56,15 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 6.7: Zenodo Metadata Weaving:** Implement `.zenodo.json` to ensure automated high-fidelity versioned citations.
 - [x] **Phase 6.8: Logic Consolidation:** Perform a codebase-wide sweep to eliminate duplicate parsing logic and optimize functional pipelines.
 
-### Phase 7: The Virtual Shack (COMPLETED - v0.5.0)
+### Phase 7: The Virtual Shack (v0.5.0) - IN PROGRESS
 **Objective:** Cross-platform simulation of Linux/ARM64 and physical hardware.
-**Branch:** `feat/phantom-shack`
+**Branch:** `feat/phantom-shack-logic`
 - [x] **Phase 7.1: Universal Orchestration:** Implemented `docker-compose.yml` for platform-agnostic development.
 - [x] **Phase 7.2: Hardware Spoofing (socat):** Certified virtual TTY (`/dev/ttyUSB99`) with NMEA background streaming.
-- [x] **Phase 7.3: Live GPS Coordinator:** Implemented TCP bridge (Port 9999) for host-to-container hardware streaming.
+- [ ] **Phase 7.3: Graceful Hardware Fallback:** Refactor `SystemOrchestrator` to prioritize hardware mode; implement auto-failover to `SimulationSerialProvider` if discovery fails.
 - [x] **Phase 7.4: Multi-Arch & Resource Hardening:** Certified ARM64 Pi-parity and enforced hardware-accurate resource constraints.
-- [x] **Phase 7.5: Hardware Discovery Probe:** Implemented automated device auditing via `probeHardware` task.
+- [x] **Phase 7.5: Live GPS Coordinator:** Implemented TCP bridge (Port 9999) for host-to-container hardware streaming.
+- [ ] **Phase 7.6: Infrastructure Decommissioning:** Implement automated cleanup protocols and stateless container lifecycles.
 
 ### Phase 8: Temporal Virtualization (v0.6.0)
 **Objective:** Decouple time-awareness for deterministic math verification.

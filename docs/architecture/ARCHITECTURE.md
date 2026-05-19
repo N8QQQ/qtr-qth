@@ -45,6 +45,13 @@ To ensure the integrity of the confluence, the system implements strict structur
 2.  **Numeric Purity:** Standardized monadic wrappers (`tryParseInt`, `tryParseDouble`) catch hardware noise and malformed telemetry before they reach the core logic.
 3.  **The Test Vault:** High-fidelity NMEA samples are externalized to ensure that the parsing engine is certified against real-world radio shack data.
 
+## 🛰️ Hardware Abstraction & Virtualization (Phase 7)
+To ensure high-fidelity testing and platform-agnostic development, the system decouples its data sources through a formal Hardware Abstraction Layer (HAL).
+
+1.  **Provider Routing:** During the bootstrap phase, the `SystemOrchestrator` utilizes a dynamic selection strategy. It prioritizes physical hardware (`JSerialCommProvider`, `NetworkNtpProvider`) but maintains a seamless fallback to high-fidelity simulation components.
+2.  **Stateless Quality Gate:** By leveraging Docker virtualization, the entire telemetry pipeline is certified in a stateless environment where physical GPS signals are replaced by deterministic `socat` pipes or file-based simulation streams.
+3.  **Deterministic Math:** This abstraction ensures that future drift and offset calculations (Phase 9) can be verified with mathematical certainty by injecting known reference signals into the virtualized rivers.
+
 ## 📉 Drift & Stability Analysis (Future Phase 9)
 Once the foundation is hardened, the system will implement an analytical pipeline to quantify system clock accuracy:
 
