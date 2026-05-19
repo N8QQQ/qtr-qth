@@ -38,7 +38,7 @@ class ConfigManagerTest extends BddTest {
             (f, p) -> { throw new IOException("Read Only"); }
         );
         
-        assertThat(manager.getConfig().simulationMode()).isTrue(); // Bootstrapped anyway
+        assertThat(manager.getConfig().simulationMode()).isFalse(); // Bootstrapped with new hardware-first default
     }
 
     @Test

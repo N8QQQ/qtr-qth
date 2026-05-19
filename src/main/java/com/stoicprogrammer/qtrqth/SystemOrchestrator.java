@@ -61,15 +61,27 @@ public final class SystemOrchestrator {
      */
     public void start(final Consumer<TelemetryPulse> pulseConsumer) {
         final AppConfig config = configManager.getConfig();
-        logger.info("System bootstrapping... (Simulation: {})", config.simulationMode());
+        logger.info("System bootstrapping... (Target: {})", config.simulationMode() ? "Simulation" : "Hardware");
         
-        // 1. Hardware Provider Selection
-        final ISerialProvider serialProvider = config.simulationMode() 
-            ? new SimulationSerialProvider()
-            : new JSerialCommProvider();
+        // 1. Adaptive Hardware Strategy
+        // We attempt to discover physical hardware first. If none is found, we fallback.
+        final ISerialProvider physicalProvider = new JSerialCommProvider();
+        final PortDiscovery discovery = new PortDiscovery(physicalProvider, configManager);
+        final List<String> physicalPorts = discovery.getAvailablePorts();
 
-        // 2. Network Time Heartbeat (Simulated or Network)
-        final INtpProvider ntpProvider = config.simulationMode()
+        final boolean useSimulation = config.simulationMode() || physicalPorts.isEmpty();
+        
+        if (!config.simulationMode() && physicalPorts.isEmpty()) {
+            logger.warn("STRATUM 0 DISCOVERY FAILURE: No physical serial hardware identified.");
+            logger.info("ADAPTIVE FALLBACK: Engaging Simulation Mode for functional continuity.");
+        }
+
+        final ISerialProvider activeProvider = useSimulation 
+            ? new SimulationSerialProvider() 
+            : physicalProvider;
+
+        // 2. Network Time Heartbeat
+        final INtpProvider ntpProvider = useSimulation
             ? new SimulationNtpProvider()
             : new NetworkNtpProvider();
 
@@ -78,15 +90,14 @@ public final class SystemOrchestrator {
             ntpClient.pollDetailed(config.ntpPool()).ifPresent(lastNtp::set), 
             0, NTP_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
-        // 3. Serial Discovery & Connection
-        final PortDiscovery discovery = new PortDiscovery(serialProvider, configManager);
-        final List<String> availablePorts = discovery.getAvailablePorts();
+        // 3. Final Confluence
+        final PortDiscovery activeDiscovery = new PortDiscovery(activeProvider, configManager);
         
-        discovery.findLikelyGpsPort()
-            .or(() -> availablePorts.stream().findFirst())
+        activeDiscovery.findLikelyGpsPort()
+            .or(() -> activeDiscovery.getAvailablePorts().stream().findFirst())
             .ifPresentOrElse(
-                port -> runPipeline(port, serialProvider, pulseConsumer),
-                () -> logger.error("No serial ports available. System operational failure.")
+                port -> runPipeline(port, activeProvider, pulseConsumer),
+                () -> logger.error("CRITICAL FAILURE: No viable serial paths (Physical or Virtual) identified.")
             );
     }
 
