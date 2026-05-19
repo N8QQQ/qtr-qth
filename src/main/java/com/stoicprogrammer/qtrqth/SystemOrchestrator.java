@@ -137,14 +137,14 @@ public final class SystemOrchestrator {
 
         connector.connect(port)
             .peek(this::updateGpsHealth)
-            .filter(this::isRiverFlowing)
             .map(sentence -> TelemetryPulse.start(sentence, lastNtp.get(), healthState.get()))
             .peek(pulse -> Map.<Boolean, Runnable>of(
                 true, () -> pulse.logRaw(logger),
                 false, () -> {}
             ).get(config.displayRawTelemetry()).run())
             .map(pulse -> pulse.update(parser, currentFix))
-            .filter(TelemetryPulse::hasValidFix)
+            // Adaptive Recovery: Allow pulses through if they are heartbeats OR have a valid fix
+            .filter(pulse -> pulse.isHeartbeat() || pulse.hasValidFix())
             .forEach(consumer);
     }
 
@@ -155,12 +155,6 @@ public final class SystemOrchestrator {
             h.ntpStatus(),
             h.mode()
         ));
-    }
-
-    private boolean isRiverFlowing(final String sentence) {
-        final ConfluenceHealth h = healthState.get();
-        return h.gpsStatus() == ConfluenceHealth.RiverStatus.ACTIVE 
-            || h.ntpStatus() == ConfluenceHealth.RiverStatus.ACTIVE;
     }
 
     /**
