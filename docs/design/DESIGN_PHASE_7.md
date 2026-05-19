@@ -70,11 +70,16 @@ flowchart TD
     -   **The 'Scrub' Routine:** Implement a standard `docker-compose down` sequence to neutralize the Phantom Shack and reclaim host ports/memory.
     -   **Orphan Mitigation:** Utilize `--remove-orphans` during startup to clear any lingering ghosts from previous failed sessions.
 
-### 7.7: Runtime Resilience & Signal Integrity
-- **Watchdog Monitor:** A 5-second timeout on the serial stream. If breached, the system enters a `SIGNAL_LOSS` state.
-- **Data Integrity (No Auto-Failover):** Mid-run failures **must not** trigger simulation mode. The system will continue to pulse but will flag telemetry as `STALE` and maintain the last known valid coordinates.
-- **Background Re-Discovery:** While in `SIGNAL_LOSS`, the system executes a low-priority background scan for the identified hardware port. Upon restoration, the confluence resumes seamlessly.
-- **NTP Resilience:** Network failures will transition the system to `LOCAL_CLOCK_ONLY` status, recovering automatically on the next successful poll.
+### 7.7: Runtime Resilience & State-Lock Architecture
+- **Bootstrap Lock-In:** The system determines its `OperationalMode` (HARDWARE vs SIMULATION) at boot. Once locked, the mode **never changes** during the run.
+- **Mid-Run Recovery (The Watchdog):** 
+    - **GPS River:** If signal is lost, enter `RECOVERY`. Monitor background ports. Maintain last known position. Utilize NTP for time-only pulses if available.
+    - **NTP River:** If network is lost, enter `RECOVERY`. Rely exclusively on GPS/Local clock.
+- **Dual-River Signaling:** Every `TelemetryPulse` will now carry a `HealthStatus` metadata packet:
+    - `gpsStatus`: [ACTIVE | RECOVERY | OFFLINE]
+    - `ntpStatus`: [ACTIVE | RECOVERY | OFFLINE]
+    - `confluenceMode`: [HARDWARE | SIMULATION]
+- **The Blackout Rule:** If both rivers enter `RECOVERY/OFFLINE`, the confluence stops producing pulses until at least one source is restored.
 
 ### 7.8: Repository Branding (Social Preview)
 - **Objective:** Generate a high-fidelity Open Graph (OG) image for the GitHub repository.
