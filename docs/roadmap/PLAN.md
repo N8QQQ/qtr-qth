@@ -70,11 +70,14 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 7.9: Project Monitoring & Traffic Analysis:** Established protocol for auditing GitHub traffic to distinguish adoption from automation.
 - [x] **Phase 7.10: The Environment Doctor:** Implemented `--doctor` diagnostic suite with prescriptive rescue instructions.
 
-### Phase 8: Temporal Virtualization (v0.6.0)
+### Phase 8: Temporal Virtualization (v0.6.0) - COMPLETED
 **Objective:** Decouple time-awareness for deterministic math verification.
 **Branch:** `feat/chrono-tesseract`
-- [ ] **Phase 8.1: Clock Dependency Injection:** Eliminate `Instant.now()`.
-- [ ] **Phase 8.2: Jitter Testing Baseline:** Verify math using `Clock.fixed()`.
+- [x] **Phase 8.1: Architectural Design:** Define the "Orchestrator-Centric Edge Stamping" model.
+- [x] **Phase 8.2: Core Model Evolution:** Add `ingressTime` to `TelemetryPulse` record.
+- [x] **Phase 8.3: Clock Dependency Injection:** Inject `InstantSource` into `SystemOrchestrator`.
+- [x] **Phase 8.4: Simulation Refactor:** Cleanse `SimulationNtpProvider` of `Instant.now()`.
+- [x] **Phase 8.5: Hermetic Test Certification:** Verify jitter/drift math using `Clock.fixed()`.
 
 ### Phase 9: Drift & Offset Analysis (v0.7.0)
 **Objective:** Quantify the accuracy of the system clock.

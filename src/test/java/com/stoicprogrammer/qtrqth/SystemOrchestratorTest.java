@@ -1,12 +1,15 @@
 package com.stoicprogrammer.qtrqth;
 
 import com.stoicprogrammer.qtrqth.base.BddTest;
+import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.InstantSource;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
@@ -16,12 +19,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * High-fidelity certification of the System Orchestrator.
  * Verifies the full 'Confluence' lifecycle in a view-agnostic manner.
+ * Adheres to deterministic frozen clock verification (Phase 8).
  */
 class SystemOrchestratorTest extends BddTest {
 
     private static final int POLL_INTERVAL_MS = 500;
     private static final int MAX_POLL_ATTEMPTS = 120; // 60 seconds total
     private static final int SHUTDOWN_WAIT_MS = 10000;
+    private static final Instant MOCK_TIME = Instant.parse("2026-05-21T12:00:00.00Z");
 
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(SystemOrchestratorTest.class);
 
@@ -35,12 +40,13 @@ class SystemOrchestratorTest extends BddTest {
         // Force simulation mode and long threshold to ensure stability in test
         java.nio.file.Files.writeString(configPath, "simulation.mode=true\nsync.threshold.ms=5000");
         
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(configPath);
+        final InstantSource frozenClock = InstantSource.fixed(MOCK_TIME);
+        final SystemOrchestrator orchestrator = new SystemOrchestrator(new ConfigManager(configPath), null, null, frozenClock);
         final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
 
         // Start the engine with a simple list collector as the 'View'
         final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {
-            logger.info("Captured Pulse: {}", pulse.pulseId());
+            logger.info("Captured Pulse: {} [Ingress: {}]", pulse.pulseId(), pulse.ingressTime());
             capturedPulses.add(pulse);
         }));
         engineThread.setDaemon(true);
@@ -60,6 +66,7 @@ class SystemOrchestratorTest extends BddTest {
         engineThread.join(SHUTDOWN_WAIT_MS);
 
         assertThat(capturedPulses).isNotEmpty();
+        assertThat(capturedPulses.get(0).ingressTime()).isEqualTo(MOCK_TIME);
     }
 
     @Test
@@ -70,7 +77,8 @@ class SystemOrchestratorTest extends BddTest {
         // GIVEN: Intent is Hardware Mode, but no physical hardware will be found in CI
         java.nio.file.Files.writeString(configPath, "simulation.mode=false\nsync.threshold.ms=5000");
         
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(configPath);
+        final InstantSource frozenClock = InstantSource.fixed(MOCK_TIME);
+        final SystemOrchestrator orchestrator = new SystemOrchestrator(new ConfigManager(configPath), null, null, frozenClock);
         final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
 
         // WHEN: The system boots
@@ -92,6 +100,7 @@ class SystemOrchestratorTest extends BddTest {
         engineThread.join(SHUTDOWN_WAIT_MS);
 
         assertThat(capturedPulses).as("System should have failed over to simulation and produced pulses").isNotEmpty();
+        assertThat(capturedPulses.get(0).ingressTime()).isEqualTo(MOCK_TIME);
     }
 
     @Test

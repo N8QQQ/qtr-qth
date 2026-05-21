@@ -21,6 +21,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 
+/**
+ * Unit tests for TelemetryPulse.
+ * Adheres to deterministic frozen clock verification (Phase 8).
+ */
 class TelemetryPulseTest extends BddTest {
 
     private static final int MOCK_RTT = 10;
@@ -30,6 +34,7 @@ class TelemetryPulseTest extends BddTest {
     private static final double LON_SAMPLE = -80.0;
     private static final double ALT_SAMPLE = 100.0;
     private static final int SAT_SAMPLE = 8;
+    private static final Instant MOCK_TIME = Instant.parse("2026-05-21T12:34:56.00Z");
 
     private final PulseFixture fixture = new ConnectorFixture();
 
@@ -38,6 +43,7 @@ class TelemetryPulseTest extends BddTest {
         fixture.given_sentence("$GPRMC,123456,A*66");
         fixture.when_starting_pulse();
         fixture.then_id_is_not_empty();
+        fixture.then_ingress_time_is_frozen();
     }
 
     @Test
@@ -87,6 +93,7 @@ class TelemetryPulseTest extends BddTest {
         abstract void when_logging_raw();
         abstract void when_logging_final();
         abstract void then_id_is_not_empty();
+        abstract void then_ingress_time_is_frozen();
         abstract void then_fix_is_valid();
         abstract void then_logger_was_called();
         abstract void then_raw_logger_was_called();
@@ -98,7 +105,7 @@ class TelemetryPulseTest extends BddTest {
         private final NmeaParser mockParser = mock(NmeaParser.class);
         private final Logger mockLogger = mock(Logger.class);
         private final AtomicReference<GpsData> state = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
-        private final NtpResponse mockNtp = new NtpResponse(Instant.now(), MOCK_RTT, MOCK_STRATUM, MOCK_DISPERSION);
+        private final NtpResponse mockNtp = new NtpResponse(MOCK_TIME, MOCK_RTT, MOCK_STRATUM, MOCK_DISPERSION);
 
         @Override
         void given_sentence(final String s) {
@@ -107,12 +114,22 @@ class TelemetryPulseTest extends BddTest {
 
         @Override
         void given_starting_pulse() {
-            this.pulse = TelemetryPulse.start(sentence, mockNtp, com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE);
+            this.pulse = TelemetryPulse.start(
+                sentence, 
+                mockNtp, 
+                com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE,
+                MOCK_TIME
+            );
         }
 
         @Override
         void given_pulse_without_ntp() {
-            this.pulse = TelemetryPulse.start(sentence, null, com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE);
+            this.pulse = TelemetryPulse.start(
+                sentence, 
+                null, 
+                com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE,
+                MOCK_TIME
+            );
         }
 
         @Override
@@ -122,7 +139,12 @@ class TelemetryPulseTest extends BddTest {
 
         @Override
         void when_starting_pulse() {
-            this.pulse = TelemetryPulse.start(sentence, mockNtp, com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE);
+            this.pulse = TelemetryPulse.start(
+                sentence, 
+                mockNtp, 
+                com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE,
+                MOCK_TIME
+            );
         }
 
         @Override
@@ -143,6 +165,11 @@ class TelemetryPulseTest extends BddTest {
         @Override
         void then_id_is_not_empty() {
             assertThat(pulse.pulseId()).isNotNull().isNotEmpty();
+        }
+
+        @Override
+        void then_ingress_time_is_frozen() {
+            assertThat(pulse.ingressTime()).isEqualTo(MOCK_TIME);
         }
 
         @Override

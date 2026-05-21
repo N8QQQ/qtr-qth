@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.time.InstantSource;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.*;
 /**
  * Integration test focusing on the 'Connection Neutralization' recovery lifecycle.
  * Adheres to strict AssertJ fluent assertion standards and Java 21 unnamed parameters.
+ * Certified for Phase 8 Temporal Virtualization.
  */
 class SystemRecoveryIntegrationTest extends BddTest {
 
@@ -59,7 +61,7 @@ class SystemRecoveryIntegrationTest extends BddTest {
             return true;
         }).when(mockPort).closePort();
 
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(configManager, mockProvider, null);
+        final SystemOrchestrator orchestrator = new SystemOrchestrator(configManager, mockProvider, null, InstantSource.system());
 
         // WHEN: The system starts (Named parameter to avoid preview features)
         final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {}));

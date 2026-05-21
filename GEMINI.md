@@ -142,6 +142,11 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 *   **Rule:** The use of `.parallel()` or `.parallelStream()` is banned unless accompanied by a high-fidelity performance benchmark.
 *   **Reason:** Avoid non-deterministic jitter and thread management overhead on Raspberry Pi architecture.
 
+### Acyclic Flow Mandate
+*   **Rule:** Circular dependencies between packages are strictly forbidden. 
+*   **Enforcement:** The system must maintain a unidirectional, top-down dependency graph: Lifecycle → Orchestration → Plumbing → Domain → Foundation.
+*   **Verification:** Any new component must be audited for cyclic imports before implementation.
+
 ---
 
 ## 10. Multi-OS, Hardware, & Cross-Platform Portability (Pop_OS!, Win11, RPi)
@@ -237,5 +242,17 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 - **Tooling Standard:** Use MCP tools for read-only repository inspection. Use the host's **`gh` CLI** for all mutating operations (PR creation, merging, labeling) to ensure compliance with organization security policies.
 - **Initialization:** Upon session start, the AI must verify the current branch and proactively suggest creating a new one if the system is currently pointing at `main`.
 
-ting at `main`.
+## 21. Verification & PR Integrity (The "Heritage Pre-Flight")
+- **Rule:** The "One Phase, One PR" mandate must be protected by explicit payload verification and platform-agnostic execution.
+- **Protocol:**
+    1.  **Platform-Agnostic Execution:** Never use shell-level chaining operators (e.g., `&&` or `||`) for multi-step commands. Execute each command as a discrete, sequential tool call to ensure compatibility across PowerShell (Windows) and Bash (Linux).
+    2.  **Pre-Flight Audit:** Before PR creation, verify local state via `git status` and `git diff --staged`.
+    3.  **Payload Certification:** After PR creation, use `gh pr view --json files` to confirm the remote diff matches the tactical scope.
+    4.  **Final Seal:** Never request a merge until the automated Quality Gate is green AND the payload has been certified.
 
+## 22. Command Submission Awareness
+- **Rule:** AI contributors must be aware of the host OS shell syntax.
+- **Enforcement:**
+    - **Windows (PowerShell):** Use `;` for sequencing if absolutely necessary, but prefer discrete tool calls.
+    - **Linux (Bash):** `&&` is permitted but discouraged in favor of discrete tool calls for auditability.
+    - **Platform-Agnostic:** When in doubt, perform operations sequentially across multiple conversational turns.

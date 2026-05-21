@@ -26,6 +26,31 @@ This log tracks tactical development sessions, capturing duration, charters, and
 
 ---
 
+## 📅 Sprint 8: Temporal Virtualization (v0.6.0)
+**Goal:** Decouple time-awareness for deterministic math verification and drift analysis.
+
+### Session 2026-05-21 (Session 2): The Chrono Tesseract & Clock Injection
+- **Charter:** Implement Phase 8 temporal decoupling, eliminate static time calls, and certify deterministic testing.
+- **Duration:** 1.5 Hours
+- **Timeline:**
+    - **21:15:** Session Start. Analyzed remaining static time calls (`Instant.now()`).
+    - **21:30:** Architecture: Formulated the 'Orchestrator-Centric Edge Stamping' model to maintain functional purity.
+    - **21:45:** Implementation: Injected `InstantSource` into `SystemOrchestrator` and updated `TelemetryPulse` to include `ingressTime`.
+    - **22:00:** Hardening: Refactored `SimulationNtpProvider` and all unit/integration tests to use frozen clocks (`Clock.fixed()`).
+    - **22:15:** Certification: Executed local Quality Gate; addressed Checkstyle 'Unused Import' and 'Magic Number' infractions.
+    - **22:30:** Finalization: Synchronized metadata to **v0.6.0** and updated architectural diagrams.
+- **Outcome:** 
+    - [x] Phase 8 officially COMPLETED.
+    - [x] 'Edge Stamping' temporal model operational.
+    - [x] Production codebase cleansed of non-deterministic static time.
+    - [x] Test suite certified for frozen-time math verification.
+- **Calibration:**
+    - **Estimated SP:** 12
+    - **Actual Hours:** 1.5
+    - **Velocity:** 8.0 SP/Hour
+
+---
+
 ## 📅 Sprint 7: The Virtual Shack (v0.5.0)
 **Goal:** Implement high-fidelity virtualization and universal orchestration.
 

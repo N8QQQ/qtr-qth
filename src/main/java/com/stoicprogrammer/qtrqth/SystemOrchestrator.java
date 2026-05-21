@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.time.InstantSource;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +45,7 @@ public final class SystemOrchestrator {
     private static final int RECOVERY_BACKOFF_MS = 2000;
 
     private final ConfigManager configManager;
+    private final InstantSource clock;
     private final ScheduledExecutorService ntpExecutor;
     private final AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
     private final AtomicReference<GpsData> currentFix = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
@@ -57,16 +59,22 @@ public final class SystemOrchestrator {
     private SerialConnector connector;
 
     public SystemOrchestrator(final Path configPath) {
-        this(new ConfigManager(configPath), null, null);
+        this(new ConfigManager(configPath), null, null, InstantSource.system());
     }
 
     /**
      * Internal constructor for high-fidelity testing and dependency injection.
      */
-    SystemOrchestrator(final ConfigManager configManager, final ISerialProvider serialProvider, final INtpProvider ntpProvider) {
+    SystemOrchestrator(
+        final ConfigManager configManager, 
+        final ISerialProvider serialProvider, 
+        final INtpProvider ntpProvider,
+        final InstantSource clock
+    ) {
         this.configManager = configManager;
         this.testSerialProvider = serialProvider;
         this.testNtpProvider = ntpProvider;
+        this.clock = clock;
         this.ntpExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             final Thread t = new Thread(r, "ntp-heartbeat");
             t.setDaemon(true);
@@ -131,7 +139,7 @@ public final class SystemOrchestrator {
 
     private void initNtpHeartbeat(final AppConfig config, final boolean useSimulation) {
         final INtpProvider provider = Optional.ofNullable(testNtpProvider)
-            .orElseGet(() -> useSimulation ? new SimulationNtpProvider() : new NetworkNtpProvider());
+            .orElseGet(() -> useSimulation ? new SimulationNtpProvider(clock) : new NetworkNtpProvider());
         final NtpClient client = new NtpClient(provider, NTP_TIMEOUT_MS);
         
         ntpExecutor.scheduleAtFixedRate(() -> {
@@ -175,7 +183,7 @@ public final class SystemOrchestrator {
         updateGpsHealth(false);
 
         connector.connect(port)
-            .map(sentence -> TelemetryPulse.start(sentence, lastNtp.get(), healthState.get()))
+            .map(sentence -> TelemetryPulse.start(sentence, lastNtp.get(), healthState.get(), clock.instant()))
             .peek(pulse -> Map.<Boolean, Runnable>of(
                 true, () -> pulse.logRaw(logger),
                 false, () -> {}

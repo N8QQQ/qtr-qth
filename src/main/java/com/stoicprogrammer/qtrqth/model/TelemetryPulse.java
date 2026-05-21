@@ -7,6 +7,7 @@ import com.stoicprogrammer.qtrqth.util.GridSquareCalculator;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -17,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public record TelemetryPulse(
     String pulseId, 
     String sentence, 
+    Instant ingressTime,
     GpsData data, 
     NtpResponse reference,
     ConfluenceHealth health
@@ -29,11 +31,17 @@ public record TelemetryPulse(
      * @param sentence The raw NMEA sentence.
      * @param ntp The latest known NTP reference.
      * @param health The current system health status.
+     * @param ingressTime The exact moment the sentence entered the system.
      * @return A new TelemetryPulse instance.
      */
-    public static TelemetryPulse start(final String sentence, final NtpResponse ntp, final ConfluenceHealth health) {
+    public static TelemetryPulse start(
+        final String sentence, 
+        final NtpResponse ntp, 
+        final ConfluenceHealth health,
+        final Instant ingressTime
+    ) {
         final String id = String.format("%04X", (sentence.hashCode() & PULSE_ID_MASK));
-        return new TelemetryPulse(id, sentence, Optional.empty(), Optional.ofNullable(ntp), health);
+        return new TelemetryPulse(id, sentence, ingressTime, Optional.empty(), Optional.ofNullable(ntp), health);
     }
 
     /**
@@ -42,11 +50,12 @@ public record TelemetryPulse(
     private TelemetryPulse(
         final String pulseId, 
         final String sentence, 
+        final Instant ingressTime,
         final Optional<GpsData> data, 
         final Optional<NtpResponse> reference,
         final ConfluenceHealth health
     ) {
-        this(pulseId, sentence, data.orElse(null), reference.orElse(null), health);
+        this(pulseId, sentence, ingressTime, data.orElse(null), reference.orElse(null), health);
     }
 
     /**
@@ -61,7 +70,7 @@ public record TelemetryPulse(
      */
     public TelemetryPulse update(final NmeaParser parser, final AtomicReference<GpsData> state) {
         final GpsData next = state.updateAndGet(fix -> parser.parse(sentence, fix));
-        return new TelemetryPulse(pulseId, sentence, Optional.of(next), Optional.ofNullable(reference), health);
+        return new TelemetryPulse(pulseId, sentence, ingressTime, Optional.of(next), Optional.ofNullable(reference), health);
     }
 
     /**
