@@ -61,13 +61,15 @@ For details on the concurrency model, functional pipeline, and architectural dec
 **Branch:** `feat/phantom-shack-logic`
 - [x] **Phase 7.1: Universal Orchestration:** Implemented `docker-compose.yml` for platform-agnostic development.
 - [x] **Phase 7.2: Hardware Spoofing (socat):** Certified virtual TTY (`/dev/ttyUSB99`) with NMEA background streaming.
-- [ ] **Phase 7.3: Graceful Hardware Fallback:** Refactor `SystemOrchestrator` to prioritize hardware mode; implement auto-failover to `SimulationSerialProvider` if discovery fails.
+- [x] **Phase 7.3: Graceful Hardware Fallback:** Refactor `SystemOrchestrator` to prioritize hardware mode; implement auto-failover to `SimulationSerialProvider` if discovery fails.
 - [x] **Phase 7.4: Multi-Arch & Resource Hardening:** Certified ARM64 Pi-parity and enforced hardware-accurate resource constraints.
 - [x] **Phase 7.5: Live GPS Coordinator:** Implemented TCP bridge (Port 9999) for host-to-container hardware streaming.
 - [ ] **Phase 7.6: Infrastructure Decommissioning:** Implement automated cleanup protocols and stateless container lifecycles.
-- [ ] **Phase 7.7: Runtime Resilience:** Implement Watchdog monitors and "Signal Loss Hold" patterns. 
-    - *Blocker:* System detects loss but fails to re-acquire hardware on re-entry (Defect 7.7.A).
+- [x] **Phase 7.7: Runtime Resilience:** Implement Watchdog monitors and "Signal Loss Hold" patterns. 
+    - *Fixed:* Resolved Defect 7.7.A (Restoration Stall) via Connection Neutralization pattern.
 - [ ] **Phase 7.8: Repository Branding:** Generate high-fidelity Open Graph social preview image via p5.js.
+- [ ] **Phase 7.9: Project Monitoring & Traffic Analysis:** Establish a periodic cadence for auditing GitHub traffic (clones/visitors) to distinguish between automation artifacts and real-world adoption.
+- [ ] **Phase 7.10: The Environment Doctor:** Implement a `--doctor` flag to validate system readiness (Java, Serial, Docker, NTP) for non-technical users.
 
 ### Phase 8: Temporal Virtualization (v0.6.0)
 **Objective:** Decouple time-awareness for deterministic math verification.

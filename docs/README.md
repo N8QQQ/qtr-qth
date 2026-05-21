@@ -5,66 +5,97 @@ title: README
 # qtr-qth : GPS Time & Location Hub
 
 [![Build Status](https://github.com/n8qqq/qtr-qth/actions/workflows/ci.yml/badge.svg)](https://github.com/n8qqq/qtr-qth/actions/workflows/ci.yml)
-[![Security: CodeQL](https://github.com/n8qqq/qtr-qth/actions/workflows/codeql.yml/badge.svg)](https://github.com/n8qqq/qtr-qth/actions/workflows/codeql.yml)
+[![Security: CodeQL](https://github.com/n8qqq/qtr-qth/actions/workflows/codeql.yml/badge.svg)](https://github.com/n8qqq/codeql.yml)
 [![Documentation](https://github.com/n8qqq/qtr-qth/actions/workflows/docs.yml/badge.svg)](https://n8qqq.github.io/qtr-qth/)
-[![DOI](https://zenodo.org/badge/1200462693.svg)](https://doi.org/10.5281/zenodo.20114280)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20257593.svg)](https://doi.org/10.5281/zenodo.20257593)
+[![ORCiD](https://img.shields.io/badge/ORCiD-0009--0001--9211--8000-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0001-9211-8000)
 
-`qtr-qth` is a cross-platform application for Amateur Radio operators.
- It synchronizes your system clock (QTR) and provides precise location data (QTH), including Maidenhead Grid Squares, using a standard GPS USB receiver.
+`qtr-qth` is a high-precision, branchless functional application designed for the Amateur Radio shack and scientific synchronization. It transforms a standard USB GPS receiver into a **Stratum 1 Time Authority** and real-time **Maidenhead Grid Square** telemetry hub.
 
-## 🚀 Capabilities
+---
 
-- **Time Sync:** Precision UTC time extraction from GPS satellites.
-- **Location Hub:** Real-time Latitude, Longitude, and Altitude monitoring.
-- **Grid Square:** Automatic 6-character Maidenhead Grid Square calculation (e.g., `FN20xr`).
-- **Sim Mode:** Built-in GPS simulator for testing away from the radio shack.
-- **Observability:** Professional-grade logging with pulse-tracking for 24/7 reliability.
+## 🚀 Key Capabilities
 
-## 📑 Documentation
-- **Architecture:** [ARCHITECTURE.md](architecture/ARCHITECTURE.md) - Deep dive into the "Two-River Confluence" model.
-- **Blueprint:** [PLAN.md](roadmap/PLAN.md) - The tactical execution roadmap.
-- **Flight Log:** [SESSIONS.md](roadmap/SESSIONS.md) - SBA velocity tracking and metrics.
-- **Developer Guide:** [DEVELOPER.md](DEVELOPER.md) - Environment setup and release protocols.
+- **Stratum 1 Precision:** High-fidelity UTC time extraction with micro-drift monitoring.
+- **Location Telemetry:** Real-time Latitude, Longitude, Altitude, and Maidenhead Grid Square (6-character resolution).
+- **Functional Confluence:** A unique "Two-River" model merging GPS and NTP data streams with zero mutable state.
+- **Hardware Virtualization:** Integrated "Phantom Shack" for high-fidelity simulation on any OS (including ARM64 Pi-parity).
+- **Self-Healing Recovery:** Automatic hardware re-acquisition (Connection Neutralization) during signal loss.
 
-## 🏃 Getting Started
+---
+
+## 📑 Documentation Hub
+*The complete technical manual is hosted at the **[Documentation Hub](https://n8qqq.github.io/qtr-qth/)**.*
+
+- **Architecture:** [The Two-River Confluence Model](architecture/ARCHITECTURE.md)
+- **Developer Guide:** [Environment & Release Protocols](DEVELOPER.md)
+- **Manual Test Plan:** [End-to-End Verification](MANUAL_TEST_PLAN.md)
+- **Blueprint:** [Project Execution Roadmap](roadmap/PLAN.md)
+
+---
+
+## 🏃 Quick Start
 
 ### 1. Requirements
-- **Java 21:** Ensure you have Java 21 installed on your system.
-- **GPS Device:** (Optional) A USB GPS dongle (u-blox, VFAN, etc.).
+- **Java 21 LTS** (Eclipse Temurin preferred).
+- **USB GPS Device:** Compatible with NMEA 0183 (u-blox, Prolific, Silicon Labs, etc.).
 
-### 2. Configuration
-The application uses a `qtr-qth.properties` file. It will be created automatically on first run, but you can customize it as needed:
+### 2. Installation & Run
+Download the latest release and run the script for your environment:
 
-| Property | Default | Description |
-| :--- | :--- | :--- |
-| `simulation.mode` | `true` | Set to `false` to use real hardware. |
-| `display.raw.telemetry` | `false` | Set to `true` to see raw NMEA data from the GPS. |
-| `serial.baud` | `9600` | The speed of your GPS device (usually 9600). |
-| `gps.discovery.keywords` | `gps,u-blox...` | Keywords to help find your GPS hardware. |
+**Windows:**
+```powershell
+./qtr-qth.bat
+```
 
-### 3. Running the Application
-Download the latest release and run the script for your OS:
+**Linux / Raspberry Pi:**
+```bash
+chmod +x qtr-qth && ./qtr-qth
+```
 
-**Windows:** `./qtr-qth.bat` | **Linux / macOS:** `./qtr-qth`
+### 3. Hardware Discovery Probe
+If you are unsure which port your GPS is using, run the integrated discovery probe:
+**Windows:** `./qtr-qth.bat --probe`
+**Linux / RPi:** `./qtr-qth --probe`
 
-## 📊 Logs & Observability
-`qtr-qth` maintains two rotating log files in the `logs/` directory:
-- **`qtr-qth.log`**: The "Shack Log." Contains high-level operational info.
-- **`trace.log`**: The "Lab Log." Contains granular, second-by-second telemetry data.
+### 4. Environment Doctor
+If you are experiencing issues starting the application, run the environment doctor to diagnose your system:
+**Windows:** `./qtr-qth.bat --doctor`
+**Linux / RPi:** `./qtr-qth --doctor`
 
-**Dynamic Logging:** You can change log levels (e.g., from `INFO` to `DEBUG`) in real-time by editing `src/main/resources/logback.xml`. The application scans for changes every 30 seconds without needing a restart.
+### 5. Configuration
+Upon first run, the application creates `qtr-qth.properties`. You can tune the following parameters:
+- `serial.baud`: Default `9600`. Match your GPS receiver's baud rate.
+- `ntp.server`: Comma-separated list of NTP servers for drift verification.
+- `display.raw.telemetry`: Set to `true` to see raw NMEA sentences in the logs.
+- `simulation.mode`: Set to `true` to run without hardware using built-in samples.
+- `sync.threshold.ms`: Maximum allowed delta between sources before a sync warning.
 
-## 🔍 Troubleshooting
-If your device is not detected, check the `logs/qtr-qth.log` file. For deep hardware debugging, set `simulation.mode=false` and check `logs/trace.log` to see every character arriving from the serial port.
+---
 
-## ⚖️ License & Copyright
+## 📡 Understanding the Pulse
+The application outputs a high-fidelity telemetry pulse every second. Each pulse is tracked via a unique **Pulse ID** (e.g., `[B026]`).
 
-Developed by **Nicholas R. Ustick ([N8QQQ](https://www.qrz.com/db/N8QQQ))** - [StoicProgrammer.com](https://StoicProgrammer.com)
+**Example Output:**
+`[GPS: ACTIVE | NTP: ACTIVE | Mode: HARDWARE_LOCK] GPS Fix: 12:34:56 UTC | 45.1234N, -87.5678W | NTP: 2026-05-21T12:34:56.012Z (RTT: 15ms) | Grid: EN66`
 
-Copyright (c) 2026 Nicholas R. Ustick. This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for full details.
+- **GPS Status:** `ACTIVE` (normal), `RECOVERY` (searching for hardware), `OFFLINE` (disabled).
+- **NTP Status:** Displays the latest network time reference and Round Trip Time (RTT).
+- **Grid:** Your current Maidenhead Grid Square, recalculated every second.
 
-## 📝 Scientific Citation
+---
 
-If you use this software for research, technical papers, or formal radio experiment reports, please cite it using the metadata in the [CITATION.cff](CITATION.cff) file. This project is indexed for archival preservation on **Zenodo**.
+## 🛠️ Hardware Compatibility
+`qtr-qth` is designed to be plug-and-play. It applies fuzzy-matching logic to auto-discover GPS receivers on your USB ports. It is certified against:
+- GlobalSat BU-353-S4
+- u-blox 6/7/8/9 Series
+- Generic G-Mouse USB Receivers
 
+---
+
+## ⚖️ License & Identity
+- **Developer:** Nicholas R. Ustick ([N8QQQ](https://www.qrz.com/db/N8QQQ))
+- **License:** [GNU GPL v3.0](LICENSE)
+
+---
 *Engineered in collaboration with JARVIS (via Gemini CLI).*

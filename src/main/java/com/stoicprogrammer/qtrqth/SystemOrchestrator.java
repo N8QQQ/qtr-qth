@@ -50,10 +50,23 @@ public final class SystemOrchestrator {
     private final AtomicReference<ConfluenceHealth> healthState = new AtomicReference<>();
     private final AtomicBoolean running = new AtomicBoolean(true);
     
+    // Testing Injectors
+    private final ISerialProvider testSerialProvider;
+    private final INtpProvider testNtpProvider;
+
     private SerialConnector connector;
 
     public SystemOrchestrator(final Path configPath) {
-        this.configManager = new ConfigManager(configPath);
+        this(new ConfigManager(configPath), null, null);
+    }
+
+    /**
+     * Internal constructor for high-fidelity testing and dependency injection.
+     */
+    SystemOrchestrator(final ConfigManager configManager, final ISerialProvider serialProvider, final INtpProvider ntpProvider) {
+        this.configManager = configManager;
+        this.testSerialProvider = serialProvider;
+        this.testNtpProvider = ntpProvider;
         this.ntpExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             final Thread t = new Thread(r, "ntp-heartbeat");
             t.setDaemon(true);
@@ -96,6 +109,7 @@ public final class SystemOrchestrator {
         if (running.get()) {
             logger.warn("SIGNAL LOSS DETECTED: Entering Adaptive Recovery...");
             updateGpsHealth(true);
+            Optional.ofNullable(connector).ifPresent(SerialConnector::disconnect);
             sleep(RECOVERY_BACKOFF_MS);
         }
     }
@@ -116,7 +130,8 @@ public final class SystemOrchestrator {
     }
 
     private void initNtpHeartbeat(final AppConfig config, final boolean useSimulation) {
-        final INtpProvider provider = useSimulation ? new SimulationNtpProvider() : new NetworkNtpProvider();
+        final INtpProvider provider = Optional.ofNullable(testNtpProvider)
+            .orElseGet(() -> useSimulation ? new SimulationNtpProvider() : new NetworkNtpProvider());
         final NtpClient client = new NtpClient(provider, NTP_TIMEOUT_MS);
         
         ntpExecutor.scheduleAtFixedRate(() -> {
@@ -135,7 +150,8 @@ public final class SystemOrchestrator {
     }
 
     private void initConfluence(final boolean useSimulation, final Consumer<TelemetryPulse> pulseConsumer) {
-        final ISerialProvider provider = useSimulation ? new SimulationSerialProvider() : new JSerialCommProvider();
+        final ISerialProvider provider = Optional.ofNullable(testSerialProvider)
+            .orElseGet(() -> useSimulation ? new SimulationSerialProvider() : new JSerialCommProvider());
         final PortDiscovery discovery = new PortDiscovery(provider, configManager);
         
         discovery.findLikelyGpsPort()

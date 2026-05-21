@@ -69,7 +69,6 @@ flowchart TD
     -   **Ephemeral CI:** All Quality Gate runs must utilize the `--rm` flag to ensure containers are purged upon task completion.
     -   **The 'Scrub' Routine:** Implement a standard `docker-compose down` sequence to neutralize the Phantom Shack and reclaim host ports/memory.
     -   **Orphan Mitigation:** Utilize `--remove-orphans` during startup to clear any lingering ghosts from previous failed sessions.
-
 ### 7.7: Runtime Resilience & State-Lock Architecture
 - **Bootstrap Lock-In:** The system determines its `OperationalMode` (HARDWARE vs SIMULATION) at boot. Once locked, the mode **never changes** during the run.
 - **Mid-Run Recovery (The Watchdog):** 
@@ -81,7 +80,22 @@ flowchart TD
     - `confluenceMode`: [HARDWARE | SIMULATION]
 - **The Blackout Rule:** If both rivers enter `RECOVERY/OFFLINE`, the confluence stops producing pulses until at least one source is restored.
 
-### 7.8: Repository Branding (Social Preview)
+#### The Recovery Lifecycle (Option A: Connection Neutralization)
+```mermaid
+flowchart TD
+    A[Signal Loss Detected] --> B[Enter Recovery Loop]
+    B --> C{Is Stale Connector Present?}
+    C -- Yes --> D["Explicitly Call connector.disconnect()"]
+    C -- No --> E["Wait: RECOVERY_BACKOFF_MS"]
+    D --> E
+    E --> F[Initiate New Confluence Cycle]
+    F --> G[Acquire Fresh Hardware Handle]
+    G --> H{Acquisition Success?}
+    H -- No --> B
+    H -- Yes --> I[Resume Confluence]
+```
+
+#### Bootstrap State Machine
 - **Objective:** Generate a high-fidelity Open Graph (OG) image for the GitHub repository.
 - **Technical Path:** Implement a p5.js "Branding Generator" utilizing the Phase 7 Constellation engine.
 - **Dimensions:** 1280x640px (GitHub Standard).
