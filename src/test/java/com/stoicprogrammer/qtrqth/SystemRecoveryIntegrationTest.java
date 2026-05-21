@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -29,45 +28,59 @@ class SystemRecoveryIntegrationTest extends BddTest {
     private Path tempDir;
 
     @Test
-    void should_neutralize_stale_connection_during_recovery_cycle() throws Exception {
-        // GIVEN: A configuration and mocked hardware
-        final Path configPath = tempDir.resolve("recovery.properties");
+    void should_reacquire_hardware_after_neutralization_lifecycle() throws Exception {
+        // GIVEN: A configuration and hardware that fails then restores
+        final Path configPath = tempDir.resolve("recovery-cycle.properties");
         java.nio.file.Files.writeString(configPath, "simulation.mode=false");
         final ConfigManager configManager = new ConfigManager(configPath);
         
         final ISerialProvider mockProvider = mock(ISerialProvider.class);
         final ISerialPort mockPort = mock(ISerialPort.class);
         
+        final CountDownLatch neutralizationLatch = new CountDownLatch(1);
+        final CountDownLatch reacquisitionLatch = new CountDownLatch(2);
+
+        // Initial state: Hardware available
         given(mockProvider.getAvailablePorts()).willReturn(List.of(mockPort));
         given(mockProvider.getPort(anyString())).willReturn(mockPort);
-        given(mockPort.openPort()).willReturn(true);
+        given(mockPort.openPort()).willAnswer(inv -> {
+            reacquisitionLatch.countDown();
+            return true;
+        });
         given(mockPort.isOpen()).willReturn(true);
-        given(mockPort.getSystemPortName()).willReturn("COM_TEST");
+        given(mockPort.getSystemPortName()).willReturn("COM_RECOVERY");
         
-        // Count how many times initConfluence tries to start
-        final AtomicInteger confluenceStarts = new AtomicInteger(0);
-        final CountDownLatch recoveryLatch = new CountDownLatch(2);
+        // Count down when closePort is called
+        doAnswer(inv -> {
+            neutralizationLatch.countDown();
+            return true;
+        }).when(mockPort).closePort();
 
         final SystemOrchestrator orchestrator = new SystemOrchestrator(configManager, mockProvider, null);
 
         // WHEN: The system starts
-        final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {
-            confluenceStarts.incrementAndGet();
-            // Simulate a single pulse then "signal loss" by making the next poll return null
-        }));
+        final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {}));
         engineThread.setDaemon(true);
         engineThread.start();
 
-        // Wait a bit for the first cycle to run and fail (it will fail because we provide no data)
-        // The failure will trigger executeConfluenceCycle's recovery block.
-        final boolean reachedRecovery = recoveryLatch.await(RECOVERY_WAIT_SECONDS, TimeUnit.SECONDS);
+        // THEN: The system should eventually neutralize the port due to lack of data (Watchdog timeout)
+        assertThat(neutralizationLatch.await(10, TimeUnit.SECONDS))
+            .as("System failed to neutralize stale port after watchdog timeout")
+            .isTrue();
+
+        // AND: The system should attempt to re-acquire the port
+        assertThat(reacquisitionLatch.await(10, TimeUnit.SECONDS))
+            .as("System failed to attempt re-acquisition after neutralization")
+            .isTrue();
 
         orchestrator.shutdown();
         engineThread.join(THREAD_JOIN_TIMEOUT_MS);
 
-        // THEN: The connector.disconnect() should have been called, which calls port.closePort()
-        // We verify that closePort was called at least once during the recovery attempts.
         verify(mockPort, atLeastOnce()).closePort();
-        verify(mockPort, atLeastOnce()).removeDataListener();
+        verify(mockPort, atLeast(2)).openPort();
+    }
+}
+sePort();
+        verify(mockPort, atLeast(2)).openPort();
     }
 }
