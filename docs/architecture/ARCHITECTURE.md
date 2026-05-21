@@ -15,6 +15,7 @@ classDiagram
     
     class SystemOrchestrator {
         -ConfigManager configManager
+        -InstantSource clock
         -ScheduledExecutorService ntpExecutor
         -AtomicReference~NtpResponse~ lastNtp
         -AtomicReference~GpsData~ currentFix
@@ -41,6 +42,7 @@ classDiagram
         <<record>>
         +String pulseId
         +String sentence
+        +Instant ingressTime
         +GpsData data
         +NtpResponse reference
         +ConfluenceHealth health
@@ -58,6 +60,55 @@ classDiagram
     SerialConnector *-- NmeaSentenceAccumulator : owns
     TelemetryPulse ..> NmeaParser : utilizes for evolution
 ```
+
+## 📐 Package Hierarchy & Dependency Graph (Structural Purity)
+The system enforces a strict **Top-Down Unidirectional Flow**. My audit of the `v0.6.0` codebase certifies **Zero Circular Dependencies**.
+
+```mermaid
+graph TD
+    subgraph "1. Lifecycle Layer (Boot)"
+        MAIN[com.stoicprogrammer.qtrqth.Main] --> ORCH[SystemOrchestrator]
+    end
+
+    subgraph "2. Orchestration Layer (Confluence)"
+        ORCH --> CONF[config]
+        ORCH --> SER[serial]
+        ORCH --> NTP[ntp]
+        ORCH --> MOD[model]
+        ORCH --> NMEA[nmea]
+    end
+
+    subgraph "3. Plumbing Layer (HAL)"
+        SER --> SER_API[serial.api]
+        SER --> SER_SIM[serial.simulation]
+        SER --> SER_JSC[serial.jserialcomm]
+        NTP --> NTP_API[ntp.api]
+        NTP --> NTP_NET[ntp.network]
+        NTP --> NTP_SIM[ntp.simulation]
+    end
+
+    subgraph "4. Domain Layer (The Pulse)"
+        MOD --> NMEA
+        MOD --> NTP
+        MOD --> UTIL[util]
+    end
+
+    subgraph "5. Foundation (Pure Utilities)"
+        NMEA --> UTIL
+        CONF --> UTIL
+        SER_API
+        NTP_API
+    end
+
+    style MAIN fill:#f9f,stroke:#333,stroke-width:2px
+    style MOD fill:#bbf,stroke:#333,stroke-width:2px
+    style UTIL fill:#dfd,stroke:#333,stroke-width:2px
+```
+
+### 🛡️ Dependency Mandates:
+1.  **Acyclic Flow:** No package in a lower layer may depend on a higher layer.
+2.  **Domain Purity:** The `model` and `nmea` packages must remain free of OS-level side effects (I/O, Clocks, Network).
+3.  **Monadic Foundation:** The `util` package provides the functional primitives used by all layers for safe parsing and exception handling.
 
 ## 🔄 System Lifecycle (Behavioral View)
 The application operates as a deterministic state machine. The transition from `BOOTING` to `ACTIVE` involves a "State-Lock" where the operational mode is committed and never changed.
@@ -109,6 +160,7 @@ flowchart TD
         AC --> |NMEA Sentence| ML[Main Pipeline]
     end
 
+    CLOCK[InstantSource: Edge Stamp] --> |System Time| TP
     AR -.-> |Merge| TP[TelemetryPulse::start]
     ML --> TP
     TP --> |Parse| NP[NmeaParser]
