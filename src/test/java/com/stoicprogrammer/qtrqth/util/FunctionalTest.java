@@ -6,14 +6,17 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/**
+ * Unit tests for functional utility methods.
+ * Adheres to strict AssertJ fluent assertion standards.
+ */
 class FunctionalTest extends BddTest {
 
     private static final int TEST_INT = 123;
-    private static final int TEST_INT_HEX = 255;
-    private static final int RADIX_HEX = 16;
-    private static final int TEST_INT_MAPPED = 456;
 
     @ParameterizedTest
     @CsvSource({
@@ -68,12 +71,13 @@ class FunctionalTest extends BddTest {
     @Test
     void should_throw_runtime_exception_on_wrapped_failure() {
         // Verifying that checked exceptions are pivoted to RuntimeException
-        final java.util.function.Function<String, Integer> mapper = 
+        final java.util.function.Function<String, Integer> mapper =
             Functional.wrap(s -> {
                 throw new IOException("Checked Error");
             });
-            
-        assertThat(org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> mapper.apply("any")))
+
+        assertThatThrownBy(() -> mapper.apply("any"))
+            .isInstanceOf(RuntimeException.class)
             .hasCauseInstanceOf(IOException.class);
     }
 }

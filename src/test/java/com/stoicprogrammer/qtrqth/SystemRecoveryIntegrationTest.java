@@ -12,17 +12,20 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 /**
  * Integration test focusing on the 'Connection Neutralization' recovery lifecycle.
+ * Adheres to strict AssertJ fluent assertion standards and Java 21 unnamed parameters.
  */
 class SystemRecoveryIntegrationTest extends BddTest {
 
     private static final int RECOVERY_WAIT_SECONDS = 5;
     private static final int THREAD_JOIN_TIMEOUT_MS = 1000;
+    private static final int LATCH_TIMEOUT_SECONDS = 10;
 
     @TempDir
     private Path tempDir;
@@ -58,18 +61,18 @@ class SystemRecoveryIntegrationTest extends BddTest {
 
         final SystemOrchestrator orchestrator = new SystemOrchestrator(configManager, mockProvider, null);
 
-        // WHEN: The system starts
+        // WHEN: The system starts (Named parameter to avoid preview features)
         final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {}));
         engineThread.setDaemon(true);
         engineThread.start();
 
         // THEN: The system should eventually neutralize the port due to lack of data (Watchdog timeout)
-        assertThat(neutralizationLatch.await(10, TimeUnit.SECONDS))
+        assertThat(neutralizationLatch.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS))
             .as("System failed to neutralize stale port after watchdog timeout")
             .isTrue();
 
         // AND: The system should attempt to re-acquire the port
-        assertThat(reacquisitionLatch.await(10, TimeUnit.SECONDS))
+        assertThat(reacquisitionLatch.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS))
             .as("System failed to attempt re-acquisition after neutralization")
             .isTrue();
 
@@ -77,10 +80,6 @@ class SystemRecoveryIntegrationTest extends BddTest {
         engineThread.join(THREAD_JOIN_TIMEOUT_MS);
 
         verify(mockPort, atLeastOnce()).closePort();
-        verify(mockPort, atLeast(2)).openPort();
-    }
-}
-sePort();
         verify(mockPort, atLeast(2)).openPort();
     }
 }
