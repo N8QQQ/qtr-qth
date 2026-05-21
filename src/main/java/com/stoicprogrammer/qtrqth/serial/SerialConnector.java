@@ -141,12 +141,11 @@ public final class SerialConnector {
 
     public void disconnect() {
         Optional.ofNullable(activePort)
-            .filter(ISerialPort::isOpen)
             .ifPresent(port -> {
-                logger.debug("Closing serial port...");
+                logger.debug("Neutralizing serial port handle...");
                 port.removeDataListener();
                 port.closePort();
-                logger.info("Serial port closed.");
+                logger.info("Serial port neutralized.");
             });
     }
 }

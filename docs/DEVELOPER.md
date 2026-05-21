@@ -52,7 +52,7 @@ This project follows an **AI-first workflow** (Nicholas R. Ustick + JARVIS). All
 
 ---
 ## 🛰️ Infrastructure Ecosystem (Docker)
-To ensure high-fidelity development and cross-platform parity, `qtr-qth` utilizes a multi-container orchestration strategy. This eliminates "It works on my machine" syndromes and allows for deterministic hardware testing.
+To ensure high-fidelity development and cross-platform parity, `qtr-qth` utilizes a multi-container orchestration strategy. This eliminates platform-specific "crutch" scripts and ensures deterministic hardware testing across Windows, Linux, and macOS.
 
 ### Container Catalog & Utility
 
@@ -65,25 +65,28 @@ To ensure high-fidelity development and cross-platform parity, `qtr-qth` utilize
 
 ---
 
-### 🛠️ Detailed Service Breakdown
+### 🛠️ Universal Orchestration Commands
+
+The following commands are platform-agnostic and should be used instead of any legacy PowerShell or Bash scripts for host-level orchestration.
 
 #### 1. The Quality Gate (`ci`)
-- **Usage:** `docker-compose run --rm ci`
-- **Purpose:** Mirrors the GitHub Actions environment (Ubuntu 24.04 + JDK 21). It executes a full "Clean-Check-Test" cycle, producing the final distribution ZIP.
-- **Developer Benefit:** Ensures that your local changes will pass the remote CI pipeline before you push.
+- **Command:** `docker-compose run --rm ci`
+- **Purpose:** Mirrors the GitHub Actions environment. It executes a full "Clean-Check-Test" cycle.
 
-#### 2. The Phantom Shack (`phantom`)
-- **Usage:** `docker-compose run --rm phantom`
-- **Purpose:** A high-fidelity laboratory for hardware logic.
-    - **Hardware Spoofing:** Creates a virtual serial device at `/dev/ttyUSB99`.
-    - **TCP Bridge:** Listens on port `9999`. Any data sent to this port from the host is piped directly into the virtual GPS device inside the container.
-    - **Static Seeding:** If `SIM_MODE=true` (default), it loops `gps_sim.nmea` into the TTY automatically.
-- **Developer Benefit:** Allows testing of "Signal Loss" and "Recovery" logic without physically unplugging a GPS receiver.
+#### 2. The Documentation Hub (`docs`)
+- **Command:** `docker-compose up docs`
+- **Purpose:** Real-time preview of the documentation at `http://localhost:4000/qtr-qth/`.
+- **Note:** To change the Jekyll theme, modify `remote_theme` in `docs/_config.yml`.
 
-#### 3. The Stress Tester (`stress-test`)
-- **Usage:** `docker-compose run --rm stress-test`
-- **Purpose:** Utilizes QEMU emulation to run the application on a native `linux/arm64` platform.
-- **Developer Benefit:** Certifies that Nio-based pathing and floating-point math behave identically on a Raspberry Pi, even when developed on Windows or Intel-based Linux.
+#### 3. The Phantom Shack (`phantom`)
+- **Command:** `docker-compose run --rm phantom`
+- **Purpose:** A virtualized laboratory for hardware logic and spoofing.
+- **TCP Bridge:** Connect your host's NMEA stream to `localhost:9999`.
+
+#### 4. Maintenance & Cleanup (The Scrub)
+- **Command:** `docker-compose down -v --remove-orphans`
+- **Purpose:** Neutralize the environment and reclaim host resources.
+- **Protocol:** Run this whenever switching between hardware and simulation modes, or if `socat` handles become stale.
 
 ---
 ## 🔍 Debugging & Troubleshooting
@@ -97,7 +100,7 @@ If the application fails to identify your GPS receiver:
 
 ### 2. Virtualization & Phantom Shack Issues
 If the `phantom` container behaves unexpectedly:
-- **Stale TTY Handles:** If `socat` fails to create `/dev/ttyUSB99`, ensure a previous container didn't leave a ghost handle. Run `docker-compose down` to purge the network and orphans.
+- **Stale TTY Handles:** If `socat` fails to create `/dev/ttyUSB99`, ensure a previous container didn't leave a ghost handle. Run **The Scrub** routine.
 - **Live Stream Verification:** To verify the TCP bridge, send a manual sentence from your host: 
   `echo "$GPZDA,123456,01,01,2026,00,00*6C" | nc localhost 9999`
 - **Architecture Mismatch:** If `stress-test` fails to start, verify that Docker Desktop has **QEMU support** enabled for ARM64 emulation.

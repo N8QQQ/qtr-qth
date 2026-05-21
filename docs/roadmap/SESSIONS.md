@@ -29,31 +29,22 @@ This log tracks tactical development sessions, capturing duration, charters, and
 ## 📅 Sprint 7: The Virtual Shack (v0.5.0)
 **Goal:** Implement high-fidelity virtualization and universal orchestration.
 
-### Session 2026-05-17 (Session 2): Virtual Shack & Hardware Spoofing
-- **Charter:** Implement Phase 7 virtualization, universal docker-compose, and hardware spoofing logic.
-- **Duration:** 2.5 Hours
+### Session 2026-05-21: Infrastructure Decommissioning & Scrub Implementation
+- **Charter:** Implement platform-agnostic 'Scrub' routine and decommission host-level PowerShell scripts.
+- **Duration:** 1.0 Hour
 - **Timeline:**
-    - **18:30:** Session Start. Migrated infrastructure to `/docker` hierarchy.
-    - **19:00:** Implementation: Universal `docker-compose.yml` model certified.
-    - **19:30:** Virtualization: Certified the 'Phantom Shack' with `socat` hardware spoofing and a Live GPS Coordinator (TCP 9999).
-    - **20:00:** Tooling: Implemented and certified the `probeHardware` task for automated GPS device auditing.
-    - **20:30:** Hardening: Enforced memory/CPU constraints to simulate Raspberry Pi hardware.
-    - **21:00:** Governance: Enshrined Heritage Branching Protocol in `GEMINI.md`.
+    - **19:00:** Session Start. Analyzed existing host-level orchestration scripts.
+    - **19:15:** Implementation: Codified 'The Scrub' routine (`docker-compose down -v --remove-orphans`) in `DEVELOPER.md`.
+    - **19:30:** Decommissioning: Removed `verify-docs.ps1` and `verify-local-ci.ps1` to enforce platform-agnostic workflows.
+    - **19:45:** Documentation: Unified all Docker orchestration commands in `DEVELOPER.md`, replacing "crutch" scripts with native Compose calls.
 - **Outcome:** 
-    - [x] Universal `docker-compose` orchestration implemented.
-    - [x] Phantom Shack virtual hardware laboratory certified.
-    - [x] ARM64 Stress Test capability enabled.
-    - [x] Heritage Branching Protocol active.
-    - **21:30:** Recovery: Implemented stream-based self-healing loop to replace imperative while-loops.
-    - **22:00:** Bench Test: Confirmed `SIGNAL LOSS` detection, but identified **Defect 7.7.A** (Restoration Stall upon hardware re-entry).
-- **Outcome:** 
-    - [x] Adaptive Bootstrap logic certified (Hardware-First).
-    - [x] Watchdog monitor emitting loss sentinels.
-    - [ ] Runtime recovery loop implemented but failing to re-acquire hardware.
+    - [x] Universal 'Scrub' routine operational.
+    - [x] Host-level PowerShell scripts decommissioned.
+    - [x] Developer Guide unified for cross-platform parity.
 - **Calibration:**
-    - **Estimated SP:** 15
-    - **Actual Hours:** 4.0
-    - **Velocity:** 3.75 SP/Hour
+    - **Estimated SP:** 5
+    - **Actual Hours:** 1.0
+    - **Velocity:** 5.0 SP/Hour
 
 ### Session 2026-05-17 (Session 1): Documentation Visibility & Governance Enshrinement
 - **Charter:** Resolve GitHub Pages 404, consolidate Dependabot PRs, and formalize branching governance.
