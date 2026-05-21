@@ -26,6 +26,6 @@ Welcome to the official technical documentation for `qtr-qth`, a high-precision 
 ## ⚖️ Identity & Scholarly Record
 
 [![ORCiD](https://img.shields.io/badge/ORCiD-0009--0001--9211--8000-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0001-9211-8000)
-- **Developer:** Nicholas R. Ustick (N8QQQ)
+- **Developer:** Nicholas R. Ustick ([N8QQQ](https://www.qrz.com/db/N8QQQ))
 - **Archival:** This project is indexed on **Zenodo** for persistent citation.
 - **DOI:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20257593.svg)](https://doi.org/10.5281/zenodo.20257593)

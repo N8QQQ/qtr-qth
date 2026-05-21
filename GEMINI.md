@@ -90,6 +90,8 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 ### Tooling Stack Integration
 *   **Frameworks:** Enforce JUnit 5 Jupiter engine combined with standard Mockito.
 *   **Assertion Engine:** Ban standard JUnit assertions (`assertEquals`). Enforce **AssertJ** (`assertThat()`) to ensure assertions maintain a fluent, stream-like functional pipeline.
+    *   **Exceptions:** Use `assertThatThrownBy(() -> logic).isInstanceOf(...)` for all exception testing.
+    *   **Enforcement:** Raw imports from `org.junit.jupiter.api.Assertions` are forbidden and will be flagged by Checkstyle.
 
 ### Test-Driven Development (TDD) Workflow
 *   **Rule:** Enforce the Red-Green-Refactor loop during logic creation.

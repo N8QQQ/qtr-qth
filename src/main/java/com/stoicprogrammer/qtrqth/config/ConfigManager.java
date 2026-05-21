@@ -57,7 +57,7 @@ public final class ConfigManager {
         properties.setProperty("sync.threshold.ms", String.valueOf(DEFAULT_SYNC_THRESHOLD));
         properties.setProperty("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver,ttyusb");
         properties.setProperty("display.raw.telemetry", "false");
-        properties.setProperty("simulation.mode", "true");
+        properties.setProperty("simulation.mode", "false");
 
         final File configFile = configPath.toFile();
 
@@ -73,9 +73,9 @@ public final class ConfigManager {
             extractList("ntp.server", "pool.ntp.org"),
             extractInt("serial.baud", DEFAULT_BAUD),
             extractLong("sync.threshold.ms", DEFAULT_SYNC_THRESHOLD),
-            extractList("gps.discovery.keywords", "gps"),
+            extractList("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver,ttyusb"),
             extractBoolean("display.raw.telemetry", false),
-            extractBoolean("simulation.mode", true)
+            extractBoolean("simulation.mode", false)
         );
     }
 

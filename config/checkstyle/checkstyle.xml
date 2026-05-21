@@ -5,15 +5,26 @@
 <module name="Checker">
     <property name="charset" value="UTF-8"/>
     <property name="severity" value="error"/>
+
+    <!-- File-level Regex checks -->
     <module name="RegexpSingleline">
         <property name="format" value="\s(for|while|do)\s*\("/>
         <property name="message" value="Imperative loops are forbidden. Use Streams API or Recursion."/>
     </module>
+
     <module name="TreeWalker">
+        <!-- Assertion Enforcement -->
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="org.junit.jupiter.api.Assertions"/>
+        </module>
+
+        <!-- Final Enforcement -->
         <module name="FinalLocalVariable">
             <property name="tokens" value="VARIABLE_DEF, PARAMETER_DEF"/>
         </module>
         <module name="FinalParameters"/>
+        
+        <!-- Logic Constraints -->
         <module name="VisibilityModifier"/>
         <module name="IllegalInstantiation">
             <property name="classes" value="java.util.ArrayList,java.util.HashMap,java.util.HashSet,java.util.LinkedHashMap,java.util.LinkedHashSet"/>
@@ -28,12 +39,15 @@
         <module name="PackageDeclaration"/>
         <module name="HideUtilityClassConstructor"/>
         <module name="OneStatementPerLine"/>
+        
+        <!-- Magic Number Suppression -->
         <module name="MagicNumber">
             <property name="ignoreNumbers" value="-1, 0, 1, 2"/>
             <property name="ignoreAnnotation" value="true"/>
             <property name="ignoreFieldDeclaration" value="false"/>
             <property name="ignoreHashCodeMethod" value="true"/>
         </module>
+        
         <module name="FinalClass"/>
         <module name="ParameterAssignment"/>
         <module name="ModifiedControlVariable"/>
@@ -47,6 +61,8 @@
         <module name="ThrowsCount">
             <property name="max" value="1"/>
         </module>
+
+        <!-- Pure Functional Enforcement -->
         <module name="DescendantToken">
             <property name="id" value="BanReturnNull"/>
             <property name="tokens" value="LITERAL_RETURN"/>

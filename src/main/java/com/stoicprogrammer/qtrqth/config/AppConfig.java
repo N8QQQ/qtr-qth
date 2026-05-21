@@ -21,8 +21,9 @@ public record AppConfig(
         List.of("pool.ntp.org", "time.google.com", "time.windows.com"),
         9600,
         1000L,
-        List.of("gps", "u-blox", "prolific", "silicon labs", "gnss", "receiver"),
+        List.of("gps", "u-blox", "prolific", "silicon labs", "gnss", "receiver", "ttyusb"),
         false,
-        true
+        false
     );
-}
+    }
+

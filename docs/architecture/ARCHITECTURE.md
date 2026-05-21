@@ -4,10 +4,96 @@ title: System Architecture
 ---
 # System Architecture: qtr-qth
 
-`qtr-qth` is designed as a high-precision, event-driven telemetry hub. The architecture prioritizes functional purity, thread-safety, and observability.
+`qtr-qth` is a high-precision, event-driven telemetry hub. The architecture prioritizes functional purity, thread-safety, and high-fidelity observability through a strictly decoupled Hardware Abstraction Layer (HAL).
 
-## 🏛️ The "Two-River Confluence" Model
+## 🏛️ Component Blueprint (Structural View)
+The system is organized into decoupled functional blocks. The `SystemOrchestrator` serves as the primary lifecycle manager, coordinating the interaction between data providers and the telemetry pipeline.
 
+```mermaid
+classDiagram
+    direction TB
+    
+    class SystemOrchestrator {
+        -ConfigManager configManager
+        -ScheduledExecutorService ntpExecutor
+        -AtomicReference~NtpResponse~ lastNtp
+        -AtomicReference~GpsData~ currentFix
+        -SerialConnector connector
+        +start(Consumer~TelemetryPulse~)
+        +shutdown()
+    }
+
+    class SerialConnector {
+        -ISerialProvider provider
+        -NmeaSentenceAccumulator accumulator
+        -ISerialPort activePort
+        -LinkedBlockingQueue~String~ queue
+        +connect(String portName) Stream~String~
+        +disconnect()
+    }
+
+    class NtpClient {
+        -INtpProvider provider
+        +pollDetailed(List~String~ hosts) Optional~NtpResponse~
+    }
+
+    class TelemetryPulse {
+        <<record>>
+        +String pulseId
+        +String sentence
+        +GpsData data
+        +NtpResponse reference
+        +ConfluenceHealth health
+        +update(NmeaParser, AtomicReference) TelemetryPulse
+    }
+
+    class NmeaParser {
+        +parse(String, GpsData) GpsData
+    }
+
+    SystemOrchestrator *-- SerialConnector : owns
+    SystemOrchestrator *-- NtpClient : delegates to
+    SystemOrchestrator ..> TelemetryPulse : produces
+    SerialConnector o-- ISerialProvider : utilizes
+    SerialConnector *-- NmeaSentenceAccumulator : owns
+    TelemetryPulse ..> NmeaParser : utilizes for evolution
+```
+
+## 🔄 System Lifecycle (Behavioral View)
+The application operates as a deterministic state machine. The transition from `BOOTING` to `ACTIVE` involves a "State-Lock" where the operational mode is committed and never changed.
+
+```mermaid
+stateDiagram-v2
+    [*] --> BOOTING : System Start
+    
+    state BOOTING {
+        direction TB
+        INIT_CONFIG --> RESOLVE_MODE
+        RESOLVE_MODE --> LOCK_MODE
+    }
+    
+    BOOTING --> ACTIVE : Mode Locked (Hardware Found)
+    BOOTING --> SIMULATION : Mode Locked (Fallback/Manual)
+    
+    state ACTIVE {
+        [*] --> STREAMING
+        STREAMING --> RECOVERY : Signal Loss
+        RECOVERY --> NEUTRALIZATION : Disconnect Stale Handle
+        NEUTRALIZATION --> DISCOVERY : Backoff Wait
+        DISCOVERY --> STREAMING : Hardware Re-acquired
+        DISCOVERY --> DISCOVERY : Hardware Missing
+    }
+
+    state SIMULATION {
+        [*] --> VIRTUAL_STREAMING
+    }
+    
+    ACTIVE --> SHUTDOWN : SIGTERM / User Stop
+    SIMULATION --> SHUTDOWN : SIGTERM / User Stop
+    SHUTDOWN --> [*] : Resources Released
+```
+
+## 📡 The "Two-River Confluence" Model (Data Flow)
 The core of the system is based on two asynchronous streams of data merging into a unified telemetry pulse.
 
 ```mermaid
@@ -31,42 +117,14 @@ flowchart TD
     GS --> |Log| LOG[High-Fidelity Console UI]
 ```
 
-1.  **The Slow River (NTP):** A background heartbeat that polls high-stratum network time servers every 60 seconds to provide a reliable "second opinion" on time drift.
-2.  **The Fast River (GPS):** A high-frequency stream of NMEA sentences direct from the serial hardware, providing Stratum 0 precision and location context.
-3.  **The Confluence:** Every time a GPS sentence arrives, it captures the latest known NTP reference to create a `TelemetryPulse`, ensuring end-to-end traceability across threads.
+1.  **The Slow River (NTP):** A background heartbeat that polls network time servers to provide a reliable "second opinion" on time drift.
+2.  **The Fast River (GPS):** A high-frequency stream of NMEA sentences direct from hardware, providing Stratum 0 precision.
+3.  **The Confluence:** Every time a GPS sentence arrives, it captures the latest known NTP reference to create a `TelemetryPulse`, ensuring end-to-end traceability.
 
-## 📡 Authority & Stratum
-By directly connecting to GPS (Stratum 0), `qtr-qth` effectively operates as a **Stratum 1** authority for the local shack, using NTP as a "Second Opinion" for drift verification.
-
-## 🛡️ Structural Hardening (Phase 6)
-To ensure the integrity of the confluence, the system implements strict structural guardrails:
-
-1.  **Typed Configuration:** All system parameters are parsed at the edge into immutable `AppConfig` records, eliminating "Stringly-Typed" logic.
-2.  **Numeric Purity:** Standardized monadic wrappers (`tryParseInt`, `tryParseDouble`) catch hardware noise and malformed telemetry before they reach the core logic.
-3.  **The Test Vault:** High-fidelity NMEA samples are externalized to ensure that the parsing engine is certified against real-world radio shack data.
-
-## 🛰️ Hardware Abstraction & Virtualization (Phase 7)
-To ensure high-fidelity testing and platform-agnostic development, the system decouples its data sources through a formal Hardware Abstraction Layer (HAL).
-
-1.  **Provider Routing:** During the bootstrap phase, the `SystemOrchestrator` utilizes a dynamic selection strategy. It prioritizes physical hardware (`JSerialCommProvider`, `NetworkNtpProvider`) but maintains a seamless fallback to high-fidelity simulation components.
-2.  **Stateless Quality Gate:** By leveraging Docker virtualization, the entire telemetry pipeline is certified in a stateless environment where physical GPS signals are replaced by deterministic `socat` pipes or file-based simulation streams.
-3.  **Deterministic Math:** This abstraction ensures that future drift and offset calculations (Phase 9) can be verified with mathematical certainty by injecting known reference signals into the virtualized rivers.
-
-## 📉 Drift & Stability Analysis (Future Phase 9)
-Once the foundation is hardened, the system will implement an analytical pipeline to quantify system clock accuracy:
-
-1.  **Differential Calculus:** Calculating the high-precision delta between `Local Clock` and `Reference Clock`.
-2.  **Statistical Smoothing:** Using a Sliding Window Buffer to calculate jitter (standard deviation) and drift trends.
-
-```mermaid
-flowchart LR
-    P[Pulse Arrival] --> |System.nanoTime| OE[Offset Engine]
-    REF[Ref: GPS/NTP] --> OE
-    OE --> |Duration| SWB[Sliding Window Buffer]
-    SWB --> |Stream| SE[Stability Engine]
-    SE --> |Stats| SG[Stability Grade]
-    SG --> |Metadata| LOG[Final Telemetry Log]
-```
+## 🛡️ Structural Guardrails
+- **Typed Configuration:** Immutable `AppConfig` records eliminate "Stringly-Typed" logic.
+- **Numeric Purity:** Monadic wrappers (`tryParseInt`) catch hardware noise.
+- **State-Lock:** Boot-time determination of HARDWARE vs SIMULATION modes ensures runtime stability.
 
 ---
 *For historical tactical details, see the [Phase Designs](../design/DESIGN_PHASE_1.md).*

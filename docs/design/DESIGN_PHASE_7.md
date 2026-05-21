@@ -69,6 +69,36 @@ flowchart TD
     -   **Ephemeral CI:** All Quality Gate runs must utilize the `--rm` flag to ensure containers are purged upon task completion.
     -   **The 'Scrub' Routine:** Implement a standard `docker-compose down` sequence to neutralize the Phantom Shack and reclaim host ports/memory.
     -   **Orphan Mitigation:** Utilize `--remove-orphans` during startup to clear any lingering ghosts from previous failed sessions.
+### 7.7: Runtime Resilience & State-Lock Architecture
+- **Bootstrap Lock-In:** The system determines its `OperationalMode` (HARDWARE vs SIMULATION) at boot. Once locked, the mode **never changes** during the run.
+- **Mid-Run Recovery (The Watchdog):** 
+    - **GPS River:** If signal is lost, enter `RECOVERY`. Monitor background ports. Maintain last known position. Utilize NTP for time-only pulses if available.
+    - **NTP River:** If network is lost, enter `RECOVERY`. Rely exclusively on GPS/Local clock.
+- **Dual-River Signaling:** Every `TelemetryPulse` will now carry a `HealthStatus` metadata packet:
+    - `gpsStatus`: [ACTIVE | RECOVERY | OFFLINE]
+    - `ntpStatus`: [ACTIVE | RECOVERY | OFFLINE]
+    - `confluenceMode`: [HARDWARE | SIMULATION]
+- **The Blackout Rule:** If both rivers enter `RECOVERY/OFFLINE`, the confluence stops producing pulses until at least one source is restored.
+
+#### The Recovery Lifecycle (Option A: Connection Neutralization)
+```mermaid
+flowchart TD
+    A[Signal Loss Detected] --> B[Enter Recovery Loop]
+    B --> C{Is Stale Connector Present?}
+    C -- Yes --> D["Explicitly Call connector.disconnect()"]
+    C -- No --> E["Wait: RECOVERY_BACKOFF_MS"]
+    D --> E
+    E --> F[Initiate New Confluence Cycle]
+    F --> G[Acquire Fresh Hardware Handle]
+    G --> H{Acquisition Success?}
+    H -- No --> B
+    H -- Yes --> I[Resume Confluence]
+```
+
+#### Bootstrap State Machine
+- **Objective:** Generate a high-fidelity Open Graph (OG) image for the GitHub repository.
+- **Technical Path:** Implement a p5.js "Branding Generator" utilizing the Phase 7 Constellation engine.
+- **Dimensions:** 1280x640px (GitHub Standard).
 
 
 ---
@@ -90,4 +120,9 @@ flowchart TD
 - [ ] **Spoof Integrity:** `NmeaParser` processes data from a virtual TTY pipe with zero-jitter.
 
 ---
-*Maintained by JARVIS for the Heritage Grade Standard.*
+
+## 🛑 Unresolved Tactical Defects (Handover Notes)
+- **Defect 7.7.A: Restoration Stall**
+    - **Symptom:** System successfully detects `SIGNAL LOSS` and enters the `executeConfluenceCycle` recovery loop. However, upon re-plugging the physical GPS, the system fails to re-acquire the lock.
+    - **Current Hypothesis:** The `JSerialCommProvider` or the underlying `SerialPort` instance may be holding a stale reference to the previous (now invalid) system handle, preventing the new hardware instance from being bound.
+    - **Next Action:** Investigate port-level cleanup and handle neutralization during the `RECOVERY` backoff phase.
