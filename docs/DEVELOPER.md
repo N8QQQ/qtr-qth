@@ -48,7 +48,7 @@ sequenceDiagram
 - `./gradlew probeHardware`: Scans the host system for physical/virtual GPS serial hardware.
 
 ## 🤖 AI-Integrated Development
-This project follows an **AI-first workflow** (Nicholas R. Ustick + JARVIS). All refactoring must follow the **"Heritage Grade"** standard: Zero mutable logic in core components and strictly decoupled hardware abstractions as defined in [`GEMINI.md`](GEMINI.md).
+This project follows an **AI-first workflow** (Nicholas R. Ustick + JARVIS). All refactoring must follow the **"Heritage Grade"** standard: Zero mutable logic in core components and strictly decoupled hardware abstractions as defined in the project's root `GEMINI.md` mandates.
 
 ---
 ## 🛰️ Infrastructure Ecosystem (Docker)
