@@ -31,7 +31,7 @@ public final class Main {
         if (argList.contains(PROBE_FLAG)) {
             runProbe(argList);
         } else if (argList.contains(DOCTOR_FLAG)) {
-            runDoctor(argList);
+            runDoctor();
         } else {
             runOrchestrator(argList);
         }
@@ -41,7 +41,7 @@ public final class Main {
         HardwareProbe.main(args.toArray(String[]::new));
     }
 
-    private static void runDoctor(final List<String> args) {
+    private static void runDoctor() {
         com.stoicprogrammer.qtrqth.util.EnvironmentDoctor.performCheck();
     }
 
