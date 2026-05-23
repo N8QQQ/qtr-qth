@@ -127,11 +127,19 @@ stateDiagram-v2
     BOOTING --> SIMULATION : Mode Locked (Fallback/Manual)
     
     state ACTIVE {
-        [*] --> STREAMING
+        [*] --> CALIBRATING
+        CALIBRATING --> CALIBRATING : Observe Burst
+        CALIBRATING --> ACTIVE_CALIBRATED : Confidence Reached
+        CALIBRATING --> ACTIVE_BUCKETED : Timeout (FLEXIBLE)
+        CALIBRATING --> TERMINATED : Timeout (STRICT)
+        
+        ACTIVE_CALIBRATED --> STREAMING
+        ACTIVE_BUCKETED --> STREAMING
+        
         STREAMING --> RECOVERY : Signal Loss
         RECOVERY --> NEUTRALIZATION : Disconnect Stale Handle
         NEUTRALIZATION --> DISCOVERY : Backoff Wait
-        DISCOVERY --> STREAMING : Hardware Re-acquired
+        DISCOVERY --> CALIBRATING : Hardware Re-acquired
         DISCOVERY --> DISCOVERY : Hardware Missing
     }
 

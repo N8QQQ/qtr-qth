@@ -79,47 +79,54 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 8.4: Simulation Refactor:** Cleanse `SimulationNtpProvider` of `Instant.now()`.
 - [x] **Phase 8.5: Hermetic Test Certification:** Verify jitter/drift math using `Clock.fixed()`.
 
-### Phase 9: Statistical Telemetry & Analysis (v0.7.0) - IN PROGRESS
+### Phase 9: Smart Sync & Intelligent Ingestion (v0.7.0) - IN PROGRESS
+**Objective:** Synchronize the 1Hz telemetry heartbeat with hardware data bursts.
+**Branch:** `feat/phase-locked-logic`
+- [ ] **Phase 9.1: Burst Calibration:** Implement 'Phase-Locked' pattern matching to identify the burst Sentinel.
+- [ ] **Phase 9.2: Device Calibration Data:** Implement persistent caching of hardware-specific sync profiles.
+- [ ] **Phase 9.3: Smart Sync Policy:** Implement `STRICT` (Fail-Stop) vs `FLEXIBLE` (Bucketed) ingestion modes.
+- [ ] **Phase 9.4: Temporal Bucketing:** Implement the 1-second latency fallback for noisy hardware.
+- [ ] **Phase 9.5: Sync Health Integration:** Update `ConfluenceHealth` to track sync-lock status.
+
+### Phase 10: Precision Drift & Offset Analysis (v0.8.0)
 **Objective:** Quantify clock accuracy and establish a data-rich signal foundation.
 **Branch:** `feat/jitter-bug`
-- [ ] **Phase 9.1: The Offset Engine:** Calculate multi-source drift (System vs. GPS vs. NTP).
-- [ ] **Phase 9.2: Signal Intelligence:** Full GSV/GSA parsing for SNR and celestial tracking.
-- [ ] **Phase 9.3: Statistical Window:** Functional implementation of Jitter (RMS) and StdDev.
-- [ ] **Phase 9.4: Feature Flag Framework:** Declarative safety toggles for future authority features.
-- [ ] **Phase 9.5: Chart-Ready Data Certification:** Mandatory recurring gate for data compatibility.
-- [ ] **Phase 9.6: JSON Serialization Baseline:** Certify high-fidelity Record serialization for the Hub API.
+- [ ] **Phase 10.1: The Offset Engine:** Calculate system drift vs Authority (GPS/NTP).
+- [ ] **Phase 10.2: Signal Intelligence:** Parse GSV/GSA for SNR and Satellite tracking.
+- [ ] **Phase 10.3: Statistical Window:** Functional implementation of Jitter (RMS) and Mean Offset.
+- [ ] **Phase 10.4: Chart-Ready Data Certification:** Mandatory recurring gate for data compatibility.
 
-### Phase 10: Precision Clock Synchronization (v1.0.0)
+### Phase 11: Precision Clock Synchronization (v1.0.0)
 **Objective:** Discipline the local host clock via a **Dual-Tier HAL**.
-- [ ] **Phase 10.1: The PPS Bridge (Linux):** RFC 2783 support for <100µs kernel timestamping.
-- [ ] **Phase 10.2: The Best-Effort Sync (Windows):** Coarse disciplining via Windows Time Service.
-- [ ] **Phase 10.3: The Slew Engine:** Implementation of monotonic drift correction (no "backwards" time).
-- [ ] **Phase 10.4: Privilege HAL:** Automated Root/Admin handling via feature flags.
+- [ ] **Phase 11.1: The PPS Bridge (Linux):** RFC 2783 support for <100µs kernel timestamping.
+- [ ] **Phase 11.2: The Best-Effort Sync (Windows):** Coarse disciplining via Windows Time Service.
+- [ ] **Phase 11.3: The Slew Engine:** Implementation of monotonic drift correction.
+- [ ] **Phase 11.4: Privilege HAL:** Automated Root/Admin handling via feature flags.
 
-### Phase 11: The QTH Hub Authority (v2.0.0)
+### Phase 12: The QTH Hub Authority (v2.0.0)
 **Objective:** Broadcast Stratum 1 authority to the shack network.
-- [ ] **Phase 11.1: NTP Daemon:** Lightweight UDP Port 123 responder.
-- [ ] **Phase 11.2: Multi-Source Arbitration:** Logic to choose the most accurate available authority.
-- [ ] **Phase 11.3: Quality of Authority (QoA):** Metric calculating confidence based on jitter/stratum.
-- [ ] **Phase 11.4: Shack Broadcast Discovery:** Implement mDNS/Zeroconf for automated hub identification.
+- [ ] **Phase 12.1: NTP Daemon:** Lightweight UDP Port 123 responder.
+- [ ] **Phase 12.2: Multi-Source Arbitration:** Logic to choose the most accurate available authority.
+- [ ] **Phase 12.3: Quality of Authority (QoA):** Metric calculating confidence based on jitter/stratum.
+- [ ] **Phase 12.4: Shack Broadcast Discovery:** Implement mDNS/Zeroconf for automated hub identification.
 
-### Phase 12: Dashboard - Embedded Web Scribe (v3.0.0)
+### Phase 13: Dashboard - Embedded Web Scribe (v3.0.0)
 **Objective:** Lightweight remote monitoring and visual regression testing.
-- [ ] **Phase 12.1: Embedded Server:** Zero-dependency web server (e.g., Sun HttpServer).
-- [ ] **Phase 12.2: Visual Quality Gate:** **Playwright** integration for UI regression and asset capture.
+- [ ] **Phase 13.1: Embedded Server:** Zero-dependency web server (e.g., Sun HttpServer).
+- [ ] **Phase 13.2: Visual Quality Gate:** **Playwright** integration for UI regression and asset capture.
 
-### Phase 13: Dashboard - RESTful Pulse API (v3.1.0)
+### Phase 14: Dashboard - RESTful Pulse API (v3.1.0)
 **Objective:** Expose real-time Telemetry Pulses as JSON for 3rd party shack tools.
-- [ ] **Phase 13.1: Pulse persistence:** Optional SQLite or CSV export for post-shack analysis.
+- [ ] **Phase 14.1: Pulse persistence:** Optional SQLite or CSV export for post-shack analysis.
 
-### Phase 14: Dashboard - "The Visual Shack" (v4.0.0)
+### Phase 15: Dashboard - "The Visual Shack" (v4.0.0)
 **Objective:** High-fidelity real-time telemetry rendering via p5.js.
 - [ ] **Phase 14.1: Temporal Drift Plot:** Dual-trace offset history line graph.
 - [ ] **Phase 14.2: Polar Sky Plot:** Celestial constellation map.
 - [ ] **Phase 14.3: Jitter Stability Histogram:** Precision distribution curve.
 - [ ] **Phase 14.4: SNR Signal Matrix:** Multi-GNSS signal strength bars.
 
-### Phase 15: Heritage Stabilization (v5.0.0)
+### Phase 16: Heritage Stabilization (v5.0.0)
 **Objective:** Final performance optimization and long-term security archival.
 
 ---
