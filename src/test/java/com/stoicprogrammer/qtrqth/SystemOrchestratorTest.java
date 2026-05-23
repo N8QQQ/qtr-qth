@@ -37,8 +37,8 @@ class SystemOrchestratorTest extends BddTest {
     void should_orchestrate_telemetry_flow_and_produce_pulses() throws Exception {
         logger.info("Starting BDD Test: should_orchestrate_telemetry_flow_and_produce_pulses");
         final Path configPath = tempDir.resolve("orchestrator.properties");
-        // Force simulation mode and long threshold to ensure stability in test
-        java.nio.file.Files.writeString(configPath, "simulation.mode=true\nsync.threshold.ms=5000");
+        // Force simulation mode and rapid calibration for test
+        java.nio.file.Files.writeString(configPath, "simulation.mode=true\nsync.threshold.ms=5000\nsync.calibration.cycles=1");
         
         final InstantSource frozenClock = InstantSource.fixed(MOCK_TIME);
         final SystemOrchestrator orchestrator = new SystemOrchestrator(new ConfigManager(configPath), null, null, frozenClock);
@@ -53,6 +53,8 @@ class SystemOrchestratorTest extends BddTest {
         engineThread.start();
 
         // Functional Polling: Wait for at least one pulse
+        final long startTime = System.currentTimeMillis();
+        
         Stream.generate(() -> {
             try { 
                 Thread.sleep(POLL_INTERVAL_MS); 
@@ -60,12 +62,17 @@ class SystemOrchestratorTest extends BddTest {
                 Thread.currentThread().interrupt(); 
             }
             return capturedPulses.isEmpty();
-        }).limit(MAX_POLL_ATTEMPTS).takeWhile(empty -> empty).count();
+        })
+        .limit(MAX_POLL_ATTEMPTS)
+        .takeWhile(empty -> empty)
+        .forEach(empty -> {});
+
+        logger.info("Polling finished after {}ms. Pulse received: {}", System.currentTimeMillis() - startTime, !capturedPulses.isEmpty());
 
         orchestrator.shutdown();
         engineThread.join(SHUTDOWN_WAIT_MS);
 
-        assertThat(capturedPulses).isNotEmpty();
+        assertThat(capturedPulses).as("System failed to produce a synchronized pulse within the timeout").isNotEmpty();
         assertThat(capturedPulses.get(0).ingressTime()).isEqualTo(MOCK_TIME);
     }
 

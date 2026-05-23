@@ -95,7 +95,8 @@ public final class SystemOrchestrator {
         this.healthState.set(new ConfluenceHealth(
             ConfluenceHealth.RiverStatus.ACTIVE, 
             ConfluenceHealth.RiverStatus.ACTIVE, 
-            mode
+            mode,
+            ConfluenceHealth.SyncStatus.UNKNOWN
         ));
 
         logger.info("System bootstrapping... (Mode: {})", mode);
@@ -153,7 +154,8 @@ public final class SystemOrchestrator {
         healthState.updateAndGet(h -> new ConfluenceHealth(
             h.gpsStatus(),
             active ? ConfluenceHealth.RiverStatus.ACTIVE : ConfluenceHealth.RiverStatus.RECOVERY,
-            h.mode()
+            h.mode(),
+            h.syncStatus()
         ));
     }
 
@@ -177,27 +179,121 @@ public final class SystemOrchestrator {
     private void runPipeline(final String port, final ISerialProvider provider, final Consumer<TelemetryPulse> consumer) {
         final AppConfig config = configManager.getConfig();
         final NmeaParser parser = new NmeaParser();
+        final com.stoicprogrammer.qtrqth.serial.CalibrationEngine calibrator = 
+            new com.stoicprogrammer.qtrqth.serial.CalibrationEngine(config.syncCalibrationCycles(), config.syncCalibrationTimeoutSeconds());
+        
+        final List<String> burstBuffer = Stream.<String>empty().collect(java.util.stream.Collectors.toList());
+        final AtomicReference<String> bucketTimestamp = new AtomicReference<>("");
+
         this.connector = new SerialConnector(configManager, new NmeaSentenceAccumulator(), provider);
 
         logger.info("Telemetry Confluence initiated on port {}...", port);
+        
+        // 1. Initial State Resolution (Cache Check)
+        com.stoicprogrammer.qtrqth.serial.CalibrationCache.load(port)
+            .ifPresentOrElse(
+                cachedSentinel -> {
+                    calibrator.forceSentinel(cachedSentinel);
+                    updateSyncStatus(ConfluenceHealth.SyncStatus.CALIBRATED);
+                },
+                () -> updateSyncStatus(ConfluenceHealth.SyncStatus.CALIBRATING)
+            );
+
         updateGpsHealth(false);
 
         connector.connect(port)
-            .map(sentence -> TelemetryPulse.start(sentence, lastNtp.get(), healthState.get(), clock.instant()))
-            .peek(pulse -> Map.<Boolean, Runnable>of(
-                true, () -> pulse.logRaw(logger),
-                false, () -> {}
-            ).get(config.displayRawTelemetry()).run())
+            .map(sentence -> Map.entry(sentence, parser.getTimestamp(sentence).orElse("")))
+            .peek(entry -> handleArbiter(entry, calibrator, port, config))
+            .map(entry -> {
+                burstBuffer.add(entry.getKey());
+                final boolean flush = shouldEmit(entry.getKey(), entry.getValue(), calibrator, bucketTimestamp);
+                if (flush) {
+                    final List<String> burst = List.copyOf(burstBuffer);
+                    burstBuffer.clear();
+                    return Optional.of(TelemetryPulse.start(burst, lastNtp.get(), healthState.get(), clock.instant()));
+                }
+                return Optional.<TelemetryPulse>empty();
+            })
+            .flatMap(Optional::stream)
             .map(pulse -> pulse.update(parser, currentFix))
             .filter(TelemetryPulse::hasValidFix)
-            .forEach(consumer);
+            .forEach(pulse -> {
+                try {
+                    consumer.accept(pulse);
+                } catch (final Exception e) {
+                    logger.error("Error in telemetry consumer: {}", e.getMessage(), e);
+                }
+            });
+    }
+
+    private void handleArbiter(
+        final Map.Entry<String, String> entry, 
+        final com.stoicprogrammer.qtrqth.serial.CalibrationEngine calibrator, 
+        final String port,
+        final AppConfig config
+    ) {
+        if (healthState.get().syncStatus() == ConfluenceHealth.SyncStatus.CALIBRATING) {
+            calibrator.observe(entry.getKey(), entry.getValue());
+            
+            if (calibrator.isCalibrated()) {
+                com.stoicprogrammer.qtrqth.serial.CalibrationCache.save(port, calibrator.getSentinel(), clock);
+                updateSyncStatus(ConfluenceHealth.SyncStatus.CALIBRATED);
+            } else if (calibrator.isTimedOut()) {
+                handleCalibrationFailure(config);
+            }
+        }
+    }
+
+    private void handleCalibrationFailure(final AppConfig config) {
+        if (config.syncPolicy() == AppConfig.SyncPolicy.STRICT) {
+            logger.error("FATAL: Sync Policy STRICT violated. Hardware cadence unstable. Terminating.");
+            System.exit(1);
+        } else {
+            logger.warn("ADAPTIVE FAIL-SAFE: Hardware cadence unstable. Falling back to BUCKETED mode.");
+            updateSyncStatus(ConfluenceHealth.SyncStatus.BUCKETED);
+        }
+    }
+
+    private boolean shouldEmit(
+        final String sentence, 
+        final String timestamp,
+        final com.stoicprogrammer.qtrqth.serial.CalibrationEngine calibrator,
+        final java.util.concurrent.atomic.AtomicReference<String> bucketTimestamp
+    ) {
+        final ConfluenceHealth.SyncStatus status = healthState.get().syncStatus();
+
+        return switch (status) {
+            case CALIBRATED -> sentence.startsWith(calibrator.getSentinel());
+            case BUCKETED -> {
+                // Only trigger rollover if we have a valid new timestamp.
+                // GSV/GSA sentences (which return empty timestamps) are accumulated but NEVER trigger a flush.
+                final boolean hasNewTime = !timestamp.isEmpty() && !timestamp.equals(bucketTimestamp.get());
+                if (hasNewTime) {
+                    final boolean firstPulse = bucketTimestamp.get().isEmpty();
+                    bucketTimestamp.set(timestamp);
+                    yield !firstPulse; // Don't flush an empty buffer on the very first sentence
+                }
+                yield false;
+            }
+            default -> false; 
+        };
+    }
+
+    private void updateSyncStatus(final ConfluenceHealth.SyncStatus status) {
+        healthState.updateAndGet(h -> new ConfluenceHealth(
+            h.gpsStatus(),
+            h.ntpStatus(),
+            h.mode(),
+            status
+        ));
     }
 
     private void updateGpsHealth(final boolean signalLoss) {
         healthState.updateAndGet(h -> new ConfluenceHealth(
             signalLoss ? ConfluenceHealth.RiverStatus.RECOVERY : ConfluenceHealth.RiverStatus.ACTIVE,
             h.ntpStatus(),
-            h.mode()
+            h.mode(),
+            h.syncStatus()
         ));
     }
 

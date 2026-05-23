@@ -66,6 +66,29 @@ public final class NmeaParser {
             .orElse(previous);
     }
 
+    /**
+     * Extracts the raw UTC timestamp field from supported NMEA sentences (RMC, GGA, ZDA).
+     * @param raw The raw NMEA string.
+     * @return An Optional containing the raw timestamp string, or empty if unsupported.
+     */
+    public Optional<String> getTimestamp(final String raw) {
+        return Optional.ofNullable(raw)
+            .filter(s -> s.startsWith("$GPRMC") || s.startsWith("$GPGGA") || s.startsWith("$GPZDA"))
+            .map(s -> s.split(",", MAX_FIELDS))
+            .flatMap(parts -> extractField(parts, 1));
+    }
+
+    /**
+     * Folds a burst of NMEA sentences into a single GpsData record.
+     * @param burst The list of raw NMEA sentences in a single burst.
+     * @param previous The previous GpsData state.
+     * @return A consolidated GpsData record.
+     */
+    public GpsData parseBurst(final java.util.List<String> burst, final GpsData previous) {
+        return burst.stream()
+            .reduce(previous, (state, sentence) -> parse(sentence, state), (s1, s2) -> s2);
+    }
+
     private GpsData route(final String[] parts, final GpsData previous) {
         return Optional.ofNullable(parsers.get(parts[0]))
             .map(parser -> parser.apply(parts, previous))

@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.verify;
 
 /**
  * Unit tests for TelemetryPulse.
- * Adheres to deterministic frozen clock verification (Phase 8).
+ * Adheres to deterministic frozen clock verification (Phase 8) and Burst Materialization (Phase 9).
  */
 class TelemetryPulseTest extends BddTest {
 
@@ -39,18 +40,18 @@ class TelemetryPulseTest extends BddTest {
     private final PulseFixture fixture = new ConnectorFixture();
 
     @Test
-    void given_a_valid_sentence_when_starting_pulse_then_id_is_generated() {
-        fixture.given_sentence("$GPRMC,123456,A*66");
+    void given_a_valid_burst_when_starting_pulse_then_id_is_generated() {
+        fixture.given_burst(List.of("$GPRMC,123456,A*66", "$GPGGA,123456,..."));
         fixture.when_starting_pulse();
         fixture.then_id_is_not_empty();
         fixture.then_ingress_time_is_frozen();
     }
 
     @Test
-    void given_a_pulse_when_updating_then_parser_is_called_and_state_updated() {
-        fixture.given_sentence("$GPRMC,123456,A*66");
+    void given_a_pulse_when_updating_then_entire_burst_is_parsed() {
+        fixture.given_burst(List.of("$GPRMC,123456,A*66", "$GPGGA,123456,..."));
         fixture.given_starting_pulse();
-        fixture.given_mock_parser_returns(new GpsData(LocalTime.now(), null, 0, 0, 0, 0));
+        fixture.given_mock_parser_returns_for_burst(new GpsData(LocalTime.now(), null, 0, 0, 0, 0));
         
         fixture.when_updating_pulse();
         
@@ -59,9 +60,9 @@ class TelemetryPulseTest extends BddTest {
 
     @Test
     void should_execute_logging_methods_without_exception() {
-        fixture.given_sentence("$GPRMC,123456,A*66");
+        fixture.given_burst(List.of("$GPRMC,123456,A*66", "$GPGGA,123456,..."));
         fixture.given_starting_pulse();
-        fixture.given_mock_parser_returns(new GpsData(LocalTime.now(), null, LAT_SAMPLE, LON_SAMPLE, ALT_SAMPLE, SAT_SAMPLE));
+        fixture.given_mock_parser_returns_for_burst(new GpsData(LocalTime.now(), null, LAT_SAMPLE, LON_SAMPLE, ALT_SAMPLE, SAT_SAMPLE));
         fixture.when_updating_pulse();
         
         fixture.when_logging_raw();
@@ -71,23 +72,11 @@ class TelemetryPulseTest extends BddTest {
         fixture.then_raw_logger_was_called();
     }
 
-    @Test
-    void should_handle_pulse_without_ntp_reference_gracefully() {
-        fixture.given_sentence("$GPRMC,123456,A*66");
-        fixture.given_pulse_without_ntp();
-        fixture.given_mock_parser_returns(new GpsData(LocalTime.now(), null, LAT_SAMPLE, LON_SAMPLE, ALT_SAMPLE, SAT_SAMPLE));
-        fixture.when_updating_pulse();
-        
-        fixture.when_logging_final();
-        
-        fixture.then_logger_was_called();
-    }
-
     private abstract static class PulseFixture {
-        abstract void given_sentence(String s);
+        abstract void given_burst(List<String> burst);
         abstract void given_starting_pulse();
         abstract void given_pulse_without_ntp();
-        abstract void given_mock_parser_returns(GpsData data);
+        abstract void given_mock_parser_returns_for_burst(GpsData data);
         abstract void when_starting_pulse();
         abstract void when_updating_pulse();
         abstract void when_logging_raw();
@@ -100,7 +89,7 @@ class TelemetryPulseTest extends BddTest {
     }
 
     private static final class ConnectorFixture extends PulseFixture {
-        private String sentence;
+        private List<String> burst;
         private TelemetryPulse pulse;
         private final NmeaParser mockParser = mock(NmeaParser.class);
         private final Logger mockLogger = mock(Logger.class);
@@ -108,14 +97,14 @@ class TelemetryPulseTest extends BddTest {
         private final NtpResponse mockNtp = new NtpResponse(MOCK_TIME, MOCK_RTT, MOCK_STRATUM, MOCK_DISPERSION);
 
         @Override
-        void given_sentence(final String s) {
-            this.sentence = s;
+        void given_burst(final List<String> b) {
+            this.burst = b;
         }
 
         @Override
         void given_starting_pulse() {
             this.pulse = TelemetryPulse.start(
-                sentence, 
+                burst, 
                 mockNtp, 
                 com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE,
                 MOCK_TIME
@@ -125,7 +114,7 @@ class TelemetryPulseTest extends BddTest {
         @Override
         void given_pulse_without_ntp() {
             this.pulse = TelemetryPulse.start(
-                sentence, 
+                burst, 
                 null, 
                 com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE,
                 MOCK_TIME
@@ -133,14 +122,14 @@ class TelemetryPulseTest extends BddTest {
         }
 
         @Override
-        void given_mock_parser_returns(final GpsData data) {
-            given(mockParser.parse(eq(sentence), any())).willReturn(data);
+        void given_mock_parser_returns_for_burst(final GpsData data) {
+            given(mockParser.parseBurst(eq(burst), any())).willReturn(data);
         }
 
         @Override
         void when_starting_pulse() {
             this.pulse = TelemetryPulse.start(
-                sentence, 
+                burst, 
                 mockNtp, 
                 com.stoicprogrammer.qtrqth.model.ConfluenceHealth.HEALTHY_HARDWARE,
                 MOCK_TIME

@@ -12,8 +12,19 @@ public record AppConfig(
     long syncThresholdMs,
     List<String> discoveryKeywords,
     boolean displayRawTelemetry,
-    boolean simulationMode
+    boolean simulationMode,
+    SyncPolicy syncPolicy,
+    int syncCalibrationCycles,
+    int syncCalibrationTimeoutSeconds
 ) {
+    /**
+     * Operational policies for hardware synchronization.
+     */
+    public enum SyncPolicy {
+        STRICT,   // Fail-stop if calibration fails
+        FLEXIBLE  // Fallback to temporal bucketing if calibration fails
+    }
+
     /**
      * Default configuration for rapid bootstrapping.
      */
@@ -23,7 +34,10 @@ public record AppConfig(
         1000L,
         List.of("gps", "u-blox", "prolific", "silicon labs", "gnss", "receiver", "ttyusb"),
         false,
-        false
+        false,
+        SyncPolicy.FLEXIBLE,
+        3,
+        30
     );
-    }
+}
 

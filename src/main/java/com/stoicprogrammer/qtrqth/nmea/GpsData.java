@@ -17,6 +17,11 @@ public record GpsData(
     double altitude,
     int satelliteCount
 ) {
+    /**
+     * Uninitialized fix state for system bootstrapping.
+     */
+    public static final GpsData EMPTY = new GpsData(null, null, 0, 0, 0, 0);
+
     @Override
     public String toString() {
         final String timeStr = Optional.ofNullable(utcTime)
