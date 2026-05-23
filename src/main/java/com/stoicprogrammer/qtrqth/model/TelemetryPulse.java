@@ -29,11 +29,6 @@ public record TelemetryPulse(
 
     /**
      * Factory method to initiate a new telemetry heartbeat from a burst of sentences.
-     * @param burst The list of NMEA sentences in the burst.
-     * @param ntp The latest known NTP reference.
-     * @param health The current system health status.
-     * @param ingressTime The exact moment the burst was completed/ingested.
-     * @return A new TelemetryPulse instance.
      */
     public static TelemetryPulse start(
         final List<String> burst, 
@@ -41,9 +36,10 @@ public record TelemetryPulse(
         final ConfluenceHealth health,
         final Instant ingressTime
     ) {
-        final String primarySentence = burst.isEmpty() ? "" : burst.get(0);
+        final List<String> copy = List.copyOf(burst);
+        final String primarySentence = copy.isEmpty() ? "" : copy.get(0);
         final String id = String.format("%04X", (primarySentence.hashCode() & PULSE_ID_MASK));
-        return new TelemetryPulse(id, List.copyOf(burst), ingressTime, GpsData.EMPTY, ntp, health);
+        return new TelemetryPulse(id, copy, ingressTime, GpsData.EMPTY, ntp, health);
     }
 
     /**
@@ -75,6 +71,13 @@ public record TelemetryPulse(
      */
     public boolean isHeartbeat() {
         return burst.stream().anyMatch(com.stoicprogrammer.qtrqth.serial.SerialConnector.SIGNAL_LOSS::equals);
+    }
+
+    /**
+     * Helper to get the latest sentence in the burst for pattern matching.
+     */
+    public String latestSentence() {
+        return burst.isEmpty() ? "" : burst.get(burst.size() - 1);
     }
 
     /**

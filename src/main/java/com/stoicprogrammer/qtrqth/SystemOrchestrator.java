@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -48,7 +49,7 @@ public final class SystemOrchestrator {
     private final InstantSource clock;
     private final ScheduledExecutorService ntpExecutor;
     private final AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
-    private final AtomicReference<GpsData> currentFix = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
+    private final AtomicReference<GpsData> currentFix = new AtomicReference<>(GpsData.EMPTY);
     private final AtomicReference<ConfluenceHealth> healthState = new AtomicReference<>();
     private final AtomicBoolean running = new AtomicBoolean(true);
     
@@ -105,7 +106,6 @@ public final class SystemOrchestrator {
         initNtpHeartbeat(config, mode == ConfluenceHealth.OperationalMode.SIMULATION_LOCK);
 
         // 3. Adaptive Recovery Stream
-        // We use a generating stream to replace the forbidden 'while' loop.
         Stream.generate(running::get)
             .takeWhile(Boolean::booleanValue)
             .forEach(r -> executeConfluenceCycle(mode, pulseConsumer));
@@ -182,7 +182,7 @@ public final class SystemOrchestrator {
         final com.stoicprogrammer.qtrqth.serial.CalibrationEngine calibrator = 
             new com.stoicprogrammer.qtrqth.serial.CalibrationEngine(config.syncCalibrationCycles(), config.syncCalibrationTimeoutSeconds());
         
-        final List<String> burstBuffer = Stream.<String>empty().collect(java.util.stream.Collectors.toList());
+        final List<String> burstBuffer = Stream.<String>empty().collect(Collectors.toList());
         final AtomicReference<String> bucketTimestamp = new AtomicReference<>("");
 
         this.connector = new SerialConnector(configManager, new NmeaSentenceAccumulator(), provider);
@@ -258,20 +258,18 @@ public final class SystemOrchestrator {
         final String sentence, 
         final String timestamp,
         final com.stoicprogrammer.qtrqth.serial.CalibrationEngine calibrator,
-        final java.util.concurrent.atomic.AtomicReference<String> bucketTimestamp
+        final AtomicReference<String> bucketTimestamp
     ) {
         final ConfluenceHealth.SyncStatus status = healthState.get().syncStatus();
 
         return switch (status) {
             case CALIBRATED -> sentence.startsWith(calibrator.getSentinel());
             case BUCKETED -> {
-                // Only trigger rollover if we have a valid new timestamp.
-                // GSV/GSA sentences (which return empty timestamps) are accumulated but NEVER trigger a flush.
-                final boolean hasNewTime = !timestamp.isEmpty() && !timestamp.equals(bucketTimestamp.get());
-                if (hasNewTime) {
+                final boolean rollover = !timestamp.isEmpty() && !timestamp.equals(bucketTimestamp.get());
+                if (rollover) {
                     final boolean firstPulse = bucketTimestamp.get().isEmpty();
                     bucketTimestamp.set(timestamp);
-                    yield !firstPulse; // Don't flush an empty buffer on the very first sentence
+                    yield !firstPulse;
                 }
                 yield false;
             }

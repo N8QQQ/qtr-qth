@@ -20,6 +20,7 @@ public final class NmeaParser {
 
     // Operational Constants
     private static final int MAX_SENTENCE_LENGTH = 128;
+    private static final int MIN_SENTENCE_LENGTH = 10;
     private static final int MAX_FIELDS = 20;
     private static final int MIN_FIELDS_GPRMC = 10;
     private static final int MIN_FIELDS_GPGGA = 10;
@@ -67,15 +68,21 @@ public final class NmeaParser {
     }
 
     /**
-     * Extracts the raw UTC timestamp field from supported NMEA sentences (RMC, GGA, ZDA).
+     * Extracts and normalizes the UTC timestamp from supported NMEA sentences.
      * @param raw The raw NMEA string.
-     * @return An Optional containing the raw timestamp string, or empty if unsupported.
+     * @return An Optional containing a normalized 6-digit timestamp (HHMMSS).
      */
     public Optional<String> getTimestamp(final String raw) {
         return Optional.ofNullable(raw)
-            .filter(s -> s.startsWith("$GPRMC") || s.startsWith("$GPGGA") || s.startsWith("$GPZDA"))
+            .filter(s -> s.startsWith("$") && s.length() > MIN_SENTENCE_LENGTH)
             .map(s -> s.split(",", MAX_FIELDS))
-            .flatMap(parts -> extractField(parts, 1));
+            .flatMap(parts -> {
+                final String type = parts[0];
+                final boolean supported = type.endsWith("RMC") || type.endsWith("GGA") || type.endsWith("ZDA");
+                return supported ? extractField(parts, 1)
+                        .filter(ts -> ts.length() >= NMEA_TIME_STRING_LEN)
+                        .map(ts -> ts.substring(0, NMEA_TIME_STRING_LEN)) : Optional.<String>empty();
+            });
     }
 
     /**

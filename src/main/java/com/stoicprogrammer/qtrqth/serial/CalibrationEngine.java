@@ -23,7 +23,7 @@ public final class CalibrationEngine {
     private final Map<List<String>, Integer> patterns = new ConcurrentHashMap<>();
     
     private String lastTimestamp = "";
-    private List<String> lastCompleteBurst = List.of();
+    private String lastCompleteBurstSentinel = "";
     private Optional<String> identifiedSentinel = Optional.empty();
     private int cyclesObserved = 0;
     private boolean timedOut = false;
@@ -44,50 +44,59 @@ public final class CalibrationEngine {
             return identifiedSentinel;
         }
 
-        final String type = sentence.split(",")[0];
-
         // Detect Rollover
-        if (!timestamp.equals(lastTimestamp) && !lastTimestamp.isEmpty()) {
-            cyclesObserved++;
-            processBurstCompletion();
-            
-            if (cyclesObserved >= maxCycles && identifiedSentinel.isEmpty()) {
-                this.timedOut = true;
-                logger.warn("CALIBRATION TIMEOUT: Failed to identify stable hardware cadence after {} cycles.", maxCycles);
-            }
+        if (isRollover(timestamp)) {
+            handleRollover();
         }
 
         lastTimestamp = timestamp;
-        currentBurst.add(type);
+        currentBurst.add(sentence.split(",")[0]);
 
         return identifiedSentinel;
     }
 
+    private boolean isRollover(final String timestamp) {
+        return !timestamp.isEmpty() && !timestamp.equals(lastTimestamp) && !lastTimestamp.isEmpty();
+    }
+
+    private void handleRollover() {
+        processBurstCompletion();
+        if (cyclesObserved >= maxCycles && identifiedSentinel.isEmpty()) {
+            this.timedOut = true;
+            logger.warn("CALIBRATION TIMEOUT: Failed to identify stable hardware cadence after {} cycles.", maxCycles);
+        }
+    }
+
     private void processBurstCompletion() {
-        final List<String> burstCopy = List.copyOf(currentBurst);
+        if (currentBurst.isEmpty()) return;
+
+        final String lastInBurst = currentBurst.get(currentBurst.size() - 1);
         currentBurst = Stream.<String>empty().collect(Collectors.toList());
 
-        if (burstCopy.isEmpty()) return;
+        cyclesObserved++;
+        logger.debug("Observed Burst End [Cycle {}]: {}", cyclesObserved, lastInBurst);
 
-        logger.debug("Observed Burst Pattern [Cycle {}]: {}", cyclesObserved, burstCopy);
-
-        // Pattern Matching
-        if (burstCopy.equals(lastCompleteBurst)) {
-            final int confidence = patterns.merge(burstCopy, 1, Integer::sum);
+        // Sentinel Consistency Check: Is the last sentence before rollover always the same?
+        if (lastInBurst.equals(lastCompleteBurstSentinel)) {
+            final int confidence = patterns.merge(List.of(lastInBurst), 1, Integer::sum);
             logger.info("Calibration Confidence: {}/{}", confidence, requiredConfidence);
 
             if (confidence >= requiredConfidence) {
-                this.identifiedSentinel = Optional.of(burstCopy.get(burstCopy.size() - 1));
+                this.identifiedSentinel = Optional.of(lastInBurst);
                 logger.info("PHASE LOCK ACHIEVED: Sentinel identified as {}", identifiedSentinel.get());
             }
         } else {
-            if (cyclesObserved > 1) {
-                logger.debug("Cadence Mismatch. Resetting confidence.");
-                patterns.clear(); 
-            }
+            resetConfidence(lastInBurst);
         }
 
-        lastCompleteBurst = burstCopy;
+        lastCompleteBurstSentinel = lastInBurst;
+    }
+
+    private void resetConfidence(final String lastInBurst) {
+        if (cyclesObserved > 1) {
+            logger.debug("Sentinel Mismatch ({} vs {}). Resetting confidence.", lastInBurst, lastCompleteBurstSentinel);
+            patterns.clear(); 
+        }
     }
 
     public boolean isCalibrated() {

@@ -79,10 +79,10 @@ class SystemOrchestratorTest extends BddTest {
     @Test
     void should_automatically_fallback_to_simulation_when_hardware_missing() throws Exception {
         logger.info("Starting BDD Test: should_automatically_fallback_to_simulation_when_hardware_missing");
-        final Path configPath = tempDir.resolve("fallback.properties");
         
-        // GIVEN: Intent is Hardware Mode, but no physical hardware will be found in CI
-        java.nio.file.Files.writeString(configPath, "simulation.mode=false\nsync.threshold.ms=5000");
+        // GIVEN: A config path that does not exist, forcing default discovery behavior
+        final Path configPath = tempDir.resolve("missing-hardware.properties");
+        java.nio.file.Files.writeString(configPath, "simulation.mode=false\nsync.threshold.ms=5000\nsync.calibration.cycles=1");
         
         final InstantSource frozenClock = InstantSource.fixed(MOCK_TIME);
         final SystemOrchestrator orchestrator = new SystemOrchestrator(new ConfigManager(configPath), null, null, frozenClock);
