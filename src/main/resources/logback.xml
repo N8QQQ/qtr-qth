@@ -42,17 +42,40 @@
         </encoder>
     </appender>
 
+    <!-- NMEA_LOG: Dedicated NMEA sentence audit log -->
+    <appender name="NMEA_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/nmea.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/nmea.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>3</maxHistory>
+            <totalSizeCap>300MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <!-- ASYNC WRAPPERS: Ensuring zero latency on the telemetry thread -->
     <appender name="ASYNC_SHACK" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="SHACK_FILE" />
         <discardingThreshold>0</discardingThreshold>
         <queueSize>512</queueSize>
+        <neverBlock>true</neverBlock>
     </appender>
 
     <appender name="ASYNC_TRACE" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="TRACE_FILE" />
         <discardingThreshold>0</discardingThreshold>
         <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="ASYNC_NMEA" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="NMEA_FILE" />
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>2048</queueSize>
+        <neverBlock>true</neverBlock>
     </appender>
 
     <!-- ROOT LOGGER -->
@@ -64,6 +87,11 @@
     <!-- Package-specific logging -->
     <logger name="com.stoicprogrammer.qtrqth" level="TRACE">
         <appender-ref ref="ASYNC_TRACE" />
+    </logger>
+
+    <!-- Telemetry Audit Logger -->
+    <logger name="com.stoicprogrammer.qtrqth.telemetry.Nmea" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_NMEA" />
     </logger>
 
 </configuration>

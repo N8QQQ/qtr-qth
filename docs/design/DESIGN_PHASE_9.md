@@ -1,62 +1,60 @@
-# Phase 9 Design: Phase-Locked Logic (v0.7.0)
+# Phase 9 Design: Reactive State Synchronization (v0.7.0)
 
-**Objective:** Synchronize the functional 1Hz pipeline with non-deterministic hardware data bursts using a software-based Phase-Locked Loop (PLL).
+**Objective:** Achieve Phase Lock via stateless, zero-latency ingestion of the 1Hz telemetry stream by transforming NMEA sentences into discrete temporal events.
 
-## 🏛️ Smart Sync Architecture
+## 🏛️ Deterministic Monolith Architecture
 
-The system transitions from a passive stream reader to an active sequence observer. This intelligence ensures zero-latency ingestion by learning exactly when a 1-second data burst ends.
+The system utilizes a single-consumer, high-priority pipeline to eliminate state-tearing race conditions and ensure absolute temporal fidelity.
 
-### 1. Operation Modes (The Sync Policy)
-
-| Policy | Failure Mode | Behavior | Use Case |
-| :--- | :--- | :--- | :--- |
-| **STRICT** | Fail-Stop | Terminates process if confidence is not reached. | Stratum 1 Disciplining. |
-| **FLEXIBLE** | Fallback | Degrades to 1s latency (Temporal Bucketing). | General Telemetry / Mobile. |
-
-### 2. The Calibration Lifecycle
+### 1. The Deterministic Pipeline
 
 ```mermaid
 flowchart TD
-    START[Serial Port Opened] --> CACHE{Cache Exists?}
-    CACHE -->|Yes| LOCK[State: ACTIVE_CALIBRATED]
-    CACHE -->|No| CAL[State: CALIBRATING]
+    subgraph "Producer Layer (Ingress Guard: Max Priority)"
+        SC["SerialConnector"] -->|Byte Arrival| STAMP["Edge Stamp: Instant.now()"]
+        STAMP --> ACC["Line Accumulator"]
+        ACC -->|Complete Sentence + Stamp| QUEUE["LinkedBlockingQueue: TelemetryEvent"]
+    end
     
-    CAL --> OBS[Observe Burst Sequence]
-    OBS --> MATCH{Pattern Match?}
-    MATCH -->|No| RESET[Reset Confidence]
-    MATCH -->|Yes| INC[Increment Confidence]
+    subgraph "Consumer Layer (Deterministic Monolith: High Priority)"
+        QUEUE --> EVENT["Poll Event"]
+        EVENT --> PARSE["NmeaParser: Talker-Agnostic"]
+        PARSE --> REG["Update State Registry"]
+        REG --> TRIGGER{"Is Trigger?"}
+        TRIGGER -->|Yes| PULSE["Emit TelemetryPulse"]
+        TRIGGER -->|No| QUEUE
+    end
     
-    RESET --> TO{Timeout?}
-    INC --> CONF{Confidence Meta?}
-    
-    CONF -->|No| CAL
-    CONF -->|Yes| LOCK
-    
-    LOCK --> SAVE[Save Device Calibration Data]
-    
-    TO -->|Yes / STRICT| TERM[TERMINATED]
-    TO -->|Yes / FLEXIBLE| BUCKET[State: ACTIVE_BUCKETED]
-    
-    SAVE --> STREAM[1Hz Synchronized Stream]
-    BUCKET --> STREAM
+    PULSE -->|Async| LOG["Shack Console / nmea.log"]
 ```
 
-### 3. Device Calibration Data (Persistence)
-To optimize boot times, the system caches the identified **Sentinel** (the last sentence in a burst).
-*   **Storage:** `config/calibration/[PortID].json`
-*   **Payload:** `{"sentinel": "$GPZDA", "confidence": 1.0, "timestamp": "2026-05-21T..."}`
+### 2. High-Fidelity Edge Stamping
+Unlike batching or multi-lane models, the system captures the "Ground Truth" timestamp at the **Producer level**.
+- **T0:** First byte of a sentence arrives at the serial port.
+- **T1 (The Edge):** The absolute nanosecond the `\n` character is detected by the `SerialPortDataListener`.
+- **T2 (Propagation):** The `Instant` is bundled with the `String` into a `TelemetryEvent` object.
+- **T3 (Execution):** Even if the consumer is delayed by GC or I/O, the pulse is emitted with the **T1 timestamp**, ensuring the reported offset is jitter-free.
 
-### 4. Temporal Bucketing (The Fail-Safe)
-If the hardware cadence is too jittery for pattern matching, the system groups all sentences by their reported NMEA timestamp.
-*   **Trigger:** Arrival of a sentence with $T + 1$.
-*   **Latency:** Inherently 1.0 seconds.
-*   **Stability:** High; immune to sequence changes.
+### 3. State Management (The Registry)
+The system maintains a single-threaded **Reactive State Registry** to prevent race conditions.
+- **GGA/GNS:** Updates Altitude and Satellite Count.
+- **GSV:** Updates individual Satellite SNR and Constellation data.
+- **GSA:** Updates Dilution of Precision (DOP).
+- **VTG:** Updates Ground Speed and Track (APRS Ready).
+- **ZDA/RMC:** Triggers the Pulse, carrying the "latest" state from the registry and the **original Edge Stamp**.
+
+### 4. Zero-Latency Logging
+- **`nmea.log`:** Configured with `neverBlock=true`. This ensures the serial ingestion thread never waits for slow SD card I/O on devices like the Raspberry Pi.
+- **Telemetry Heartbeat:** Only authoritative 1Hz pulses are logged to the primary shack output to minimize system noise.
 
 ## 🛠️ Data Model Evolution
 
+### TelemetryEvent (New Internal Model)
+An immutable container for high-fidelity hand-off.
+- `String rawSentence`
+- `Instant ingressTime`
+
 ### ConfluenceHealth.SyncStatus
-*   `UNKNOWN`: System just booted.
-*   `CALIBRATING`: Observing sequences.
-*   `CALIBRATED`: Lock achieved (Zero-Latency).
-*   `BUCKETED`: Fallback mode (High-Latency).
-*   `TERMINATED`: Violation of Strict Policy.
+- `REACTIVE_LOCK`: System is successfully triggering pulses on authoritative time sentences.
+- `SIGNAL_LOSS`: No valid sentences received within the timeout.
+- `SIMULATION`: Operating on synthetic data.

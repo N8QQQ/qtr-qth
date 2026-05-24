@@ -79,20 +79,20 @@ For details on the concurrency model, functional pipeline, and architectural dec
 - [x] **Phase 8.4: Simulation Refactor:** Cleanse `SimulationNtpProvider` of `Instant.now()`.
 - [x] **Phase 8.5: Hermetic Test Certification:** Verify jitter/drift math using `Clock.fixed()`.
 
-### Phase 9: Smart Sync & Intelligent Ingestion (v0.7.0) - IN PROGRESS
-**Objective:** Synchronize the 1Hz telemetry heartbeat with hardware data bursts.
-**Branch:** `feat/phase-locked-logic`
-- [ ] **Phase 9.1: Burst Calibration:** Implement 'Phase-Locked' pattern matching to identify the burst Sentinel.
-- [ ] **Phase 9.2: Device Calibration Data:** Implement persistent caching of hardware-specific sync profiles.
-- [ ] **Phase 9.3: Smart Sync Policy:** Implement `STRICT` (Fail-Stop) vs `FLEXIBLE` (Bucketed) ingestion modes.
-- [ ] **Phase 9.4: Temporal Bucketing:** Implement the 1-second latency fallback for noisy hardware.
-- [ ] **Phase 9.5: Sync Health Integration:** Update `ConfluenceHealth` to track sync-lock status.
+### Phase 9: Reactive State Synchronization (v0.7.0) - COMPLETE
+**Objective:** Achieve Phase Lock via stateless, zero-latency ingestion of the 1Hz telemetry stream.
+**Branch:** `feat/reactive-state-flow`
+- [x] **Phase 9.1: Reactive Ingestion Pipeline:** Refactor `SystemOrchestrator` to process NMEA sentences as discrete asynchronous events.
+- [x] **Phase 9.2: High-Fidelity Edge Stamping:** Capture high-resolution system timestamps at the exact microsecond of sentence validation.
+- [x] **Phase 9.3: The Reactive State Registry:** Implement an `AtomicReference` state repository for cross-sentence data enrichment (Position/Sats).
+- [x] **Phase 9.4: Deterministic 1Hz Trigger:** Configure temporal sentences ($GPZDA, $GPRMC) to act as immediate pulse triggers.
+- [x] **Phase 9.5: Sync Health Integration:** Update `ConfluenceHealth` to reflect 'Reactive Lock' status and stream health.
 
 ### Phase 10: Precision Drift & Offset Analysis (v0.8.0)
-**Objective:** Quantify clock accuracy and establish a data-rich signal foundation.
+**Objective:** Quantify clock accuracy using the Reactive Ingress data.
 **Branch:** `feat/jitter-bug`
-- [ ] **Phase 10.1: The Offset Engine:** Calculate system drift vs Authority (GPS/NTP).
-- [ ] **Phase 10.2: Signal Intelligence:** Parse GSV/GSA for SNR and Satellite tracking.
+- [ ] **Phase 10.1: The Reactive Offset Engine:** Calculate system drift ($T_{System} - T_{GPS}$) for every triggered pulse.
+- [ ] **Phase 10.2: Signal Intelligence:** Extend the State Registry to handle GSV/GSA for SNR and Constellation tracking.
 - [ ] **Phase 10.3: Statistical Window:** Functional implementation of Jitter (RMS) and Mean Offset.
 - [ ] **Phase 10.4: Chart-Ready Data Certification:** Mandatory recurring gate for data compatibility.
 
@@ -128,6 +128,15 @@ For details on the concurrency model, functional pipeline, and architectural dec
 
 ### Phase 16: Heritage Stabilization (v5.0.0)
 **Objective:** Final performance optimization and long-term security archival.
+
+### Phase 17: Community & Outreach (The "Alpha Flight")
+**Objective:** Transition `qtr-qth` from a private tool to a community-standard hub for Amateur Radio.
+- [ ] **Phase 17.1: High-Fidelity Demonstration:** Use 'The Visual Shack' (Phase 15) to create video/gif demos for GitHub and QRZ.
+- [ ] **Phase 17.2: Beta Flight Program:** Identify and onboard 5-10 Alpha Testers with diverse hardware (u-blox, MTK, SiRF).
+- [ ] **Phase 17.3: Field Day Deployment:** Document a real-world mobile deployment for the ARRL Field Day or Winter Field Day.
+- [ ] **Phase 17.4: APRS Integration Showcase:** Demonstrate real-time kinematic tracking via the VTG ingestion.
+- [ ] **Phase 17.5: Publication:** Technical write-up for QST or CQ Magazine regarding precision shack timing.
+- [ ] **Phase 17.6: Hardware Enclosures:** Research, design, and publish 3D-printable STL enclosures for target boards (e.g., 7SEMI NEO-M9N) to provide SMA strain relief and professional presentation.
 
 ---
 ## 📐 Platform Precision & Resolving Power (Epsilon)

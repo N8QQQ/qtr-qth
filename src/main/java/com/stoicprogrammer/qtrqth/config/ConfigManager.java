@@ -26,8 +26,8 @@ public final class ConfigManager {
     // Default Operational Constants
     private static final int DEFAULT_BAUD = 9600;
     private static final long DEFAULT_SYNC_THRESHOLD = 1000L;
-    private static final int DEFAULT_CALIBRATION_CYCLES = 3;
-    private static final int DEFAULT_CALIBRATION_TIMEOUT = 30;
+    private static final String DEFAULT_SIM_DATA = "simulation/gps_sim.nmea";
+    private static final int DEFAULT_SIM_INTERVAL = 1000;
 
     /**
      * Internal interface for mocking file operations.
@@ -60,9 +60,8 @@ public final class ConfigManager {
         properties.setProperty("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver,ttyusb");
         properties.setProperty("display.raw.telemetry", "false");
         properties.setProperty("simulation.mode", "false");
-        properties.setProperty("sync.policy", AppConfig.SyncPolicy.FLEXIBLE.name());
-        properties.setProperty("sync.calibration.cycles", String.valueOf(DEFAULT_CALIBRATION_CYCLES));
-        properties.setProperty("sync.calibration.timeout", String.valueOf(DEFAULT_CALIBRATION_TIMEOUT));
+        properties.setProperty("simulation.data.file", DEFAULT_SIM_DATA);
+        properties.setProperty("simulation.interval.ms", String.valueOf(DEFAULT_SIM_INTERVAL));
 
         final File configFile = configPath.toFile();
 
@@ -81,9 +80,8 @@ public final class ConfigManager {
             extractList("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver,ttyusb"),
             extractBoolean("display.raw.telemetry", false),
             extractBoolean("simulation.mode", false),
-            extractEnum("sync.policy", AppConfig.SyncPolicy.class, AppConfig.SyncPolicy.FLEXIBLE),
-            extractInt("sync.calibration.cycles", DEFAULT_CALIBRATION_CYCLES),
-            extractInt("sync.calibration.timeout", DEFAULT_CALIBRATION_TIMEOUT)
+            getProperty("simulation.data.file").orElse(DEFAULT_SIM_DATA),
+            extractInt("simulation.interval.ms", DEFAULT_SIM_INTERVAL)
         );
     }
 
@@ -137,19 +135,6 @@ public final class ConfigManager {
     private boolean extractBoolean(final String key, final boolean defaultVal) {
         return getProperty(key)
             .map(Boolean::parseBoolean)
-            .orElse(defaultVal);
-    }
-
-    private <T extends Enum<T>> T extractEnum(final String key, final Class<T> enumClass, final T defaultVal) {
-        return getProperty(key)
-            .flatMap(val -> {
-                try {
-                    return Optional.of(Enum.valueOf(enumClass, val.toUpperCase()));
-                } catch (final IllegalArgumentException e) {
-                    logger.warn("Property {} contains invalid value {}. Using default: {}", key, val, defaultVal);
-                    return Optional.empty();
-                }
-            })
             .orElse(defaultVal);
     }
 }

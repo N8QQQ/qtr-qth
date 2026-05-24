@@ -4,6 +4,7 @@ import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortDataListener;
 import com.fazecast.jSerialComm.SerialPortEvent;
 import com.stoicprogrammer.qtrqth.config.ConfigManager;
+import com.stoicprogrammer.qtrqth.model.TelemetryEvent;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
@@ -11,6 +12,7 @@ import com.stoicprogrammer.qtrqth.util.Functional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.InstantSource;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -21,53 +23,58 @@ import java.util.stream.Stream;
 
 /**
  * Manages the connection to physical or virtual serial hardware using declarative patterns.
- * Adheres to strict finality and expression-based control flow.
+ * Producer Level: Captures Edge Stamps (T1) the instant a sentence is reconstructed.
  */
 public final class SerialConnector {
     private static final Logger logger = LoggerFactory.getLogger(SerialConnector.class);
 
-    /**
-     * Sentinel value emitted by the stream when the Watchdog monitor detects signal loss.
-     */
-    public static final String SIGNAL_LOSS = "__SIGNAL_LOSS__";
-
     // Operational Constants
     private static final int DEFAULT_BAUD = 9600;
     private static final int WATCHDOG_TIMEOUT_SECONDS = 5;
-    private static final int TELEMETRY_QUEUE_CAPACITY = 100;
+    private static final int TELEMETRY_QUEUE_CAPACITY = 500; // Increased for high-speed bursts
     private static final int DATA_BITS = 8;
 
     private final ConfigManager config;
     private final NmeaSentenceAccumulator accumulator;
     private final ISerialProvider provider;
+    private final InstantSource clock;
     private ISerialPort activePort;
-    private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>(TELEMETRY_QUEUE_CAPACITY);
+    private final LinkedBlockingQueue<TelemetryEvent> queue = new LinkedBlockingQueue<>(TELEMETRY_QUEUE_CAPACITY);
 
-    private record ConnectionRule(boolean condition, Supplier<Stream<String>> action) {}
+    private record ConnectionRule(boolean condition, Supplier<Stream<TelemetryEvent>> action) {}
     private record QueueRule(boolean condition, Runnable action) {}
 
-    public SerialConnector(final ConfigManager config, final NmeaSentenceAccumulator accumulator, final ISerialProvider provider) {
+    public SerialConnector(final ConfigManager config, final NmeaSentenceAccumulator accumulator, final ISerialProvider provider, final InstantSource clock) {
         this.config = config;
         this.accumulator = accumulator;
         this.provider = provider;
+        this.clock = clock;
     }
 
     /**
-     * Connects to the specified serial port and returns a stream of NMEA sentences.
+     * Connects to the specified serial port and returns a stream of high-fidelity TelemetryEvents.
      * @param portName The system port name (e.g., COM3).
-     * @return A Stream of completed NMEA sentences.
+     * @return A Stream of TelemetryEvents containing the raw sentence and Edge Stamp.
      */
-    public Stream<String> connect(final String portName) {
-        final int baudRate = config.getProperty("serial.baud")
-            .flatMap(Functional::tryParseInt)
-            .or(() -> {
-                logger.warn("Invalid or missing serial.baud in config. Defaulting to {}.", DEFAULT_BAUD);
-                return Optional.of(DEFAULT_BAUD);
-            })
-            .orElse(DEFAULT_BAUD);
-        
-        logger.debug("Attempting to open port {} at {} baud...", portName, baudRate);
+    public Stream<TelemetryEvent> connect(final String portName) {
+        final Optional<Integer> configuredBaud = config.getProperty("serial.baud")
+            .flatMap(Functional::tryParseInt);
+
         activePort = provider.getPort(portName);
+        
+        // Auto-Baud Logic: If baud is 0, perform an active scan
+        final int baudRate = configuredBaud
+            .filter(b -> b > 0)
+            .or(() -> {
+                logger.info("Auto-Baud: Initiating discovery for {}...", portName);
+                return AutoBaudEngine.scan(activePort);
+            })
+            .orElseGet(() -> {
+                logger.warn("Auto-Baud: No signal detected. Falling back to {}.", DEFAULT_BAUD);
+                return DEFAULT_BAUD;
+            });
+        
+        logger.debug("Opening port {} at {} bps...", portName, baudRate);
         activePort.setBaudRate(baudRate);
         activePort.setNumDataBits(DATA_BITS);
         activePort.setNumStopBits(SerialPort.ONE_STOP_BIT);
@@ -75,7 +82,6 @@ public final class SerialConnector {
 
         final boolean opened = activePort.openPort();
 
-        // Declarative Connection Rule Engine
         return List.of(
             new ConnectionRule(opened, () -> startIngestion(portName)),
             new ConnectionRule(true, () -> {
@@ -89,7 +95,7 @@ public final class SerialConnector {
          .orElse(Stream.empty());
     }
 
-    private Stream<String> startIngestion(final String portName) {
+    private Stream<TelemetryEvent> startIngestion(final String portName) {
         logger.info("Serial port {} opened successfully.", portName);
         activePort.addDataListener(new SerialPortDataListener() {
             @Override
@@ -97,7 +103,6 @@ public final class SerialConnector {
 
             @Override
             public void serialEvent(final SerialPortEvent event) {
-                logger.trace("Serial event received: {}", event.getEventType());
                 Optional.of(event)
                     .filter(e -> e.getEventType() == SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
                     .map(e -> {
@@ -110,31 +115,27 @@ public final class SerialConnector {
                         .map(accumulator::process)
                         .flatMap(Optional::stream)
                         .forEach(s -> {
-                            logger.trace("Sentence accumulated: {}", s);
-                            final boolean success = queue.offer(s);
-                            List.of(
-                                new QueueRule(success, () -> {}),
-                                new QueueRule(true, () -> logger.warn("Telemetry buffer full. Dropping sentence: {}", s))
-                            ).stream()
-                             .filter(r -> r.condition)
-                             .findFirst()
-                             .ifPresent(r -> r.action.run());
+                            // T1: Edge Stamp captured immediately upon line reconstruction
+                            final TelemetryEvent te = new TelemetryEvent(s, clock.instant());
+                            final boolean success = queue.offer(te);
+                            if (!success) {
+                                logger.warn("Telemetry buffer full. Dropping sentence: {}", s);
+                            }
                         }));
             }
         });
 
-        // Use takeWhile to terminate the stream upon signal loss.
-        // This allows the orchestrator to detect a 'River Collapse' and trigger re-discovery.
         return Stream.generate(() -> {
             try { 
                 return Optional.ofNullable(queue.poll(WATCHDOG_TIMEOUT_SECONDS, TimeUnit.SECONDS));
             } catch (final InterruptedException e) {
                 logger.warn("Telemetry stream interrupted.");
                 Thread.currentThread().interrupt();
-                return Optional.<String>empty();
+                return Optional.<TelemetryEvent>empty();
             }
         }).takeWhile(Optional::isPresent)
-          .map(Optional::get);
+          .map(Optional::get)
+          .takeWhile(e -> !e.isSignalLoss());
     }
 
     private record SerialChunk(byte[] data, int length) {}

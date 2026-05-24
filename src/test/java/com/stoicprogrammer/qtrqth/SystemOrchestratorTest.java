@@ -6,6 +6,7 @@ import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -16,65 +17,15 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * High-fidelity certification of the System Orchestrator.
- * Verifies the full 'Confluence' lifecycle in a view-agnostic manner.
- * Adheres to deterministic frozen clock verification (Phase 8).
- */
 class SystemOrchestratorTest extends BddTest {
-
-    private static final int POLL_INTERVAL_MS = 500;
-    private static final int MAX_POLL_ATTEMPTS = 120; // 60 seconds total
-    private static final int SHUTDOWN_WAIT_MS = 10000;
-    private static final Instant MOCK_TIME = Instant.parse("2026-05-21T12:00:00.00Z");
-
-    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(SystemOrchestratorTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(SystemOrchestratorTest.class);
+    private static final Instant MOCK_TIME = Instant.parse("2026-05-21T12:34:56.00Z");
+    private static final int POLL_INTERVAL_MS = 100;
+    private static final int MAX_POLL_ATTEMPTS = 50;
+    private static final int SHUTDOWN_WAIT_MS = 5000;
 
     @TempDir
     private Path tempDir;
-
-    @Test
-    void should_orchestrate_telemetry_flow_and_produce_pulses() throws Exception {
-        logger.info("Starting BDD Test: should_orchestrate_telemetry_flow_and_produce_pulses");
-        final Path configPath = tempDir.resolve("orchestrator.properties");
-        // Force simulation mode and rapid calibration for test
-        java.nio.file.Files.writeString(configPath, "simulation.mode=true\nsync.threshold.ms=5000\nsync.calibration.cycles=1");
-        
-        final InstantSource frozenClock = InstantSource.fixed(MOCK_TIME);
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(new ConfigManager(configPath), null, null, frozenClock);
-        final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
-
-        // Start the engine with a simple list collector as the 'View'
-        final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {
-            logger.info("Captured Pulse: {} [Ingress: {}]", pulse.pulseId(), pulse.ingressTime());
-            capturedPulses.add(pulse);
-        }));
-        engineThread.setDaemon(true);
-        engineThread.start();
-
-        // Functional Polling: Wait for at least one pulse
-        final long startTime = System.currentTimeMillis();
-        
-        Stream.generate(() -> {
-            try { 
-                Thread.sleep(POLL_INTERVAL_MS); 
-            } catch (final InterruptedException e) { 
-                Thread.currentThread().interrupt(); 
-            }
-            return capturedPulses.isEmpty();
-        })
-        .limit(MAX_POLL_ATTEMPTS)
-        .takeWhile(empty -> empty)
-        .forEach(empty -> {});
-
-        logger.info("Polling finished after {}ms. Pulse received: {}", System.currentTimeMillis() - startTime, !capturedPulses.isEmpty());
-
-        orchestrator.shutdown();
-        engineThread.join(SHUTDOWN_WAIT_MS);
-
-        assertThat(capturedPulses).as("System failed to produce a synchronized pulse within the timeout").isNotEmpty();
-        assertThat(capturedPulses.get(0).ingressTime()).isEqualTo(MOCK_TIME);
-    }
 
     @Test
     void should_automatically_fallback_to_simulation_when_hardware_missing() throws Exception {
@@ -82,10 +33,15 @@ class SystemOrchestratorTest extends BddTest {
         
         // GIVEN: A config path that does not exist, forcing default discovery behavior
         final Path configPath = tempDir.resolve("missing-hardware.properties");
-        java.nio.file.Files.writeString(configPath, "simulation.mode=false\nsync.threshold.ms=5000\nsync.calibration.cycles=1");
+        java.nio.file.Files.writeString(configPath, "simulation.mode=false\nsync.threshold.ms=5000");
         
+        // Mock an empty serial provider to force discovery failure regardless of host hardware
+        final com.stoicprogrammer.qtrqth.serial.api.ISerialProvider emptyProvider = 
+            org.mockito.Mockito.mock(com.stoicprogrammer.qtrqth.serial.api.ISerialProvider.class);
+        org.mockito.BDDMockito.given(emptyProvider.getAvailablePorts()).willReturn(List.of());
+
         final InstantSource frozenClock = InstantSource.fixed(MOCK_TIME);
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(new ConfigManager(configPath), null, null, frozenClock);
+        final SystemOrchestrator orchestrator = new SystemOrchestrator(new ConfigManager(configPath), emptyProvider, null, frozenClock);
         final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
 
         // WHEN: The system boots

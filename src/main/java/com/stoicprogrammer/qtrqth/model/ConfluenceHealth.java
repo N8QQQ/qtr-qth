@@ -14,11 +14,10 @@ public record ConfluenceHealth(
      * Synchronization states for the telemetry confluence.
      */
     public enum SyncStatus {
-        UNKNOWN,      // Initial state
-        CALIBRATING,  // Learning hardware cadence
-        CALIBRATED,   // Zero-latency pattern lock
-        BUCKETED,     // High-latency fail-safe mode
-        TERMINATED    // Fail-stop due to policy violation
+        UNKNOWN,       // Initial state
+        REACTIVE_LOCK, // Zero-latency event trigger achieved
+        SIGNAL_LOSS,   // Telemetry stream interrupted
+        SIMULATION     // Operating on synthetic data
     }
 
     /**
@@ -45,7 +44,7 @@ public record ConfluenceHealth(
         RiverStatus.ACTIVE, 
         RiverStatus.ACTIVE, 
         OperationalMode.HARDWARE_LOCK,
-        SyncStatus.CALIBRATED
+        SyncStatus.REACTIVE_LOCK
     );
 
     /**
@@ -55,6 +54,6 @@ public record ConfluenceHealth(
         RiverStatus.ACTIVE, 
         RiverStatus.ACTIVE, 
         OperationalMode.SIMULATION_LOCK,
-        SyncStatus.CALIBRATED
+        SyncStatus.SIMULATION
     );
 }

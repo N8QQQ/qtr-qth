@@ -73,7 +73,7 @@ Upon first run, the application creates `qtr-qth.properties` in the execution di
 The application outputs a high-fidelity telemetry pulse every second. Each pulse is tracked via a unique **Pulse ID** (e.g., `[B026]`).
 
 **Example Output:**
-`[GPS: ACTIVE | NTP: ACTIVE | Mode: HARDWARE_LOCK] GPS Fix: 12:34:56 UTC | 45.1234N, -87.5678W | NTP: 2026-05-21T12:34:56.012Z (RTT: 15ms) | Grid: EN66`
+`[REACTIVE_LOCK | GPS:ACTIVE | NTP:ACTIVE | Mode:HARDWARE_LOCK] Fix: UTC: 12:34:56 | Date: 2026-05-24 | Lat: 45.12340 | Lon: -87.56780 | Alt: 100.0m | Sats: 8 | HDOP: 1.00 | NTP: 2026-05-24T12:34:56.012Z (RTT: 15ms) | Grid: EN66bg`
 
 - **GPS Status:** `ACTIVE` (normal), `RECOVERY` (searching for hardware), `OFFLINE` (disabled).
 - **NTP Status:** Displays the latest network time reference and Round Trip Time (RTT).

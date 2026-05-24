@@ -4,12 +4,15 @@ import com.fazecast.jSerialComm.SerialPortDataListener;
 import com.fazecast.jSerialComm.SerialPortEvent;
 import com.stoicprogrammer.qtrqth.base.BddTest;
 import com.stoicprogrammer.qtrqth.config.ConfigManager;
+import com.stoicprogrammer.qtrqth.model.TelemetryEvent;
 import com.stoicprogrammer.qtrqth.nmea.NmeaSentenceAccumulator;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.time.Instant;
+import java.time.InstantSource;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,6 +29,7 @@ import static org.mockito.Mockito.mock;
 class SerialConnectorTest extends BddTest {
 
     private static final int EXPECTED_BAUD = 9600;
+    private static final Instant MOCK_TIME = Instant.parse("2026-05-24T12:00:00Z");
     private final ConnectorFixture fixture = new ConnectorFixture();
 
     @Test
@@ -36,12 +40,12 @@ class SerialConnectorTest extends BddTest {
     }
 
     @Test
-    void should_ingest_data_from_serial_event_stream() {
+    void should_ingest_data_from_serial_event_stream_with_edge_stamp() {
         final String expected = "$GPRMC,1,2,3*44";
         fixture.given_port_exists("COM4");
         fixture.when_connecting_in_async_thread("COM4");
         fixture.when_data_arrives(expected);
-        fixture.then_sentence_is_received(expected);
+        fixture.then_event_is_received_with_stamp(expected, MOCK_TIME);
     }
 
     @Test
@@ -60,11 +64,12 @@ class SerialConnectorTest extends BddTest {
         private final ISerialPort mockPort = mock(ISerialPort.class);
         private final ConfigManager mockConfig = mock(ConfigManager.class);
         private final NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
-        private final SerialConnector connector = new SerialConnector(mockConfig, accumulator, mockProvider);
+        private final InstantSource mockClock = InstantSource.fixed(MOCK_TIME);
+        private final SerialConnector connector = new SerialConnector(mockConfig, accumulator, mockProvider, mockClock);
         
-        private Stream<String> stream;
+        private Stream<TelemetryEvent> stream;
         private com.fazecast.jSerialComm.SerialPortDataListener capturedListener;
-        private final List<String> receivedSentences = new CopyOnWriteArrayList<>();
+        private final List<TelemetryEvent> receivedEvents = new CopyOnWriteArrayList<>();
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
         void given_port_exists(final String name) {
@@ -94,7 +99,7 @@ class SerialConnectorTest extends BddTest {
 
         void when_connecting_in_async_thread(final String name) {
             when_connecting(name);
-            executor.submit(() -> stream.forEach(receivedSentences::add));
+            executor.submit(() -> stream.forEach(receivedEvents::add));
         }
 
         void when_data_arrives(final String data) {
@@ -121,18 +126,17 @@ class SerialConnectorTest extends BddTest {
             assertThat(stream).isEmpty();
         }
 
-        void then_sentence_is_received(final String expected) {
-            // Functional Polling: Avoid while-loop per Section 1.
+        void then_event_is_received_with_stamp(final String expected, final Instant stamp) {
             Stream.generate(() -> {
                try { 
                    Thread.sleep(SLEEP_INTERVAL_MS); 
                } catch (final InterruptedException e) { 
                    Thread.currentThread().interrupt(); 
                }
-               return receivedSentences.contains(expected);
+               return receivedEvents.stream().anyMatch(e -> e.rawSentence().equals(expected));
             }).limit(MAX_WAIT_ATTEMPTS).filter(found -> found).findFirst();
 
-            assertThat(receivedSentences).contains(expected);
+            assertThat(receivedEvents).anyMatch(e -> e.rawSentence().equals(expected) && e.ingressTime().equals(stamp));
             executor.shutdownNow();
         }
     }

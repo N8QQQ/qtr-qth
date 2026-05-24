@@ -25,27 +25,28 @@ public final class SimulationSerialPort implements ISerialPort {
     
     // Operational Constants
     private static final int INITIAL_DELAY_MS = 100;
-    private static final int PULSE_INTERVAL_MS = 1000;
     private static final int BYTES_AVAILABLE_SIM = 256;
 
     private final String name;
     private final List<String> dataStream;
+    private final int intervalMs;
     private final AtomicInteger lineIndex = new AtomicInteger(0);
     private boolean open = false;
     private SerialPortDataListener listener;
     private Timer timer;
 
-    public SimulationSerialPort(final String name) {
+    public SimulationSerialPort(final String name, final String dataFile, final int intervalMs) {
         this.name = name;
-        this.dataStream = loadSimulatedData();
+        this.dataStream = loadSimulatedData(dataFile);
+        this.intervalMs = intervalMs;
     }
 
-    private List<String> loadSimulatedData() {
-        try (var is = getClass().getClassLoader().getResourceAsStream("simulation/gps_sim.nmea");
+    private List<String> loadSimulatedData(final String dataFile) {
+        try (var is = getClass().getClassLoader().getResourceAsStream(dataFile);
              var reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(is)))) {
             return reader.lines().toList();
         } catch (final Exception e) {
-            logger.warn("Failed to load simulation data. Falling back to hardcoded baseline.");
+            logger.warn("Failed to load simulation data from {}. Falling back to hardcoded baseline.", dataFile);
             return List.of("$GPZDA,232810.00,02,04,2026,00,00*6C");
         }
     }
@@ -65,7 +66,6 @@ public final class SimulationSerialPort implements ISerialPort {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                // Use a valid system descriptor to avoid library-level instantiation hazards.
                 final String proxyDescriptor = System.getProperty("os.name").toLowerCase().contains("win") 
                     ? "COM1" 
                     : "/dev/null";
@@ -74,7 +74,7 @@ public final class SimulationSerialPort implements ISerialPort {
                 Optional.ofNullable(listener).ifPresent(l -> 
                     l.serialEvent(new SerialPortEvent(proxy, SerialPort.LISTENING_EVENT_DATA_AVAILABLE)));
             }
-        }, INITIAL_DELAY_MS, PULSE_INTERVAL_MS);
+        }, INITIAL_DELAY_MS, intervalMs);
         return true;
     }
 
