@@ -46,11 +46,11 @@ public final class AutoBaudEngine {
         
         return Optional.of(port.openPort())
             .filter(Boolean::booleanValue)
-            .map(opened -> performReadAudit(port, baud))
+            .map(opened -> performReadAudit(port))
             .orElse(false);
     }
 
-    private static boolean performReadAudit(final ISerialPort port, final int baud) {
+    private static boolean performReadAudit(final ISerialPort port) {
         try {
             final byte[] buffer = new byte[BUFFER_SIZE];
             final long deadline = System.currentTimeMillis() + SCAN_TIMEOUT_MS;

@@ -150,17 +150,21 @@ class ReactiveStressTest extends BddTest {
             final String[] parts = raw.split(",");
             final String expectedRawTime = parts[1];
             
-            final int hh = Integer.parseInt(expectedRawTime.substring(HOUR_START, HOUR_END));
-            final int mm = Integer.parseInt(expectedRawTime.substring(MINUTE_START, MINUTE_END));
-            final int ss = Integer.parseInt(expectedRawTime.substring(SECOND_START, SECOND_END));
-            int ns = 0;
-            if (expectedRawTime.length() > SECOND_END && expectedRawTime.charAt(SECOND_END) == '.') {
-                final double fraction = Double.parseDouble("0" + expectedRawTime.substring(SECOND_END));
-                ns = (int) Math.round(fraction * BILLION_NANOS);
+            try {
+                final int hh = Integer.parseInt(expectedRawTime.substring(HOUR_START, HOUR_END));
+                final int mm = Integer.parseInt(expectedRawTime.substring(MINUTE_START, MINUTE_END));
+                final int ss = Integer.parseInt(expectedRawTime.substring(SECOND_START, SECOND_END));
+                int ns = 0;
+                if (expectedRawTime.length() > SECOND_END && expectedRawTime.charAt(SECOND_END) == '.') {
+                    final double fraction = Double.parseDouble("0" + expectedRawTime.substring(SECOND_END));
+                    ns = (int) Math.round(fraction * BILLION_NANOS);
+                }
+                final java.time.LocalTime expectedTime = java.time.LocalTime.of(hh, mm, ss, ns);
+                
+                assertThat(pulse.data().utcTime()).isEqualTo(expectedTime);
+            } catch (final NumberFormatException e) {
+                throw new AssertionError("Data Corruption: Malformed timestamp " + expectedRawTime + " in trigger: " + raw, e);
             }
-            final java.time.LocalTime expectedTime = java.time.LocalTime.of(hh, mm, ss, ns);
-            
-            assertThat(pulse.data().utcTime()).isEqualTo(expectedTime);
         });
         
         final TelemetryPulse finalPulse = capturedPulses.get().last();
