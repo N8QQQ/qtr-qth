@@ -41,16 +41,16 @@ classDiagram
     class TelemetryPulse {
         <<record>>
         +String pulseId
-        +String sentence
+        +String triggeringSentence
         +Instant ingressTime
         +GpsData data
         +NtpResponse reference
         +ConfluenceHealth health
-        +update(NmeaParser, AtomicReference) TelemetryPulse
     }
 
     class NmeaParser {
         +parse(String, GpsData) GpsData
+        +isTrigger(String) boolean
     }
 
     SystemOrchestrator *-- SerialConnector : owns
@@ -58,7 +58,6 @@ classDiagram
     SystemOrchestrator ..> TelemetryPulse : produces
     SerialConnector o-- ISerialProvider : utilizes
     SerialConnector *-- NmeaSentenceAccumulator : owns
-    TelemetryPulse ..> NmeaParser : utilizes for evolution
 ```
 
 ## 📐 Package Hierarchy & Dependency Graph (Structural Purity)
@@ -127,11 +126,13 @@ stateDiagram-v2
     BOOTING --> SIMULATION : Mode Locked (Fallback/Manual)
     
     state ACTIVE {
-        [*] --> STREAMING
+        [*] --> DISCOVERY
+        DISCOVERY --> STREAMING : Hardware Acquired
+        STREAMING --> STREAMING : Reactive Ingress
+        
         STREAMING --> RECOVERY : Signal Loss
         RECOVERY --> NEUTRALIZATION : Disconnect Stale Handle
         NEUTRALIZATION --> DISCOVERY : Backoff Wait
-        DISCOVERY --> STREAMING : Hardware Re-acquired
         DISCOVERY --> DISCOVERY : Hardware Missing
     }
 
@@ -144,34 +145,39 @@ stateDiagram-v2
     SHUTDOWN --> [*] : Resources Released
 ```
 
-## 📡 The "Two-River Confluence" Model (Data Flow)
-The core of the system is based on two asynchronous streams of data merging into a unified telemetry pulse.
+## 📡 The "Reactive Confluence" Model (Data Flow)
+The core of the system is based on two asynchronous streams of data merging into a unified telemetry pulse. The "Fast River" (GPS) is processed as a deterministic monolith to ensure absolute temporal fidelity.
 
 ```mermaid
 flowchart TD
     subgraph "The Slow River (Network)"
-        NTP[NTP Pool] --> |Poll 60s| NC[NtpClient]
-        NC --> |NtpResponse| AR[AtomicReference: lastNtp]
+        NTP["NTP Pool"] --> |Poll 60s| NC["NtpClient"]
+        NC --> |NtpResponse| AR["AtomicReference: lastNtp"]
     end
 
     subgraph "The Fast River (Hardware)"
-        GPS[GPS Hardware] --> |Stream 1Hz| SC[SerialConnector]
-        SC --> |Byte Stream| AC[NmeaSentenceAccumulator]
-        AC --> |NMEA Sentence| ML[Main Pipeline]
+        GPS["GPS Hardware"] --> |Byte Stream| SC["SerialConnector"]
+        SC --> |Edge Stamp: T1| EQ["LinkedBlockingQueue: TelemetryEvent"]
+        EQ --> |Poll| RM["Reactive Monolith: Core 1"]
+        
+        subgraph "Reactive Monolith"
+            RM --> |Parse| NP["NmeaParser"]
+            RM --> |Update| SR["Reactive State Registry"]
+            RM --> |Trigger| TP["TelemetryPulse::start"]
+        end
     end
 
-    CLOCK[InstantSource: Edge Stamp] --> |System Time| TP
-    AR -.-> |Merge| TP[TelemetryPulse::start]
-    ML --> TP
-    TP --> |Parse| NP[NmeaParser]
-    NP --> |GpsData| CF[AtomicReference: currentFix]
-    CF --> |Grid| GS[GridSquareCalculator]
-    GS --> |Log| LOG[High-Fidelity Console UI]
+    CLOCK["InstantSource: Ground Truth"] --> |T1 Timestamp| SC
+    AR -.-> |Merge| TP
+    SR -.-> |Enrich| TP
+    TP --> |GpsData| GS["GridSquareCalculator"]
+    GS --> |Log| LOG["High-Fidelity Console UI"]
 ```
 
-1.  **The Slow River (NTP):** A background heartbeat that polls network time servers to provide a reliable "second opinion" on time drift.
-2.  **The Fast River (GPS):** A high-frequency stream of NMEA sentences direct from hardware, providing Stratum 0 precision.
-3.  **The Confluence:** Every time a GPS sentence arrives, it captures the latest known NTP reference to create a `TelemetryPulse`, ensuring end-to-end traceability.
+1.  **The Slow River (NTP):** A background heartbeat providing a network-based "second opinion."
+2.  **The Fast River (GPS):** A deterministic monolith where **Producer-side Edge Stamping** captures the system clock at the instant of byte arrival. 
+3.  **Monolithic Processing:** By using a single consumer thread for all GPS sentences, the system eliminates state-tearing and ensures that position data is always fully enriched before a timing pulse is emitted.
+4.  **Zero-Jitter Log:** The `nmea.log` uses a `neverBlock` policy to ensure logging performance never impacts the serial ingestion timing.
 
 ## 🛡️ Structural Guardrails
 - **Typed Configuration:** Immutable `AppConfig` records eliminate "Stringly-Typed" logic.

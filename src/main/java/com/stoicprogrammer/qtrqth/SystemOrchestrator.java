@@ -3,6 +3,7 @@ package com.stoicprogrammer.qtrqth;
 import com.stoicprogrammer.qtrqth.config.AppConfig;
 import com.stoicprogrammer.qtrqth.config.ConfigManager;
 import com.stoicprogrammer.qtrqth.model.ConfluenceHealth;
+import com.stoicprogrammer.qtrqth.model.TelemetryEvent;
 import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import com.stoicprogrammer.qtrqth.nmea.GpsData;
 import com.stoicprogrammer.qtrqth.nmea.NmeaParser;
@@ -23,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.time.InstantSource;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,6 +39,7 @@ import java.util.stream.Stream;
  */
 public final class SystemOrchestrator {
     private static final Logger logger = LoggerFactory.getLogger(SystemOrchestrator.class);
+    private static final Logger telemetryLogger = LoggerFactory.getLogger("com.stoicprogrammer.qtrqth.telemetry.Nmea");
 
     private static final int NTP_TIMEOUT_MS = 5000;
     private static final int NTP_POLL_INTERVAL_SECONDS = 60;
@@ -48,7 +49,7 @@ public final class SystemOrchestrator {
     private final InstantSource clock;
     private final ScheduledExecutorService ntpExecutor;
     private final AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
-    private final AtomicReference<GpsData> currentFix = new AtomicReference<>(new GpsData(null, null, 0, 0, 0, 0));
+    private final AtomicReference<GpsData> currentFix = new AtomicReference<>(GpsData.EMPTY);
     private final AtomicReference<ConfluenceHealth> healthState = new AtomicReference<>();
     private final AtomicBoolean running = new AtomicBoolean(true);
     
@@ -87,6 +88,13 @@ public final class SystemOrchestrator {
      * @param pulseConsumer A consumer for processed pulses (e.g., logging or UI updates).
      */
     public void start(final Consumer<TelemetryPulse> pulseConsumer) {
+        start(pulseConsumer, event -> {});
+    }
+
+    /**
+     * Executes the full telemetry confluence pipeline with an optional raw event listener.
+     */
+    public void start(final Consumer<TelemetryPulse> pulseConsumer, final Consumer<TelemetryEvent> eventListener) {
         final AppConfig config = configManager.getConfig();
         
         // 1. Resolve Operational Mode (State-Lock)
@@ -95,7 +103,8 @@ public final class SystemOrchestrator {
         this.healthState.set(new ConfluenceHealth(
             ConfluenceHealth.RiverStatus.ACTIVE, 
             ConfluenceHealth.RiverStatus.ACTIVE, 
-            mode
+            mode,
+            ConfluenceHealth.SyncStatus.UNKNOWN
         ));
 
         logger.info("System bootstrapping... (Mode: {})", mode);
@@ -104,37 +113,48 @@ public final class SystemOrchestrator {
         initNtpHeartbeat(config, mode == ConfluenceHealth.OperationalMode.SIMULATION_LOCK);
 
         // 3. Adaptive Recovery Stream
-        // We use a generating stream to replace the forbidden 'while' loop.
         Stream.generate(running::get)
             .takeWhile(Boolean::booleanValue)
-            .forEach(r -> executeConfluenceCycle(mode, pulseConsumer));
+            .forEach(r -> executeConfluenceCycle(mode, pulseConsumer, eventListener));
     }
 
-    private void executeConfluenceCycle(final ConfluenceHealth.OperationalMode mode, final Consumer<TelemetryPulse> pulseConsumer) {
-        initConfluence(mode == ConfluenceHealth.OperationalMode.SIMULATION_LOCK, pulseConsumer);
+    private void executeConfluenceCycle(
+        final ConfluenceHealth.OperationalMode mode, 
+        final Consumer<TelemetryPulse> pulseConsumer,
+        final Consumer<TelemetryEvent> eventListener
+    ) {
+        initConfluence(mode == ConfluenceHealth.OperationalMode.SIMULATION_LOCK, pulseConsumer, eventListener);
         
         // If we reach this point, the serial stream has collapsed.
-        if (running.get()) {
-            logger.warn("SIGNAL LOSS DETECTED: Entering Adaptive Recovery...");
-            updateGpsHealth(true);
-            Optional.ofNullable(connector).ifPresent(SerialConnector::disconnect);
-            sleep(RECOVERY_BACKOFF_MS);
-        }
+        Optional.of(running.get())
+            .filter(Boolean::booleanValue)
+            .ifPresent(r -> {
+                logger.warn("SIGNAL LOSS DETECTED: Entering Adaptive Recovery...");
+                updateGpsHealth(true);
+                Optional.ofNullable(connector).ifPresent(SerialConnector::disconnect);
+                sleep(RECOVERY_BACKOFF_MS);
+            });
     }
 
     private ConfluenceHealth.OperationalMode resolveMode(final AppConfig config) {
-        if (config.simulationMode()) {
-            return ConfluenceHealth.OperationalMode.SIMULATION_LOCK;
-        }
+        return Optional.of(config.simulationMode())
+            .filter(Boolean::booleanValue)
+            .map(sim -> ConfluenceHealth.OperationalMode.SIMULATION_LOCK)
+            .orElseGet(this::probeForHardware);
+    }
 
-        final List<String> physicalPorts = new PortDiscovery(new JSerialCommProvider(), configManager).getAvailablePorts();
-        if (physicalPorts.isEmpty()) {
-            logger.warn("STRATUM 0 DISCOVERY FAILURE: No physical serial hardware identified.");
-            logger.info("ADAPTIVE FALLBACK: Locking into Simulation Mode for this run.");
-            return ConfluenceHealth.OperationalMode.SIMULATION_LOCK;
-        }
-
-        return ConfluenceHealth.OperationalMode.HARDWARE_LOCK;
+    private ConfluenceHealth.OperationalMode probeForHardware() {
+        final ISerialProvider provider = Optional.ofNullable(testSerialProvider).orElseGet(JSerialCommProvider::new);
+        final List<String> physicalPorts = new PortDiscovery(provider, configManager).getAvailablePorts();
+        
+        return Optional.of(physicalPorts)
+            .filter(ports -> !ports.isEmpty())
+            .map(ports -> ConfluenceHealth.OperationalMode.HARDWARE_LOCK)
+            .orElseGet(() -> {
+                logger.warn("STRATUM 0 DISCOVERY FAILURE: No physical serial hardware identified.");
+                logger.info("ADAPTIVE FALLBACK: Locking into Simulation Mode for this run.");
+                return ConfluenceHealth.OperationalMode.SIMULATION_LOCK;
+            });
     }
 
     private void initNtpHeartbeat(final AppConfig config, final boolean useSimulation) {
@@ -153,51 +173,93 @@ public final class SystemOrchestrator {
         healthState.updateAndGet(h -> new ConfluenceHealth(
             h.gpsStatus(),
             active ? ConfluenceHealth.RiverStatus.ACTIVE : ConfluenceHealth.RiverStatus.RECOVERY,
-            h.mode()
+            h.mode(),
+            h.syncStatus()
         ));
     }
 
-    private void initConfluence(final boolean useSimulation, final Consumer<TelemetryPulse> pulseConsumer) {
-        final ISerialProvider provider = Optional.ofNullable(testSerialProvider)
-            .orElseGet(() -> useSimulation ? new SimulationSerialProvider() : new JSerialCommProvider());
+    private void initConfluence(
+        final boolean useSimulation, 
+        final Consumer<TelemetryPulse> pulseConsumer,
+        final Consumer<TelemetryEvent> eventListener
+    ) {
+        final AppConfig config = configManager.getConfig();
+        final ISerialProvider provider = useSimulation 
+            ? new SimulationSerialProvider(config.simulationDataFile(), config.simulationIntervalMs()) 
+            : Optional.ofNullable(testSerialProvider).orElseGet(JSerialCommProvider::new);
         final PortDiscovery discovery = new PortDiscovery(provider, configManager);
         
         discovery.findLikelyGpsPort()
             .or(() -> discovery.getAvailablePorts().stream().findFirst())
             .ifPresentOrElse(
-                port -> runPipeline(port, provider, pulseConsumer),
-                () -> {
-                    if (!useSimulation) {
-                        logger.debug("Monitoring for hardware restoration...");
-                    }
-                }
+                port -> runPipeline(port, provider, pulseConsumer, eventListener),
+                () -> Optional.of(useSimulation)
+                        .filter(u -> !u)
+                        .ifPresent(u -> logger.debug("Monitoring for hardware restoration..."))
             );
     }
 
-    private void runPipeline(final String port, final ISerialProvider provider, final Consumer<TelemetryPulse> consumer) {
-        final AppConfig config = configManager.getConfig();
+    private void runPipeline(
+        final String port, 
+        final ISerialProvider provider, 
+        final Consumer<TelemetryPulse> consumer,
+        final Consumer<TelemetryEvent> eventListener
+    ) {
         final NmeaParser parser = new NmeaParser();
-        this.connector = new SerialConnector(configManager, new NmeaSentenceAccumulator(), provider);
+        
+        this.connector = new SerialConnector(configManager, new NmeaSentenceAccumulator(), provider, clock);
 
-        logger.info("Telemetry Confluence initiated on port {}...", port);
+        logger.info("Telemetry Reactive Stream initiated on port {}...", port);
+        updateSyncStatus(ConfluenceHealth.SyncStatus.REACTIVE_LOCK);
         updateGpsHealth(false);
 
         connector.connect(port)
-            .map(sentence -> TelemetryPulse.start(sentence, lastNtp.get(), healthState.get(), clock.instant()))
-            .peek(pulse -> Map.<Boolean, Runnable>of(
-                true, () -> pulse.logRaw(logger),
-                false, () -> {}
-            ).get(config.displayRawTelemetry()).run())
-            .map(pulse -> pulse.update(parser, currentFix))
-            .filter(TelemetryPulse::hasValidFix)
-            .forEach(consumer);
+            .peek(eventListener)
+            .peek(event -> Optional.of(event.rawSentence())
+                .filter(parser::isSupported)
+                .map(s -> parser.parse(s, currentFix.get()))
+                .ifPresentOrElse(
+                    partial -> telemetryLogger.info("[DECODED] {} -> {}", event.rawSentence(), partial),
+                    () -> telemetryLogger.info("[RAW    ] {}", event.rawSentence())
+                ))
+            .forEach(event -> {
+                final String sentence = event.rawSentence();
+                
+                // 1. Update Global Fix State (Fold the new sentence into the existing fix)
+                final GpsData nextState = currentFix.updateAndGet(fix -> parser.parse(sentence, fix));
+
+                // 2. Reactive Pulse Trigger
+                Optional.of(sentence)
+                    .filter(parser::isTrigger)
+                    .map(s -> TelemetryPulse.start(s, lastNtp.get(), healthState.get(), event.ingressTime(), nextState))
+                    .filter(TelemetryPulse::hasValidFix)
+                    .ifPresent(pulse -> invokeConsumer(consumer, pulse));
+            });
+    }
+
+    private void invokeConsumer(final Consumer<TelemetryPulse> consumer, final TelemetryPulse pulse) {
+        try {
+            consumer.accept(pulse);
+        } catch (final Exception e) {
+            logger.error("Error in telemetry consumer: {}", e.getMessage(), e);
+        }
+    }
+
+    private void updateSyncStatus(final ConfluenceHealth.SyncStatus status) {
+        healthState.updateAndGet(h -> new ConfluenceHealth(
+            h.gpsStatus(),
+            h.ntpStatus(),
+            h.mode(),
+            status
+        ));
     }
 
     private void updateGpsHealth(final boolean signalLoss) {
         healthState.updateAndGet(h -> new ConfluenceHealth(
             signalLoss ? ConfluenceHealth.RiverStatus.RECOVERY : ConfluenceHealth.RiverStatus.ACTIVE,
             h.ntpStatus(),
-            h.mode()
+            h.mode(),
+            h.syncStatus()
         ));
     }
 

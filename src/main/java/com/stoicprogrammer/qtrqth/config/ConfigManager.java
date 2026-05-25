@@ -26,6 +26,9 @@ public final class ConfigManager {
     // Default Operational Constants
     private static final int DEFAULT_BAUD = 9600;
     private static final long DEFAULT_SYNC_THRESHOLD = 1000L;
+    private static final String DEFAULT_SIM_DATA = "simulation/gps_sim.nmea";
+    private static final int DEFAULT_SIM_INTERVAL = 1000;
+    private static final int DEFAULT_QUEUE_CAPACITY = 500;
 
     /**
      * Internal interface for mocking file operations.
@@ -58,6 +61,9 @@ public final class ConfigManager {
         properties.setProperty("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver,ttyusb");
         properties.setProperty("display.raw.telemetry", "false");
         properties.setProperty("simulation.mode", "false");
+        properties.setProperty("simulation.data.file", DEFAULT_SIM_DATA);
+        properties.setProperty("simulation.interval.ms", String.valueOf(DEFAULT_SIM_INTERVAL));
+        properties.setProperty("telemetry.queue.capacity", String.valueOf(DEFAULT_QUEUE_CAPACITY));
 
         final File configFile = configPath.toFile();
 
@@ -75,7 +81,10 @@ public final class ConfigManager {
             extractLong("sync.threshold.ms", DEFAULT_SYNC_THRESHOLD),
             extractList("gps.discovery.keywords", "gps,u-blox,prolific,silicon labs,gnss,receiver,ttyusb"),
             extractBoolean("display.raw.telemetry", false),
-            extractBoolean("simulation.mode", false)
+            extractBoolean("simulation.mode", false),
+            getProperty("simulation.data.file").orElse(DEFAULT_SIM_DATA),
+            extractInt("simulation.interval.ms", DEFAULT_SIM_INTERVAL),
+            extractInt("telemetry.queue.capacity", DEFAULT_QUEUE_CAPACITY)
         );
     }
 

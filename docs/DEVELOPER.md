@@ -16,22 +16,19 @@ The following diagram traces a single NMEA sentence from the hardware edge throu
 sequenceDiagram
     participant HW as GPS Hardware
     participant SC as SerialConnector
-    participant AC as NmeaSentenceAccumulator
-    participant SO as SystemOrchestrator
-    participant TP as TelemetryPulse
+    participant IG as Ingress Guard (Producer)
+    participant EQ as Event Queue
+    participant RM as Reactive Monolith (Consumer)
     participant NP as NmeaParser
 
     HW->>SC: Byte Stream
-    SC->>AC: process(byte)
-    AC->>SC: Optional<String> Sentence
-    SC->>SO: Stream<String>
-    SO->>TP: start(sentence, lastNtp, health)
-    SO->>TP: update(parser, currentFix)
-    TP->>NP: parse(sentence, previous)
-    NP->>TP: updated GpsData
-    SO->>SO: peek(logRaw)
-    SO->>SO: filter(hasValidFix)
-    SO->>Consumer: TelemetryPulse (Pulse ID)
+    SC->>IG: Capture T1 Edge Stamp
+    IG->>EQ: push TelemetryEvent(sentence, T1)
+    EQ->>RM: poll event
+    RM->>NP: parse(sentence, previous)
+    NP-->>RM: Enriched GpsData
+    RM->>RM: Trigger TelemetryPulse
+    RM->>Consumer: TelemetryPulse (Pulse ID + T1)
 ```
 
 ## 🛠️ Development Workflow
@@ -108,10 +105,11 @@ If the `phantom` container behaves unexpectedly:
 ### 3. Telemetry Pulse Analysis
 The system utilizes **Mapped Diagnostic Context (MDC)** to track data through the pipeline.
 - **Pulse ID Tracking:** Every log line is prefixed with a 4-digit Hex ID (e.g., `[B026]`). Use this to correlate raw NMEA ingestion with final parsed results.
-- **Health Signaling:** Check the `[GPS: Status | NTP: Status]` prefix in the logs.
-    - `RECOVERY`: System is re-scanning for hardware after signal loss.
-    - `ACTIVE`: The "River" is flowing normally.
-- **Raw Telemetry:** Enable `display.raw.telemetry=true` in `config/boot.properties` to see the unprocessed byte-stream in the logs.
+- **Health Signaling:** Check the `[REACTIVE_LOCK | GPS: Status | NTP: Status | Mode: Status]` prefix in the logs.
+    - `REACTIVE_LOCK`: Zero-latency event trigger achieved.
+    - `GPS: RECOVERY`: System is re-scanning for hardware after signal loss.
+    - `GPS: ACTIVE`: The GPS data stream is flowing normally.
+- **Raw Telemetry:** Enable `display.raw.telemetry=true` in `qtr-qth.properties` to see the unprocessed byte-stream in the logs.
 
 ---
 ## 🚀 Heritage Release Protocol

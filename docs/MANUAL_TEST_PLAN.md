@@ -50,6 +50,7 @@ This document provides a structured protocol for manual verification of the `qtr
 2.  **Expected Outcome:**
     - The logs show `Mode: SIMULATION_LOCK`.
     - Telemetry pulses appear every second with a valid Pulse ID (e.g., `[B026]`).
+    - The status prefix shows `[REACTIVE_LOCK | GPS:ACTIVE | NTP:ACTIVE | Mode:SIMULATION_LOCK]`.
     - Grid Square and NTP references are populated and updating.
 
 ---
@@ -61,6 +62,7 @@ This document provides a structured protocol for manual verification of the `qtr
 2.  **Expected Outcome:**
     - The logs show `Mode: HARDWARE_LOCK`.
     - The system identifies and opens the GPS port automatically.
+    - The status prefix shows `[REACTIVE_LOCK | GPS:ACTIVE | NTP:ACTIVE | Mode:HARDWARE_LOCK]`.
     - Real UTC time and coordinates from the satellites appear in the console.
 
 ---
@@ -72,7 +74,7 @@ This document provides a structured protocol for manual verification of the `qtr
 2.  **Expected Outcome:**
     - The system detects the stream collapse.
     - Console logs: `SIGNAL LOSS DETECTED: Entering Adaptive Recovery...`
-    - The status changes to `[GPS: RECOVERY | NTP: ACTIVE]`.
+    - The status changes to `[REACTIVE_LOCK | GPS:RECOVERY | NTP:ACTIVE | Mode:HARDWARE_LOCK]`.
 3.  **Action:** **Plug the GPS receiver back in.**
 4.  **Expected Outcome:**
     - The system re-discovers the port during its next backoff cycle.

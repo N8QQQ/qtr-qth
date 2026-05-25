@@ -50,6 +50,11 @@ public final class HardwareProbe {
         System.out.println(String.format("[Port: %s]", port.getSystemPortName()));
         System.out.println(String.format("  Description: %s", port.getPortDescription()));
         System.out.println(String.format("  Metadata:    %s", port.getDescriptivePortName()));
+        
+        final String speed = AutoBaudEngine.scan(port)
+            .map(baud -> baud + " bps (NMEA Detected)")
+            .orElse("No Signal / Unknown Speed");
+        System.out.println(String.format("  Telemetry:   %s", speed));
         System.out.println("");
     }
 }

@@ -36,6 +36,7 @@
             <property name="max" value="0"/>
         </module>
         <module name="UnusedImports"/>
+        <module name="UnusedLocalVariable"/>
         <module name="PackageDeclaration"/>
         <module name="HideUtilityClassConstructor"/>
         <module name="OneStatementPerLine"/>

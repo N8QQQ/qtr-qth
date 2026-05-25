@@ -7,8 +7,19 @@ package com.stoicprogrammer.qtrqth.model;
 public record ConfluenceHealth(
     RiverStatus gpsStatus,
     RiverStatus ntpStatus,
-    OperationalMode mode
+    OperationalMode mode,
+    SyncStatus syncStatus
 ) {
+    /**
+     * Synchronization states for the telemetry confluence.
+     */
+    public enum SyncStatus {
+        UNKNOWN,       // Initial state
+        REACTIVE_LOCK, // Zero-latency event trigger achieved
+        SIGNAL_LOSS,   // Telemetry stream interrupted
+        SIMULATION     // Operating on synthetic data
+    }
+
     /**
      * Standard status levels for individual data rivers.
      */
@@ -32,7 +43,8 @@ public record ConfluenceHealth(
     public static final ConfluenceHealth HEALTHY_HARDWARE = new ConfluenceHealth(
         RiverStatus.ACTIVE, 
         RiverStatus.ACTIVE, 
-        OperationalMode.HARDWARE_LOCK
+        OperationalMode.HARDWARE_LOCK,
+        SyncStatus.REACTIVE_LOCK
     );
 
     /**
@@ -41,6 +53,7 @@ public record ConfluenceHealth(
     public static final ConfluenceHealth HEALTHY_SIMULATION = new ConfluenceHealth(
         RiverStatus.ACTIVE, 
         RiverStatus.ACTIVE, 
-        OperationalMode.SIMULATION_LOCK
+        OperationalMode.SIMULATION_LOCK,
+        SyncStatus.SIMULATION
     );
 }

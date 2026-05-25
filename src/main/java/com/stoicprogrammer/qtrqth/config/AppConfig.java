@@ -12,7 +12,10 @@ public record AppConfig(
     long syncThresholdMs,
     List<String> discoveryKeywords,
     boolean displayRawTelemetry,
-    boolean simulationMode
+    boolean simulationMode,
+    String simulationDataFile,
+    int simulationIntervalMs,
+    int telemetryQueueCapacity
 ) {
     /**
      * Default configuration for rapid bootstrapping.
@@ -23,7 +26,9 @@ public record AppConfig(
         1000L,
         List.of("gps", "u-blox", "prolific", "silicon labs", "gnss", "receiver", "ttyusb"),
         false,
-        false
+        false,
+        "simulation/gps_sim.nmea",
+        1000,
+        500
     );
-    }
-
+}

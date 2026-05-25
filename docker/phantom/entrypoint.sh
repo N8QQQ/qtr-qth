@@ -28,5 +28,9 @@ ls -l /dev/tty* | grep "USB" || echo "⚠️ No physical USB/Serial devices dete
 ./gradlew --no-daemon probeHardware
 
 echo "--- 🚀 Launching Phantom Shack ---"
-# For now, we tail the log to keep the container alive and the TTY open
-tail -f /dev/null
+if [ $# -gt 0 ]; then
+    exec "$@"
+else
+    # Fallback to interactive hang if no command provided
+    tail -f /dev/null
+fi

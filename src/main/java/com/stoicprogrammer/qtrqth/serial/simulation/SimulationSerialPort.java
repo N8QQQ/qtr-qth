@@ -4,13 +4,13 @@ import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortDataListener;
 import com.fazecast.jSerialComm.SerialPortEvent;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
+import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -25,29 +25,36 @@ public final class SimulationSerialPort implements ISerialPort {
     
     // Operational Constants
     private static final int INITIAL_DELAY_MS = 100;
-    private static final int PULSE_INTERVAL_MS = 1000;
     private static final int BYTES_AVAILABLE_SIM = 256;
 
     private final String name;
     private final List<String> dataStream;
+    private final int intervalMs;
     private final AtomicInteger lineIndex = new AtomicInteger(0);
     private boolean open = false;
     private SerialPortDataListener listener;
     private Timer timer;
 
-    public SimulationSerialPort(final String name) {
+    public SimulationSerialPort(final String name, final String dataFile, final int intervalMs) {
         this.name = name;
-        this.dataStream = loadSimulatedData();
+        this.dataStream = loadSimulatedData(dataFile);
+        this.intervalMs = intervalMs;
     }
 
-    private List<String> loadSimulatedData() {
-        try (var is = getClass().getClassLoader().getResourceAsStream("simulation/gps_sim.nmea");
-             var reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(is)))) {
-            return reader.lines().toList();
-        } catch (final Exception e) {
-            logger.warn("Failed to load simulation data. Falling back to hardcoded baseline.");
-            return List.of("$GPZDA,232810.00,02,04,2026,00,00*6C");
-        }
+    private List<String> loadSimulatedData(final String dataFile) {
+        // Try Classpath first, then Absolute Path
+        return Optional.ofNullable(getClass().getClassLoader().getResourceAsStream(dataFile))
+            .map(is -> Try.of(() -> {
+                try (var reader = new BufferedReader(new InputStreamReader(is))) {
+                    return reader.lines().toList();
+                }
+            }).getOrElse(List.<String>of()))
+            .or(() -> Try.of(() -> java.nio.file.Files.readAllLines(java.nio.file.Paths.get(dataFile))).toJavaOptional())
+            .filter(lines -> !lines.isEmpty())
+            .orElseGet(() -> {
+                logger.warn("Failed to load simulation data from {}. Falling back to hardcoded baseline.", dataFile);
+                return List.of("$GPZDA,232810.00,02,04,2026,00,00*6C");
+            });
     }
 
     @Override public String getSystemPortName() { return name; }
@@ -65,7 +72,6 @@ public final class SimulationSerialPort implements ISerialPort {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                // Use a valid system descriptor to avoid library-level instantiation hazards.
                 final String proxyDescriptor = System.getProperty("os.name").toLowerCase().contains("win") 
                     ? "COM1" 
                     : "/dev/null";
@@ -74,7 +80,7 @@ public final class SimulationSerialPort implements ISerialPort {
                 Optional.ofNullable(listener).ifPresent(l -> 
                     l.serialEvent(new SerialPortEvent(proxy, SerialPort.LISTENING_EVENT_DATA_AVAILABLE)));
             }
-        }, INITIAL_DELAY_MS, PULSE_INTERVAL_MS);
+        }, INITIAL_DELAY_MS, intervalMs);
         return true;
     }
 
