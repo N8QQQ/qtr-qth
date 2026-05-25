@@ -65,12 +65,17 @@ class SerialConnectorTest extends BddTest {
         private final ConfigManager mockConfig = mock(ConfigManager.class);
         private final NmeaSentenceAccumulator accumulator = new NmeaSentenceAccumulator();
         private final InstantSource mockClock = InstantSource.fixed(MOCK_TIME);
-        private final SerialConnector connector = new SerialConnector(mockConfig, accumulator, mockProvider, mockClock);
+        private final SerialConnector connector;
         
         private Stream<TelemetryEvent> stream;
         private com.fazecast.jSerialComm.SerialPortDataListener capturedListener;
         private final List<TelemetryEvent> receivedEvents = new CopyOnWriteArrayList<>();
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        ConnectorFixture() {
+            given(mockConfig.getConfig()).willReturn(com.stoicprogrammer.qtrqth.config.AppConfig.DEFAULT);
+            this.connector = new SerialConnector(mockConfig, accumulator, mockProvider, mockClock);
+        }
 
         void given_port_exists(final String name) {
             given(mockConfig.getProperty("serial.baud")).willReturn(Optional.of(String.valueOf(DEFAULT_BAUD)));

@@ -6,6 +6,8 @@ import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import com.stoicprogrammer.qtrqth.serial.simulation.SimulationSerialProvider;
 import com.stoicprogrammer.qtrqth.ntp.simulation.SimulationNtpProvider;
 import com.stoicprogrammer.qtrqth.base.BddTest;
+import com.stoicprogrammer.qtrqth.util.TelemetryInterpolationEngine;
+import com.stoicprogrammer.qtrqth.util.TestArtifactManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
@@ -15,23 +17,14 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
-
-import com.stoicprogrammer.qtrqth.util.TelemetryInterpolationEngine;
-import com.stoicprogrammer.qtrqth.serial.simulation.SimulationSerialPort;
-import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
-
-import com.stoicprogrammer.qtrqth.util.TestArtifactManager;
-
-import java.io.IOException;
-import java.nio.file.Files;
 
 /**
  * High-Fidelity Stress Test for Phase 9 Reactive Inversion.
@@ -40,19 +33,38 @@ import java.nio.file.Files;
 class ReactiveStressTest extends BddTest {
     private static final Logger logger = LoggerFactory.getLogger(ReactiveStressTest.class);
     
+    private static final int BASELINE_FREQ = 25;
+    private static final int BASELINE_PULSES = 100;
+    private static final int HIGH_BANDWIDTH_FREQ = 50;
+    private static final int HIGH_BANDWIDTH_PULSES = 200;
+    private static final int MILLIS_PER_SEC = 1000;
+    private static final int QUEUE_CAPACITY = 10000;
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 30;
+    private static final double LATITUDE_EXPECTED = 46.28342983333334;
+    private static final double LONGITUDE_EXPECTED = -87.88802466666666;
+    private static final double COORDINATE_PRECISION = 0.00000001;
+    private static final double MAX_AVG_LAG_MS = 100.0;
+    private static final int BILLION_NANOS = 1_000_000_000;
+    private static final int HOUR_START = 0;
+    private static final int HOUR_END = 2;
+    private static final int MINUTE_START = 2;
+    private static final int MINUTE_END = 4;
+    private static final int SECOND_START = 4;
+    private static final int SECOND_END = 6;
+
     @TempDir
-    Path tempDir;
+    private Path tempDir;
 
     @Test
     void should_handle_25hz_telemetry_burst_with_minimal_processing_lag() {
         reportGiven("A 25Hz simulated hardware stream baseline (115,200 baud)");
-        runStressTest(25, 100); // 25Hz, 100 pulses
+        runStressTest(BASELINE_FREQ, BASELINE_PULSES);
     }
 
     @Test
     void should_handle_high_bandwidth_921600_baud_simulation() {
         reportGiven("A high-bandwidth 921,600 baud simulated hardware stream");
-        runStressTest(50, 200); // 50Hz, 200 pulses
+        runStressTest(HIGH_BANDWIDTH_FREQ, HIGH_BANDWIDTH_PULSES);
     }
 
     private void runStressTest(final int targetFrequency, final int burstCount) {
@@ -60,7 +72,7 @@ class ReactiveStressTest extends BddTest {
         final String stressFile = "comprehensive_stress_" + targetFrequency + ".nmea";
         final Path stressFilePath = tempDir.resolve(stressFile);
         
-        final int intervalMs = 1000 / targetFrequency;
+        final int intervalMs = MILLIS_PER_SEC / targetFrequency;
 
         // 1. Generate High-Fidelity Multi-Sentence Burst (2 full seconds of baseline data)
         final List<String> sourceCycle = List.of(
@@ -79,17 +91,15 @@ class ReactiveStressTest extends BddTest {
 
         final List<String> stressSentences = new TelemetryInterpolationEngine().interpolate(sourceCycle, targetFrequency);
         
-        try {
-            Files.write(stressFilePath, stressSentences);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        // Secure the artifact using the new manager to prove it is incorruptible
+        TestArtifactManager.secureDataset(stressFilePath, stressSentences);
+        assertThat(TestArtifactManager.verifyDataset(stressFilePath)).isTrue();
         
         final Properties props = new Properties();
         props.setProperty("simulation.mode", "true");
         props.setProperty("simulation.data.file", stressFilePath.toString());
         props.setProperty("simulation.interval.ms", String.valueOf(intervalMs));
-        props.setProperty("telemetry.queue.capacity", "10000");
+        props.setProperty("telemetry.queue.capacity", String.valueOf(QUEUE_CAPACITY));
         
         final ConfigManager configManager = new ConfigManager(configPath, (f, p) -> {}, (f, p) -> {
             props.forEach((k, v) -> p.setProperty(k.toString(), v.toString()));
@@ -106,64 +116,61 @@ class ReactiveStressTest extends BddTest {
             clock
         );
 
-        final List<TelemetryPulse> capturedPulses = new ArrayList<>();
-        final List<Long> processingLags = new ArrayList<>();
+        final AtomicReference<io.vavr.collection.Vector<TelemetryPulse>> capturedPulses = 
+            new AtomicReference<>(io.vavr.collection.Vector.empty());
+        final AtomicReference<io.vavr.collection.Vector<Long>> processingLags = 
+            new AtomicReference<>(io.vavr.collection.Vector.empty());
         final CountDownLatch latch = new CountDownLatch(burstCount);
         
-        reportWhen("The orchestrator initiates a " + targetFrequency + "Hz reactive stream");
+        reportWhen("The orchestrator initiates a " + targetFrequency + "Hz reactive stream (" + stressSentences.size() + " unique sentences)");
         new Thread(() -> orchestrator.start(pulse -> {
             final Instant now = clock.instant();
             final long lag = Duration.between(pulse.ingressTime(), now).toMillis();
-            processingLags.add(lag);
-            capturedPulses.add(pulse);
+            processingLags.updateAndGet(v -> v.append(lag));
+            capturedPulses.updateAndGet(v -> v.append(pulse));
             latch.countDown();
         })).start();
 
         reportThen("The system must capture all " + burstCount + " pulses without data corruption");
-        assertTimeoutPreemptively(Duration.ofSeconds(30), () -> {
-            try { latch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        try { 
+            final boolean completed = latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             orchestrator.shutdown();
-        });
+            assertThat(completed).withFailMessage("Test timed out before capturing all pulses").isTrue();
+        } catch (final InterruptedException e) { 
+            Thread.currentThread().interrupt(); 
+            orchestrator.shutdown();
+        }
 
-        assertThat(capturedPulses).hasSizeGreaterThanOrEqualTo(burstCount);
-
+        assertThat(capturedPulses.get()).hasSizeGreaterThanOrEqualTo(burstCount);
+        
         // Deterministic Integrity Verification
-        // Prove that every pulse arrived in order and the parser folded the state correctly under load.
-        // We do this by ensuring the parsed LocalTime in the GpsData state matches the timestamp
-        // explicitly declared in the triggering sentence (ZDA or RMC).
-        for (int i = 0; i < burstCount; i++) {
-            final TelemetryPulse pulse = capturedPulses.get(i);
-            
-            // Extract the expected timestamp directly from the trigger that caused this pulse
+        IntStream.range(0, burstCount).forEach(i -> {
+            final TelemetryPulse pulse = capturedPulses.get().get(i);
             final String raw = pulse.triggeringSentence();
             final String[] parts = raw.split(",");
-            final String expectedRawTime = raw.contains("ZDA") ? parts[1] : parts[1]; // Time is at index 1 for both
+            final String expectedRawTime = parts[1];
             
-            final int hh = Integer.parseInt(expectedRawTime.substring(0, 2));
-            final int mm = Integer.parseInt(expectedRawTime.substring(2, 4));
-            final int ss = Integer.parseInt(expectedRawTime.substring(4, 6));
+            final int hh = Integer.parseInt(expectedRawTime.substring(HOUR_START, HOUR_END));
+            final int mm = Integer.parseInt(expectedRawTime.substring(MINUTE_START, MINUTE_END));
+            final int ss = Integer.parseInt(expectedRawTime.substring(SECOND_START, SECOND_END));
             int ns = 0;
-            if (expectedRawTime.length() > 6 && expectedRawTime.charAt(6) == '.') {
-                final double fraction = Double.parseDouble("0" + expectedRawTime.substring(6));
-                ns = (int) Math.round(fraction * 1_000_000_000.0);
+            if (expectedRawTime.length() > SECOND_END && expectedRawTime.charAt(SECOND_END) == '.') {
+                final double fraction = Double.parseDouble("0" + expectedRawTime.substring(SECOND_END));
+                ns = (int) Math.round(fraction * BILLION_NANOS);
             }
             final java.time.LocalTime expectedTime = java.time.LocalTime.of(hh, mm, ss, ns);
             
-            if (!pulse.data().utcTime().equals(expectedTime)) {
-                logger.error("Data Corruption at pulse {}: Expected {}, but got {} (Trigger: {})", i, expectedTime, pulse.data().utcTime(), raw);
-            }
             assertThat(pulse.data().utcTime()).isEqualTo(expectedTime);
-        }
+        });
         
-        // Verify cross-sentence state folding remained intact (e.g. coordinates from RMC/GGA weren't lost)
-        final TelemetryPulse finalPulse = capturedPulses.get(burstCount - 1);
-        assertThat(finalPulse.data().latitude()).isCloseTo(46.28342983333334, org.assertj.core.data.Offset.offset(0.00000001));
-        assertThat(finalPulse.data().longitude()).isCloseTo(-87.88802466666666, org.assertj.core.data.Offset.offset(0.00000001));
+        final TelemetryPulse finalPulse = capturedPulses.get().last();
+        assertThat(finalPulse.data().latitude()).isCloseTo(LATITUDE_EXPECTED, org.assertj.core.data.Offset.offset(COORDINATE_PRECISION));
+        assertThat(finalPulse.data().longitude()).isCloseTo(LONGITUDE_EXPECTED, org.assertj.core.data.Offset.offset(COORDINATE_PRECISION));
         
-        final double avgLag = processingLags.stream().mapToLong(l -> l).average().orElse(0.0);
-        final long maxLag = processingLags.stream().mapToLong(l -> l).max().orElse(0L);
+        final double avgLag = capturedPulses.get().isEmpty() ? 0.0 : processingLags.get().toJavaStream().mapToLong(l -> l).average().orElse(0.0);
+        final long maxLag = capturedPulses.get().isEmpty() ? 0L : processingLags.get().toJavaStream().mapToLong(l -> l).max().orElse(0L);
         logger.info("{}Hz Endurance Test Complete. Avg Lag: {}ms | Peak: {}ms | Integrity: Verified", targetFrequency, avgLag, maxLag);
         
-        assertThat(avgLag).isLessThan(100.0);
+        assertThat(avgLag).isLessThan(MAX_AVG_LAG_MS);
     }
 }

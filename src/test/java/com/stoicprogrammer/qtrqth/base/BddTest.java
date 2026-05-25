@@ -37,7 +37,7 @@ public abstract class BddTest {
         try (var is = getClass().getClassLoader().getResourceAsStream(path);
              var reader = new java.io.BufferedReader(new java.io.InputStreamReader(java.util.Objects.requireNonNull(is)))) {
             return reader.lines().toList();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException("Failed to load main resource: " + path, e);
         }
     }
@@ -52,7 +52,7 @@ public abstract class BddTest {
             final Path path = Paths.get(Objects.requireNonNull(
                 getClass().getClassLoader().getResource("telemetry/" + filename)).toURI());
             return Files.lines(path);
-        } catch (IOException | URISyntaxException | NullPointerException e) {
+        } catch (final IOException | URISyntaxException | NullPointerException e) {
             throw new RuntimeException("Failed to load telemetry sample: " + filename, e);
         }
     }

@@ -8,13 +8,14 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 /**
  * High-fidelity telemetry recorder for Stratum 0 Audits.
@@ -23,6 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class TelemetryCaptor implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TelemetryCaptor.class);
     private static final int QUEUE_CAPACITY = 10000; // Large buffer for high-rate data
+    private static final int POLL_TIMEOUT_MS = 100;
+    private static final int SHUTDOWN_AWAIT_SECONDS = 5;
     
     private final Path capturePath;
     private final BlockingQueue<TelemetryEvent> writeQueue = new LinkedBlockingQueue<>(QUEUE_CAPACITY);
@@ -52,17 +55,32 @@ public final class TelemetryCaptor implements AutoCloseable {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(capturePath.toFile(), true))) {
             logger.info("Telemetry capture initiated at: {}", capturePath.toAbsolutePath());
             
-            while (running.get() || !writeQueue.isEmpty()) {
-                final TelemetryEvent event = writeQueue.poll(100, TimeUnit.MILLISECONDS);
-                if (event != null) {
-                    writeEvent(writer, event);
-                }
-            }
+            Stream.generate(() -> pollSafe(POLL_TIMEOUT_MS))
+                .takeWhile(eventOpt -> running.get() || !writeQueue.isEmpty())
+                .forEach(eventOpt -> eventOpt.ifPresent(event -> safeWriteEvent(writer, event)));
+            
             writer.flush();
-        } catch (final IOException | InterruptedException e) {
+        } catch (final IOException e) {
             logger.error("Telemetry captor failure: {}", e.getMessage(), e);
         } finally {
             logger.info("Telemetry capture closed.");
+        }
+    }
+
+    private void safeWriteEvent(final BufferedWriter writer, final TelemetryEvent event) {
+        try {
+            writeEvent(writer, event);
+        } catch (final IOException e) {
+            logger.error("Failed to write telemetry event: {}", e.getMessage());
+        }
+    }
+
+    private Optional<TelemetryEvent> pollSafe(final int timeoutMs) {
+        try {
+            return Optional.ofNullable(writeQueue.poll(timeoutMs, TimeUnit.MILLISECONDS));
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Optional.empty();
         }
     }
 
@@ -78,7 +96,7 @@ public final class TelemetryCaptor implements AutoCloseable {
         running.set(false);
         writerExecutor.shutdown();
         try {
-            if (!writerExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+            if (!writerExecutor.awaitTermination(SHUTDOWN_AWAIT_SECONDS, TimeUnit.SECONDS)) {
                 writerExecutor.shutdownNow();
             }
         } catch (final InterruptedException e) {

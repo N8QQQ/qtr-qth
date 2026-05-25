@@ -65,15 +65,22 @@ public final class TestArtifactManager {
     }
 
     private static String calculateHash(final Path path) {
+        final int hexMask = 0xff;
         return Try.of(() -> {
             final MessageDigest digest = MessageDigest.getInstance(ALGORITHM);
             final byte[] hashBytes = digest.digest(Files.readAllBytes(path));
             final StringBuilder hexString = new StringBuilder();
-            for (byte b : hashBytes) {
-                final String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
+            
+            java.util.stream.IntStream.range(0, hashBytes.length)
+                .map(i -> hashBytes[i] & hexMask)
+                .forEach(b -> {
+                    final String hex = Integer.toHexString(b);
+                    if (hex.length() == 1) {
+                        hexString.append('0');
+                    }
+                    hexString.append(hex);
+                });
+            
             return hexString.toString();
         }).getOrElseThrow(e -> new RuntimeException("Hash calculation failed", e));
     }

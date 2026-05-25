@@ -48,6 +48,17 @@ public final class NmeaParser {
     private static final int MIN_FIELDS_GPTXT = 4;
     private static final int MIN_FIELDS_GNGNS = 12;
 
+    // Time Parsing Constants
+    private static final int HOUR_START = 0;
+    private static final int HOUR_END = 2;
+    private static final int MINUTE_START = 2;
+    private static final int MINUTE_END = 4;
+    private static final int SECOND_START = 4;
+    private static final int SECOND_END = 6;
+    private static final double BILLION_NANOS = 1_000_000_000.0;
+    private static final double DEGREES_DIVISOR = 100.0;
+    private static final double MINUTES_DIVISOR = 60.0;
+
     // Functional Routing Table
     private final Map<String, BiFunction<String[], GpsData, GpsData>> parsers = Map.ofEntries(
         Map.entry("RMC", this::parseGprmc),
@@ -362,14 +373,14 @@ public final class NmeaParser {
 
     private Optional<LocalTime> extractTime(final String[] parts, final int index) {
         return extractField(parts, index)
-            .filter(s -> s.length() >= 6)
-            .flatMap(s -> Functional.tryParseInt(s.substring(0, 2)).flatMap(hh -> 
-                          Functional.tryParseInt(s.substring(2, 4)).flatMap(mm -> 
-                          Functional.tryParseInt(s.substring(4, 6)).map(ss -> {
+            .filter(s -> s.length() >= NMEA_TIME_STRING_LEN)
+            .flatMap(s -> Functional.tryParseInt(s.substring(HOUR_START, HOUR_END)).flatMap(hh -> 
+                          Functional.tryParseInt(s.substring(MINUTE_START, MINUTE_END)).flatMap(mm -> 
+                          Functional.tryParseInt(s.substring(SECOND_START, SECOND_END)).map(ss -> {
                               int ns = 0;
-                              if (s.length() > 6 && s.charAt(6) == '.') {
-                                  ns = Functional.tryParseDouble("0" + s.substring(6))
-                                           .map(frac -> (int) Math.round(frac * 1_000_000_000.0))
+                              if (s.length() > SECOND_END && s.charAt(SECOND_END) == '.') {
+                                  ns = Functional.tryParseDouble("0" + s.substring(SECOND_END))
+                                           .map(frac -> (int) Math.round(frac * BILLION_NANOS))
                                            .orElse(0);
                               }
                               return LocalTime.of(hh, mm, ss, ns);
@@ -384,10 +395,10 @@ public final class NmeaParser {
     }
 
     private double convertToDecimalDegrees(final double raw, final String direction) {
-        final double degrees = raw / 100.0;
+        final double degrees = raw / DEGREES_DIVISOR;
         final int degInt = (int) degrees;
-        final double minutes = raw - (degInt * 100.0);
-        final double decimal = degInt + (minutes / 60.0);
+        final double minutes = raw - (degInt * DEGREES_DIVISOR);
+        final double decimal = degInt + (minutes / MINUTES_DIVISOR);
         return (direction.equals("S") || direction.equals("W")) ? -decimal : decimal;
     }
 }
