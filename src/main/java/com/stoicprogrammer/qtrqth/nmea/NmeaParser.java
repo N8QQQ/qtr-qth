@@ -362,8 +362,18 @@ public final class NmeaParser {
 
     private Optional<LocalTime> extractTime(final String[] parts, final int index) {
         return extractField(parts, index)
-            .filter(s -> s.length() >= NMEA_TIME_STRING_LEN)
-            .map(s -> LocalTime.parse(s.substring(0, NMEA_TIME_STRING_LEN), DateTimeFormatter.ofPattern("HHmmss")));
+            .filter(s -> s.length() >= 6)
+            .flatMap(s -> Functional.tryParseInt(s.substring(0, 2)).flatMap(hh -> 
+                          Functional.tryParseInt(s.substring(2, 4)).flatMap(mm -> 
+                          Functional.tryParseInt(s.substring(4, 6)).map(ss -> {
+                              int ns = 0;
+                              if (s.length() > 6 && s.charAt(6) == '.') {
+                                  ns = Functional.tryParseDouble("0" + s.substring(6))
+                                           .map(frac -> (int) Math.round(frac * 1_000_000_000.0))
+                                           .orElse(0);
+                              }
+                              return LocalTime.of(hh, mm, ss, ns);
+                          }))));
     }
 
     private Optional<Double> extractCoordinate(final String[] parts, final int coordIdx, final int dirIdx) {

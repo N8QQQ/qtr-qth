@@ -31,7 +31,6 @@ public final class SerialConnector {
     // Operational Constants
     private static final int DEFAULT_BAUD = 9600;
     private static final int WATCHDOG_TIMEOUT_SECONDS = 5;
-    private static final int TELEMETRY_QUEUE_CAPACITY = 500; // Increased for high-speed bursts
     private static final int DATA_BITS = 8;
 
     private final ConfigManager config;
@@ -39,7 +38,7 @@ public final class SerialConnector {
     private final ISerialProvider provider;
     private final InstantSource clock;
     private ISerialPort activePort;
-    private final LinkedBlockingQueue<TelemetryEvent> queue = new LinkedBlockingQueue<>(TELEMETRY_QUEUE_CAPACITY);
+    private final LinkedBlockingQueue<TelemetryEvent> queue;
 
     private record ConnectionRule(boolean condition, Supplier<Stream<TelemetryEvent>> action) {}
     private record QueueRule(boolean condition, Runnable action) {}
@@ -49,6 +48,7 @@ public final class SerialConnector {
         this.accumulator = accumulator;
         this.provider = provider;
         this.clock = clock;
+        this.queue = new LinkedBlockingQueue<>(config.getConfig().telemetryQueueCapacity());
     }
 
     /**

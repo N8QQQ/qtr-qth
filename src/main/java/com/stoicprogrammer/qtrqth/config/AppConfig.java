@@ -14,7 +14,8 @@ public record AppConfig(
     boolean displayRawTelemetry,
     boolean simulationMode,
     String simulationDataFile,
-    int simulationIntervalMs
+    int simulationIntervalMs,
+    int telemetryQueueCapacity
 ) {
     /**
      * Default configuration for rapid bootstrapping.
@@ -27,6 +28,7 @@ public record AppConfig(
         false,
         false,
         "simulation/gps_sim.nmea",
-        1000
+        1000,
+        500
     );
 }

@@ -1,5 +1,8 @@
 package com.stoicprogrammer.qtrqth.base;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -14,6 +17,30 @@ import java.util.stream.Stream;
  * Provides access to the 'Test Data Vault'.
  */
 public abstract class BddTest {
+    private static final Logger logger = LoggerFactory.getLogger(BddTest.class);
+
+    protected void reportGiven(final String step) {
+        logger.info("[GIVEN] {}", step);
+    }
+
+    protected void reportWhen(final String step) {
+        logger.info("[WHEN]  {}", step);
+    }
+
+    protected void reportThen(final String step) {
+        logger.info("[THEN]  {}", step);
+    }
+    /**
+     * Loads a file from the main resources tree.
+     */
+    protected List<String> loadMainResource(final String path) {
+        try (var is = getClass().getClassLoader().getResourceAsStream(path);
+             var reader = new java.io.BufferedReader(new java.io.InputStreamReader(java.util.Objects.requireNonNull(is)))) {
+            return reader.lines().toList();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load main resource: " + path, e);
+        }
+    }
 
     /**
      * Loads a telemetry sample from the resources vault.

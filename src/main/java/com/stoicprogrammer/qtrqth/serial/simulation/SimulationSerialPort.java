@@ -4,6 +4,7 @@ import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortDataListener;
 import com.fazecast.jSerialComm.SerialPortEvent;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialPort;
+import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,13 +43,19 @@ public final class SimulationSerialPort implements ISerialPort {
     }
 
     private List<String> loadSimulatedData(final String dataFile) {
-        try (var is = getClass().getClassLoader().getResourceAsStream(dataFile);
-             var reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(is)))) {
-            return reader.lines().toList();
-        } catch (final Exception e) {
-            logger.warn("Failed to load simulation data from {}. Falling back to hardcoded baseline.", dataFile);
-            return List.of("$GPZDA,232810.00,02,04,2026,00,00*6C");
-        }
+        // Try Classpath first, then Absolute Path
+        return Optional.ofNullable(getClass().getClassLoader().getResourceAsStream(dataFile))
+            .map(is -> Try.of(() -> {
+                try (var reader = new BufferedReader(new InputStreamReader(is))) {
+                    return reader.lines().toList();
+                }
+            }).getOrElse(List.<String>of()))
+            .or(() -> Try.of(() -> java.nio.file.Files.readAllLines(java.nio.file.Paths.get(dataFile))).toJavaOptional())
+            .filter(lines -> !lines.isEmpty())
+            .orElseGet(() -> {
+                logger.warn("Failed to load simulation data from {}. Falling back to hardcoded baseline.", dataFile);
+                return List.of("$GPZDA,232810.00,02,04,2026,00,00*6C");
+            });
     }
 
     @Override public String getSystemPortName() { return name; }
