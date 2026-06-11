@@ -5,25 +5,24 @@ description: Governs the high-fidelity release lifecycle. Use this skill to sync
 
 # Heritage Releaser
 
-This skill ensures that every release is a high-fidelity event with bit-perfect artifacts and synchronized metadata.
+This skill ensures that every release is a high-fidelity event with bit-perfect artifacts and synchronized metadata. It utilizes a platform-agnostic Node.js engine for cross-platform reliability (Windows, Linux, Raspberry Pi).
 
-## 🚀 Workflow: Release Readiness
+## 🚀 Workflow: Release Execution
 
-To prepare for a release:
+To finalize and publish a release:
 
-1.  **Certification**: Ensure the branch has passed `heritage-verifier`.
-2.  **Execution**: Run the deterministic release controller.
+1.  **Handoff**: Execute the deterministic release engine. This script performs pre-flight checks, certifications, cryptographic tagging, and GitHub publication in a single, atomic sequence.
     ```bash
-    node <path-to-skill>/scripts/release_prepare.cjs
+    node .gemini/skills/heritage-releaser/scripts/release_execute.cjs
     ```
-3.  **Heritage Pack (Optional)**: To include benchmarks and docs in a 7-Zip archive:
-    ```bash
-    node <path-to-skill>/scripts/release_prepare.cjs --pack
-    ```
-4.  **Handoff**: Execute the generated release sequence provided in the Readiness Report.
+2.  **Verification**: Confirm the release is live on GitHub and the tag is cryptographically signed.
 
 ## 🏆 Standards
 
+- **Platform Agnosticism**: Core release logic is implemented in Node.js to ensure bit-perfect execution on all development nodes.
 - **Metadata Sync**: `build.gradle.kts` and `CITATION.cff` MUST match.
-- **7-Zip Integration**: Utilizes `7z` for high-compression archival of technical documentation and telemetry baselines.
 - **Immutability**: Tags and releases are permanent. Use incremental versioning for fixes.
+
+## 🛠️ Deprecation Warning
+The legacy PowerShell scripts (`scripts/publish-release.ps1`, `scripts/merge-pr.ps1`) are now deprecated. Always prefer the Node-based `heritage-releaser` suite for official releases.
+

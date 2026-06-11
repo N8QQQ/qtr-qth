@@ -1,6 +1,7 @@
+#!/usr/bin/env pwsh
 param (
     [Parameter(Mandatory=$true)]
-    [string]$PrId
+    [int]$PrId
 )
 
 Write-Host "--- ⚖️ qtr-qth: Manual Merge Protocol ---" -ForegroundColor Cyan

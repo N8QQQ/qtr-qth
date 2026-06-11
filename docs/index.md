@@ -22,6 +22,15 @@ Welcome to the official technical documentation for `qtr-qth`, a high-precision 
 - **[Phase 4: Network Time](design/DESIGN_PHASE_4.md)**
 - **[Phase 5: Functional Blueprint](design/DESIGN_PHASE_5.md)**
 - **[Phase 6: Structural Hardening](design/DESIGN_PHASE_6.md)**
+- **[Phase 7: Hardware Clock Isolation](design/DESIGN_PHASE_7.md)**
+- **[Phase 8: Chrono Tesseract](design/DESIGN_PHASE_8.md)**
+- **[Phase 9: Reactive Inversion](design/DESIGN_PHASE_9.md)**
+- **[Phase 10: Jitter Pulse Stability](design/DESIGN_PHASE_10.md)**
+
+## 📊 High-Fidelity Performance
+
+- **[Heritage Benchmark Registry](https://github.com/N8QQQ/qtr-qth/blob/main/benchmarks/BENCHMARK.md)**: Live precision metrics from the fleet.
+- **[Sunday Best Standards](docs/DEVELOPER.md)**: Our uncompromising quality gate protocols.
 
 ## ⚖️ Identity & Scholarly Record
 

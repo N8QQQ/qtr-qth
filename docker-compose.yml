@@ -43,7 +43,7 @@ services:
   stress-test:
     build:
       context: .
-      dockerfile: docker/ci/Dockerfile
+      dockerfile: docker/phantom/Dockerfile
     platform: linux/arm64
     container_name: qtr-qth-stress-test
     volumes:

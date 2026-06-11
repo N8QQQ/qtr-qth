@@ -30,7 +30,7 @@ const walk = (dir) => {
     fs.readdirSync(dir).forEach(file => {
         const fullPath = path.join(dir, file);
         if (fs.statSync(fullPath).isDirectory()) return walk(fullPath);
-        if (!file.endsWith('.java')) return;
+        if (!file.endsWith('.java') || file === 'Functional.java') return;
 
         audit.stats.totalFiles++;
         const content = fs.readFileSync(fullPath, 'utf8');
@@ -45,7 +45,30 @@ const walk = (dir) => {
     });
 };
 
+const runDocAudit = () => {
+    const docsDir = 'docs';
+    const designDir = path.join(docsDir, 'design');
+    const indexFile = path.join(docsDir, 'index.md');
+    
+    console.log('[Heritage] Initiating Documentation Integrity Audit...');
+    
+    // 1. Verify Design Phase Links
+    if (fs.existsSync(designDir) && fs.existsSync(indexFile)) {
+        const indexContent = fs.readFileSync(indexFile, 'utf8');
+        const designFiles = fs.readdirSync(designDir)
+            .filter(f => f.startsWith('DESIGN_PHASE_') && f.endsWith('.md'));
+
+        designFiles.forEach(file => {
+            const linkPattern = new RegExp(`design/${file}`, 'i');
+            if (!linkPattern.test(indexContent)) {
+                console.warn(`[Warning] Missing link in index.md for design phase: ${file}`);
+            }
+        });
+    }
+};
+
 modules.forEach(m => walk(m.path));
+runDocAudit();
 
 console.log('\n=================================================');
 console.log('🗺️  HERITAGE PROJECT ARCHITECTURE MAP');
