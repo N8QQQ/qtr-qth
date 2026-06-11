@@ -1,4 +1,4 @@
-cff-version: 1.2.0
+cff-version: 0.8.0
 title: "qtr-qth: High-Precision GPS Time & Location Hub"
 message: "If you use this software, please cite it using the metadata from this file."
 type: software
@@ -20,4 +20,4 @@ keywords:
   - "Functional Programming"
   - "Java"
 version: 0.8.0
-date-released: "2026-05-27"
+date-released: "2026-06-11"
