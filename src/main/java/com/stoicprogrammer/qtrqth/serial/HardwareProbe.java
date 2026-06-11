@@ -7,6 +7,8 @@ import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
 
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Standalone utility for auditing physical and virtual serial hardware.
@@ -28,21 +30,21 @@ public final class HardwareProbe {
 
         final List<? extends ISerialPort> ports = provider.getAvailablePorts();
 
-        if (ports.isEmpty()) {
-            System.out.println("⚠️ No serial hardware detected.");
-            return;
-        }
+        // Pure Functional Branching
+        Map.<Boolean, Consumer<List<? extends ISerialPort>>>of(
+            true, p -> {
+                System.out.println(String.format("Found %d available port(s):\n", p.size()));
+                p.forEach(HardwareProbe::printPortAudit);
+                System.out.println("--- 🎯 Discovery Analysis ---");
+                discovery.findLikelyGpsPort()
+                    .ifPresentOrElse(
+                        target -> System.out.println("RECOMMENDED TARGET: " + target),
+                        () -> System.out.println("No high-probability GPS targets identified.")
+                    );
+            },
+            false, p -> System.out.println("⚠️ No serial hardware detected.")
+        ).get(!ports.isEmpty()).accept(ports);
 
-        System.out.println(String.format("Found %d available port(s):\n", ports.size()));
-
-        ports.forEach(HardwareProbe::printPortAudit);
-
-        System.out.println("--- 🎯 Discovery Analysis ---");
-        discovery.findLikelyGpsPort()
-            .ifPresentOrElse(
-                target -> System.out.println("RECOMMENDED TARGET: " + target),
-                () -> System.out.println("No high-probability GPS targets identified.")
-            );
         System.out.println("-------------------------------------------");
     }
 

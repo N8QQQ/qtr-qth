@@ -13,6 +13,8 @@ import com.stoicprogrammer.qtrqth.ntp.NtpResponse;
 import com.stoicprogrammer.qtrqth.ntp.api.INtpProvider;
 import com.stoicprogrammer.qtrqth.ntp.network.NetworkNtpProvider;
 import com.stoicprogrammer.qtrqth.ntp.simulation.SimulationNtpProvider;
+import com.stoicprogrammer.qtrqth.sentinel.ExecutorSentinel;
+import com.stoicprogrammer.qtrqth.sentinel.api.IStreamSentinel;
 import com.stoicprogrammer.qtrqth.serial.PortDiscovery;
 import com.stoicprogrammer.qtrqth.serial.SerialConnector;
 import com.stoicprogrammer.qtrqth.serial.api.ISerialProvider;
@@ -25,8 +27,6 @@ import java.nio.file.Path;
 import java.time.InstantSource;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,10 +47,11 @@ public final class SystemOrchestrator {
 
     private final ConfigManager configManager;
     private final InstantSource clock;
-    private final ScheduledExecutorService ntpExecutor;
+    private final IStreamSentinel ntpSentinel;
     private final AtomicReference<NtpResponse> lastNtp = new AtomicReference<>();
     private final AtomicReference<GpsData> currentFix = new AtomicReference<>(GpsData.EMPTY);
     private final AtomicReference<ConfluenceHealth> healthState = new AtomicReference<>();
+    private final AtomicReference<com.stoicprogrammer.qtrqth.analysis.StatisticalWindow> statsWindow = new AtomicReference<>(com.stoicprogrammer.qtrqth.analysis.StatisticalWindow.empty(100));
     private final AtomicBoolean running = new AtomicBoolean(true);
     
     // Testing Injectors
@@ -60,7 +61,7 @@ public final class SystemOrchestrator {
     private SerialConnector connector;
 
     public SystemOrchestrator(final Path configPath) {
-        this(new ConfigManager(configPath), null, null, InstantSource.system());
+        this(new ConfigManager(configPath), null, null, InstantSource.system(), new ExecutorSentinel());
     }
 
     /**
@@ -70,17 +71,14 @@ public final class SystemOrchestrator {
         final ConfigManager configManager, 
         final ISerialProvider serialProvider, 
         final INtpProvider ntpProvider,
-        final InstantSource clock
+        final InstantSource clock,
+        final IStreamSentinel ntpSentinel
     ) {
         this.configManager = configManager;
         this.testSerialProvider = serialProvider;
         this.testNtpProvider = ntpProvider;
         this.clock = clock;
-        this.ntpExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-            final Thread t = new Thread(r, "ntp-heartbeat");
-            t.setDaemon(true);
-            return t;
-        });
+        this.ntpSentinel = ntpSentinel;
     }
 
     /**
@@ -162,11 +160,11 @@ public final class SystemOrchestrator {
             .orElseGet(() -> useSimulation ? new SimulationNtpProvider(clock) : new NetworkNtpProvider());
         final NtpClient client = new NtpClient(provider, NTP_TIMEOUT_MS);
         
-        ntpExecutor.scheduleAtFixedRate(() -> {
+        ntpSentinel.start(() -> {
             final Optional<NtpResponse> response = client.pollDetailed(config.ntpPool());
             updateNtpHealth(response.isPresent());
             response.ifPresent(lastNtp::set);
-        }, 0, NTP_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }, NTP_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     private void updateNtpHealth(final boolean active) {
@@ -185,7 +183,7 @@ public final class SystemOrchestrator {
     ) {
         final AppConfig config = configManager.getConfig();
         final ISerialProvider provider = useSimulation 
-            ? new SimulationSerialProvider(config.simulationDataFile(), config.simulationIntervalMs()) 
+            ? new SimulationSerialProvider(config.simulationDataFile(), config.simulationIntervalMilliseconds()) 
             : Optional.ofNullable(testSerialProvider).orElseGet(JSerialCommProvider::new);
         final PortDiscovery discovery = new PortDiscovery(provider, configManager);
         
@@ -214,6 +212,7 @@ public final class SystemOrchestrator {
         updateGpsHealth(false);
 
         connector.connect(port)
+            .takeWhile(e -> running.get())
             .peek(eventListener)
             .peek(event -> Optional.of(event.rawSentence())
                 .filter(parser::isSupported)
@@ -231,7 +230,7 @@ public final class SystemOrchestrator {
                 // 2. Reactive Pulse Trigger
                 Optional.of(sentence)
                     .filter(parser::isTrigger)
-                    .map(s -> TelemetryPulse.start(s, lastNtp.get(), healthState.get(), event.ingressTime(), nextState))
+                    .map(s -> TelemetryPulse.start(s, lastNtp.get(), healthState.get(), event.ingressTime(), nextState, calculateMetrics(event.ingressTime(), nextState.utcTime())))
                     .filter(TelemetryPulse::hasValidFix)
                     .ifPresent(pulse -> invokeConsumer(consumer, pulse));
             });
@@ -252,6 +251,12 @@ public final class SystemOrchestrator {
             h.mode(),
             status
         ));
+    }
+
+    private com.stoicprogrammer.qtrqth.analysis.PrecisionMetrics calculateMetrics(final java.time.Instant ingress, final java.time.LocalTime gpsTime) {
+        final java.time.Duration offset = com.stoicprogrammer.qtrqth.analysis.OffsetAnalyzer.calculateOffset(ingress, gpsTime);
+        final com.stoicprogrammer.qtrqth.analysis.StatisticalWindow nextWindow = statsWindow.updateAndGet(w -> w.add(offset));
+        return new com.stoicprogrammer.qtrqth.analysis.PrecisionMetrics(offset, nextWindow.rmsJitterMicroseconds(), nextWindow.stabilityMicroseconds());
     }
 
     private void updateGpsHealth(final boolean signalLoss) {
@@ -278,7 +283,7 @@ public final class SystemOrchestrator {
         logger.info("System shutdown sequence initiated...");
         running.set(false);
         Optional.ofNullable(connector).ifPresent(SerialConnector::disconnect);
-        ntpExecutor.shutdown();
+        ntpSentinel.stop();
         logger.info("System stopped.");
     }
 }

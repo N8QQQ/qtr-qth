@@ -43,7 +43,7 @@ class ReactiveStressTest extends BddTest {
     private static final double LATITUDE_EXPECTED = 46.28342983333334;
     private static final double LONGITUDE_EXPECTED = -87.88802466666666;
     private static final double COORDINATE_PRECISION = 0.00000001;
-    private static final double MAX_AVG_LAG_MS = 100.0;
+    private static final double MAX_AVG_LAG_MILLISECONDS = 100.0;
     private static final int BILLION_NANOS = 1_000_000_000;
     private static final int HOUR_START = 0;
     private static final int HOUR_END = 2;
@@ -72,7 +72,7 @@ class ReactiveStressTest extends BddTest {
         final String stressFile = "comprehensive_stress_" + targetFrequency + ".nmea";
         final Path stressFilePath = tempDir.resolve(stressFile);
         
-        final int intervalMs = MILLIS_PER_SEC / targetFrequency;
+        final int intervalMilliseconds = MILLIS_PER_SEC / targetFrequency;
 
         // 1. Generate High-Fidelity Multi-Sentence Burst (2 full seconds of baseline data)
         final List<String> sourceCycle = List.of(
@@ -98,7 +98,7 @@ class ReactiveStressTest extends BddTest {
         final Properties props = new Properties();
         props.setProperty("simulation.mode", "true");
         props.setProperty("simulation.data.file", stressFilePath.toString());
-        props.setProperty("simulation.interval.ms", String.valueOf(intervalMs));
+        props.setProperty("simulation.interval.ms", String.valueOf(intervalMilliseconds));
         props.setProperty("telemetry.queue.capacity", String.valueOf(QUEUE_CAPACITY));
         
         final ConfigManager configManager = new ConfigManager(configPath, (f, p) -> {}, (f, p) -> {
@@ -106,14 +106,15 @@ class ReactiveStressTest extends BddTest {
         });
 
         final InstantSource clock = InstantSource.system();
-        final SimulationSerialProvider serialProvider = new SimulationSerialProvider(stressFilePath.toString(), intervalMs);
+        final SimulationSerialProvider serialProvider = new SimulationSerialProvider(stressFilePath.toString(), intervalMilliseconds);
         final SimulationNtpProvider ntpProvider = new SimulationNtpProvider(clock);
         
         final SystemOrchestrator orchestrator = new SystemOrchestrator(
             configManager, 
             serialProvider, 
             ntpProvider, 
-            clock
+            clock,
+            new com.stoicprogrammer.qtrqth.sentinel.NoOpSentinel()
         );
 
         final AtomicReference<io.vavr.collection.Vector<TelemetryPulse>> capturedPulses = 
@@ -150,21 +151,19 @@ class ReactiveStressTest extends BddTest {
             final String[] parts = raw.split(",");
             final String expectedRawTime = parts[1];
             
-            try {
-                final int hh = Integer.parseInt(expectedRawTime.substring(HOUR_START, HOUR_END));
-                final int mm = Integer.parseInt(expectedRawTime.substring(MINUTE_START, MINUTE_END));
-                final int ss = Integer.parseInt(expectedRawTime.substring(SECOND_START, SECOND_END));
-                int ns = 0;
-                if (expectedRawTime.length() > SECOND_END && expectedRawTime.charAt(SECOND_END) == '.') {
-                    final double fraction = Double.parseDouble("0" + expectedRawTime.substring(SECOND_END));
-                    ns = (int) Math.round(fraction * BILLION_NANOS);
-                }
-                final java.time.LocalTime expectedTime = java.time.LocalTime.of(hh, mm, ss, ns);
-                
-                assertThat(pulse.data().utcTime()).isEqualTo(expectedTime);
-            } catch (final NumberFormatException e) {
-                throw new AssertionError("Data Corruption: Malformed timestamp " + expectedRawTime + " in trigger: " + raw, e);
-            }
+            final int hh = com.stoicprogrammer.qtrqth.util.Functional.tryParseInt(expectedRawTime.substring(HOUR_START, HOUR_END)).orElse(0);
+            final int mm = com.stoicprogrammer.qtrqth.util.Functional.tryParseInt(expectedRawTime.substring(MINUTE_START, MINUTE_END)).orElse(0);
+            final int ss = com.stoicprogrammer.qtrqth.util.Functional.tryParseInt(expectedRawTime.substring(SECOND_START, SECOND_END)).orElse(0);
+            
+            final int ns = io.vavr.control.Option.of(expectedRawTime)
+                .filter(t -> t.length() > SECOND_END && t.charAt(SECOND_END) == '.')
+                .map(t -> "0" + t.substring(SECOND_END))
+                .flatMap(s -> io.vavr.control.Option.ofOptional(com.stoicprogrammer.qtrqth.util.Functional.tryParseDouble(s)))
+                .map(fraction -> (int) Math.round(fraction * BILLION_NANOS))
+                .getOrElse(0);
+
+            final java.time.LocalTime expectedTime = java.time.LocalTime.of(hh, mm, ss, ns);
+            assertThat(pulse.data().utcTime()).isEqualTo(expectedTime);
         });
         
         final TelemetryPulse finalPulse = capturedPulses.get().last();
@@ -175,6 +174,6 @@ class ReactiveStressTest extends BddTest {
         final long maxLag = capturedPulses.get().isEmpty() ? 0L : processingLags.get().toJavaStream().mapToLong(l -> l).max().orElse(0L);
         logger.info("{}Hz Endurance Test Complete. Avg Lag: {}ms | Peak: {}ms | Integrity: Verified", targetFrequency, avgLag, maxLag);
         
-        assertThat(avgLag).isLessThan(MAX_AVG_LAG_MS);
+        assertThat(avgLag).isLessThan(MAX_AVG_LAG_MILLISECONDS);
     }
 }

@@ -19,9 +19,9 @@ public final class NetworkNtpProvider implements INtpProvider {
     private static final Logger logger = LoggerFactory.getLogger(NetworkNtpProvider.class);
 
     @Override
-    public Optional<NtpResponse> getTime(final String hostname, final int timeoutMs) {
+    public Optional<NtpResponse> getTime(final String hostname, final int timeoutMilliseconds) {
         final NTPUDPClient client = new NTPUDPClient();
-        client.setDefaultTimeout(timeoutMs);
+        client.setDefaultTimeout(timeoutMilliseconds);
         
         try {
             client.open();

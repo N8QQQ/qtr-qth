@@ -9,12 +9,12 @@ import java.util.List;
 public record AppConfig(
     List<String> ntpPool,
     int serialBaud,
-    long syncThresholdMs,
-    List<String> discoveryKeywords,
+    long syncThresholdMilliseconds,
+    List<String> gpsDiscoveryKeywords,
     boolean displayRawTelemetry,
     boolean simulationMode,
     String simulationDataFile,
-    int simulationIntervalMs,
+    int simulationIntervalMilliseconds,
     int telemetryQueueCapacity
 ) {
     /**

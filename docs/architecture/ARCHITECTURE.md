@@ -162,14 +162,16 @@ flowchart TD
         
         subgraph "Reactive Monolith"
             RM --> |Parse| NP["NmeaParser"]
-            RM --> |Update| SR["Reactive State Registry"]
-            RM --> |Trigger| TP["TelemetryPulse::start"]
+            RM --> |Update| SR["Reactive State Registry (GSV/GSA Enabled)"]
+            RM --> |Offset| OE["Offset Engine"]
+            OE --> |Stat Window| SW["Statistical Window (O1 Welford)"]
+            SW --> |Metrics| TP["TelemetryPulse::start"]
         end
     end
 
     CLOCK["InstantSource: Ground Truth"] --> |T1 Timestamp| SC
     AR -.-> |Merge| TP
-    SR -.-> |Enrich| TP
+    SR -.-> |Signal Intelligence| TP
     TP --> |GpsData| GS["GridSquareCalculator"]
     GS --> |Log| LOG["High-Fidelity Console UI"]
 ```
@@ -177,7 +179,12 @@ flowchart TD
 1.  **The Slow River (NTP):** A background heartbeat providing a network-based "second opinion."
 2.  **The Fast River (GPS):** A deterministic monolith where **Producer-side Edge Stamping** captures the system clock at the instant of byte arrival. 
 3.  **Monolithic Processing:** By using a single consumer thread for all GPS sentences, the system eliminates state-tearing and ensures that position data is always fully enriched before a timing pulse is emitted.
-4.  **Zero-Jitter Log:** The `nmea.log` uses a `neverBlock` policy to ensure logging performance never impacts the serial ingestion timing.
+4.  **Offset Engine & Statistical Window:** High-fidelity analytics (RMS Jitter, Stability) are calculated as pure functional transformations of the temporal offset window using an **$O(1)$ incremental model (Welford's style)** to ensure constant-time performance on low-power hardware.
+5.  **Signal Intelligence:** The reactive registry now tracks SNR and constellation density from GSV/GSA sentences, providing real-time visibility into signal health.
+6.  **Zero-Jitter Log:** The `nmea.log` uses a `neverBlock` policy to ensure logging performance never impacts the serial ingestion timing.
+
+### Stream Stabilization Strategy
+The Serial pipeline decouples stream lifecycle from timeout logic using a Strategy Pattern. The "Socket" (`IStreamSentinel`) accepts any watchdog strategy. The primary "Plug" (`ExecutorSentinel`) uses a highly efficient 1Hz background task to inject `SIGNAL_LOSS` events into the queue during physical disconnects. This prevents the Orchestrator from blocking and avoids the CPU penalty associated with functional tight-polling (busy-waiting) on low-power architectures.
 
 ## 🛡️ Structural Guardrails
 - **Typed Configuration:** Immutable `AppConfig` records eliminate "Stringly-Typed" logic.

@@ -61,7 +61,13 @@ class SystemRecoveryIntegrationTest extends BddTest {
             return true;
         }).when(mockPort).closePort();
 
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(configManager, mockProvider, null, InstantSource.system());
+        final SystemOrchestrator orchestrator = new SystemOrchestrator(
+            configManager, 
+            mockProvider, 
+            null, 
+            InstantSource.system(),
+            new com.stoicprogrammer.qtrqth.sentinel.NoOpSentinel()
+        );
 
         // WHEN: The system starts (Named parameter to avoid preview features)
         final Thread engineThread = new Thread(() -> orchestrator.start(pulse -> {}));

@@ -58,7 +58,7 @@ class ConfigManagerTest extends BddTest {
         final ConfigManager manager = new ConfigManager(configPath);
         
         assertThat(manager.getConfig().serialBaud()).isEqualTo(DEFAULT_BAUD);
-        assertThat(manager.getConfig().syncThresholdMs()).isEqualTo(DEFAULT_SYNC_THRESHOLD);
+        assertThat(manager.getConfig().syncThresholdMilliseconds()).isEqualTo(DEFAULT_SYNC_THRESHOLD);
     }
 
     @Test

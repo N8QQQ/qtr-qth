@@ -16,6 +16,7 @@ public final class Main {
     private static final String PROBE_FLAG = "--probe";
     private static final String DOCTOR_FLAG = "--doctor";
     private static final String CAPTURE_FLAG = "--capture";
+    private static final String DURATION_PREFIX = "--duration=";
 
     private Main() {
         // Utility Class
@@ -28,12 +29,22 @@ public final class Main {
     public static void main(final String[] args) {
         final List<String> argList = List.of(args);
         
+        // Resolve Duration Gate
+        final java.time.Duration limit = argList.stream()
+            .filter(s -> s.startsWith(DURATION_PREFIX))
+            .map(s -> s.substring(DURATION_PREFIX.length()))
+            .map(com.stoicprogrammer.qtrqth.util.Functional::tryParseLong)
+            .flatMap(java.util.Optional::stream)
+            .map(java.time.Duration::ofSeconds)
+            .findFirst()
+            .orElse(java.time.Duration.ZERO);
+
         // Declarative Routing Table
         List.<RoutingRule>of(
             new RoutingRule(argList.contains(PROBE_FLAG), () -> runProbe(argList)),
             new RoutingRule(argList.contains(DOCTOR_FLAG), Main::runDoctor),
-            new RoutingRule(argList.contains(CAPTURE_FLAG), () -> runCapture(argList)),
-            new RoutingRule(true, () -> runOrchestrator(argList))
+            new RoutingRule(argList.contains(CAPTURE_FLAG), () -> runCapture(argList, limit)),
+            new RoutingRule(true, () -> runOrchestrator(argList, limit))
         ).stream()
          .filter(rule -> rule.condition)
          .findFirst()
@@ -50,11 +61,8 @@ public final class Main {
         com.stoicprogrammer.qtrqth.util.EnvironmentDoctor.performCheck();
     }
 
-    private static void runCapture(final List<String> args) {
-        final String configPath = args.stream()
-            .filter(s -> !s.equals(CAPTURE_FLAG))
-            .findFirst()
-            .orElse(DEFAULT_CONFIG_FILENAME);
+    private static void runCapture(final List<String> args, final java.time.Duration limit) {
+        final String configPath = resolveConfigPath(args);
 
         final String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         final java.nio.file.Path capturePath = java.nio.file.Path.of("telemetry_capture_" + timestamp + ".nmea");
@@ -63,32 +71,46 @@ public final class Main {
         
         try (var captor = new com.stoicprogrammer.qtrqth.util.TelemetryCaptor(capturePath)) {
             final SystemOrchestrator orchestrator = new SystemOrchestrator(Path.of(configPath));
+            applyDurationGate(orchestrator, limit);
 
             // Registry shutdown hook for graceful cleanup
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                logger.info("Capture shutdown signal received.");
-                orchestrator.shutdown();
-            }, "capture-shutdown-hook"));
+            Runtime.getRuntime().addShutdownHook(new Thread(orchestrator::shutdown, "capture-shutdown-hook"));
 
             // Boot the system with capture listener
             orchestrator.start(pulse -> pulse.logFinal(logger), captor::capture);
         }
     }
 
-    private static void runOrchestrator(final List<String> args) {
-        final String configPath = args.stream()
-            .findFirst()
-            .orElse(DEFAULT_CONFIG_FILENAME);
+    private static void runOrchestrator(final List<String> args, final java.time.Duration limit) {
+        final String configPath = resolveConfigPath(args);
 
         final SystemOrchestrator orchestrator = new SystemOrchestrator(Path.of(configPath));
+        applyDurationGate(orchestrator, limit);
 
         // Registry shutdown hook for graceful cleanup
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Shutdown signal received.");
-            orchestrator.shutdown();
-        }, "shutdown-hook"));
+        Runtime.getRuntime().addShutdownHook(new Thread(orchestrator::shutdown, "shutdown-hook"));
 
         // Boot the system
         orchestrator.start(pulse -> pulse.logFinal(logger));
+    }
+
+    private static String resolveConfigPath(final List<String> args) {
+        return args.stream()
+            .filter(s -> !s.startsWith("--"))
+            .findFirst()
+            .orElse(DEFAULT_CONFIG_FILENAME);
+    }
+
+    private static void applyDurationGate(final SystemOrchestrator orchestrator, final java.time.Duration limit) {
+        java.util.Optional.of(limit)
+            .filter(d -> !d.isZero())
+            .ifPresent(d -> {
+                final java.util.concurrent.ScheduledExecutorService timer = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
+                timer.schedule(() -> {
+                    logger.info("DURATION GATE: Time limit of {}s reached. Initiating automatic shutdown...", d.toSeconds());
+                    orchestrator.shutdown();
+                    timer.shutdown();
+                }, d.toSeconds(), java.util.concurrent.TimeUnit.SECONDS);
+            });
     }
 }

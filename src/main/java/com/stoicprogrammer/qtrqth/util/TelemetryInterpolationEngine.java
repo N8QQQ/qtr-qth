@@ -1,9 +1,12 @@
 package com.stoicprogrammer.qtrqth.util;
 
 import io.vavr.collection.Vector;
+import io.vavr.control.Option;
 import io.vavr.control.Try;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 /**
@@ -24,10 +27,13 @@ public final class TelemetryInterpolationEngine {
      * Uses Epoch-Aware grouping to maintain realistic interleaving.
      */
     public List<String> interpolate(final List<String> sourceSentences, final int targetFrequency) {
-        if (targetFrequency <= 1) {
-            return List.copyOf(sourceSentences);
-        }
+        return Map.<Boolean, Supplier<List<String>>>of(
+            true, () -> List.copyOf(sourceSentences),
+            false, () -> performInterpolation(sourceSentences, targetFrequency)
+        ).get(targetFrequency <= 1).get();
+    }
 
+    private List<String> performInterpolation(final List<String> sourceSentences, final int targetFrequency) {
         // 1. Group sentences into 1-second Epochs using a functional fold
         final List<List<String>> epochs = Vector.ofAll(sourceSentences)
             .foldLeft(Vector.<Vector<String>>empty(), (acc, s) -> 
@@ -49,40 +55,47 @@ public final class TelemetryInterpolationEngine {
     }
 
     private String massageSentence(final String sentence, final java.math.BigDecimal fractionOffset) {
-        // Support for informational sentences (like TXT) - pass through unchanged
-        if (sentence.contains("TXT") || !sentence.contains(",")) {
-            return sentence;
-        }
-        
-        final String[] parts = sentence.split(",", -1);
-        final String type = parts[0].length() >= TYPE_END ? parts[0].substring(TYPE_START, TYPE_END) : "";
+        return Option.of(sentence)
+            .filter(s -> !s.contains("TXT") && s.contains(","))
+            .map(s -> {
+                final String[] parts = s.split(",", -1);
+                final String type = parts[0].length() >= TYPE_END ? parts[0].substring(TYPE_START, TYPE_END) : "";
 
-        return switch (type) {
-            case "ZDA", "RMC", "GGA", "GLL" -> updateTimestamp(parts, fractionOffset);
-            default -> sentence; // GSA, GSV, etc. stay same as they apply to the epoch
-        };
+                // Pure Functional Dispatch Table (Eliminating imperative branching for Technical Purity)
+                final Map<String, Supplier<String>> dispatch = Map.of(
+                    "ZDA", () -> updateTimestamp(parts, fractionOffset),
+                    "RMC", () -> updateTimestamp(parts, fractionOffset),
+                    "GGA", () -> updateTimestamp(parts, fractionOffset),
+                    "GLL", () -> updateTimestamp(parts, fractionOffset)
+                );
+
+                return Option.of(dispatch.get(type))
+                    .map(Supplier::get)
+                    .getOrElse(s);
+            })
+            .getOrElse(sentence);
     }
 
     private String updateTimestamp(final String[] parts, final java.math.BigDecimal fractionOffset) {
         final int timeIdx = parts[0].endsWith("GLL") ? TIME_IDX_GLL : TIME_IDX_DEFAULT;
-        if (parts.length <= timeIdx || parts[timeIdx].length() < TIME_STRING_MIN_LEN) {
-            return String.join(",", parts);
-        }
-
-        final String rawTime = parts[timeIdx];
-        return Try.of(() -> {
-            final java.math.BigDecimal baseSeconds = new java.math.BigDecimal(rawTime.substring(TIME_SECOND_START));
-            final java.math.BigDecimal massagedSeconds = baseSeconds.add(fractionOffset);
-            
-            final String newTime = String.format("%s%05.2f", rawTime.substring(0, TIME_SECOND_START), massagedSeconds.doubleValue());
-            final String[] massagedParts = parts.clone();
-            massagedParts[timeIdx] = newTime;
-            
-            final String payload = String.join(",", massagedParts);
-            final String cleanPayload = payload.contains("*") ? payload.substring(0, payload.lastIndexOf('*')) : payload;
-            
-            return cleanPayload + "*" + calculateChecksum(cleanPayload);
-        }).getOrElse(String.join(",", parts));
+        
+        return Option.of(parts)
+            .filter(p -> p.length > timeIdx && p[timeIdx].length() >= TIME_STRING_MIN_LEN)
+            .map(p -> Try.of(() -> {
+                final String rawTime = p[timeIdx];
+                final java.math.BigDecimal baseSeconds = new java.math.BigDecimal(rawTime.substring(TIME_SECOND_START));
+                final java.math.BigDecimal massagedSeconds = baseSeconds.add(fractionOffset);
+                
+                final String newTime = String.format("%s%05.2f", rawTime.substring(0, TIME_SECOND_START), massagedSeconds.doubleValue());
+                final String[] massagedParts = p.clone();
+                massagedParts[timeIdx] = newTime;
+                
+                final String payload = String.join(",", massagedParts);
+                final String cleanPayload = payload.contains("*") ? payload.substring(0, payload.lastIndexOf('*')) : payload;
+                
+                return cleanPayload + "*" + calculateChecksum(cleanPayload);
+            }).getOrElse(String.join(",", p)))
+            .getOrElse(String.join(",", parts));
     }
 
     private String calculateChecksum(final String sentence) {

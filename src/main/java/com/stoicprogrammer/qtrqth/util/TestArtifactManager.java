@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -53,9 +54,13 @@ public final class TestArtifactManager {
             .map(expectedHash -> {
                 final String actualHash = calculateHash(targetPath);
                 final boolean valid = actualHash.equals(expectedHash);
-                if (!valid) {
-                    logger.error("ARTIFACT TAMPERED: {} | Expected: {} | Actual: {}", targetPath.getFileName(), expectedHash, actualHash);
-                }
+                
+                // Pure Functional Logging
+                Map.<Boolean, Runnable>of(
+                    false, () -> logger.error("ARTIFACT TAMPERED: {} | Expected: {} | Actual: {}", targetPath.getFileName(), expectedHash, actualHash),
+                    true, () -> {}
+                ).get(valid).run();
+                
                 return valid;
             })
             .orElseGet(() -> {
@@ -75,9 +80,11 @@ public final class TestArtifactManager {
                 .map(i -> hashBytes[i] & hexMask)
                 .forEach(b -> {
                     final String hex = Integer.toHexString(b);
-                    if (hex.length() == 1) {
-                        hexString.append('0');
-                    }
+                    // Declarative padding
+                    Map.<Boolean, Runnable>of(
+                        true, () -> hexString.append('0'),
+                        false, () -> {}
+                    ).get(hex.length() == 1).run();
                     hexString.append(hex);
                 });
             
