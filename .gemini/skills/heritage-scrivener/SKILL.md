@@ -7,7 +7,8 @@ This skill governs the creation of "High-Fidelity" Pull Requests within the `qtr
 ### 1. The Pre-Flight Quality Gate (Mandatory)
 Before the `gh pr create` command is ever issued, the Scrivener MUST invoke the following audits:
 - **Purity Audit (`heritage-auditor`):** Confirm zero imperative leakage.
-- **Verification Audit (`heritage-verifier`):** Confirm the "Sunday Best" suite is green.
+- **Verification Audit (`heritage-verifier`):** Confirm the "Sunday Best" suite is green (via Phantom Guard).
+- **Document Guard:** Verify all design phases are linked and deprecated terminology is purged.
 - **Environment Audit (`heritage-doctor`):** Confirm signing keys are healthy.
 
 ### 2. The Technical Readiness Certificate

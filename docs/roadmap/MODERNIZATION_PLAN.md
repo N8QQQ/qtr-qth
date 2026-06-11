@@ -22,8 +22,8 @@ title: Modernization Plan
 - [x] **B.3: Integrity:** Enforce SLSA Level 3 standards and SBOM generation.
 
 ## ✅ Phase C: CI/CD Virtualization
-- [x] **C.1: Environment Parity:** Create `Dockerfile.ci` for high-fidelity local runs.
-- [x] **C.2: Local Certification:** Implement `verify-local-ci.ps1` for PowerShell/Windows users.
+- [x] **C.1: Environment Parity:** Create `docker/phantom/Dockerfile` for high-fidelity local runs (Phantom Guard).
+- [x] **C.2: Local Certification:** Implement `heritage-verifier` skill for deterministic health checks.
 - [x] **C.3: Multi-Platform Sync:** Ensure Gradle caching is active across all runners.
 
 ## 🚧 Phase D: Documentation Visibility (The Final Pillar)

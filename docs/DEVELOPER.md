@@ -69,9 +69,8 @@ To ensure high-fidelity development and cross-platform parity, `qtr-qth` utilize
 
 | Service | Role | Key Capability | Resource Envelope |
 | :--- | :--- | :--- | :--- |
-| **`ci`** | Quality Gate | Headless compilation, linting, and testing. | Native Host |
 | **`docs`** | Staging Hub | Real-time preview of the Jekyll-based manual. | 512MB RAM |
-| **`phantom`** | Virtual Shack | Hardware spoofing via `socat` and TCP bridges. | 1.0 CPU / 1GB RAM |
+| **`phantom`** | **Phantom Guard** | Definitive Quality Gate with hardware simulation. | 1.0 CPU / 1GB RAM |
 | **`stress-test`** | ARM64 Mirror | Emulated ARM64 execution to certify Pi-parity. | 0.5 CPU / 512MB RAM |
 
 ---
@@ -80,21 +79,16 @@ To ensure high-fidelity development and cross-platform parity, `qtr-qth` utilize
 
 The following commands are platform-agnostic and should be used instead of any legacy PowerShell or Bash scripts for host-level orchestration.
 
-#### 1. The Quality Gate (`ci`)
-- **Command:** `docker-compose run --rm ci`
-- **Purpose:** Mirrors the GitHub Actions environment. It executes a full "Clean-Check-Test" cycle.
+#### 1. The Phantom Guard (`phantom`)
+- **Command:** `docker-compose run --rm phantom ./gradlew clean check`
+- **Purpose:** Mirrors the GitHub Actions environment with added hardware simulation. It executes a full "Sunday Best" certification cycle.
 
 #### 2. The Documentation Hub (`docs`)
 - **Command:** `docker-compose up docs`
 - **Purpose:** Real-time preview of the documentation at `http://localhost:4000/qtr-qth/`.
 - **Note:** To change the Jekyll theme, modify `remote_theme` in `docs/_config.yml`.
 
-#### 3. The Phantom Shack (`phantom`)
-- **Command:** `docker-compose run --rm phantom`
-- **Purpose:** A virtualized laboratory for hardware logic and spoofing.
-- **TCP Bridge:** Connect your host's NMEA stream to `localhost:9999`.
-
-#### 4. Maintenance & Cleanup (The Scrub)
+#### 3. Maintenance & Cleanup (The Scrub)
 - **Command:** `docker-compose down -v --remove-orphans`
 - **Purpose:** Neutralize the environment and reclaim host resources.
 - **Protocol:** Run this whenever switching between hardware and simulation modes, or if `socat` handles become stale.
@@ -136,7 +130,8 @@ Every release must follow this high-fidelity sequence:
 - [ ] **Roadmap Alignment:** Synchronize `PLAN.md` with the current tactical state.
 
 ### 2. Logic & Security Certification (DoD)
-- [ ] **Test Pass:** Run `docker-compose run --rm ci`. **All tests must be green.**
+- [ ] **Test Pass:** Run `docker-compose run --rm phantom ./gradlew clean check`. **All tests must be green.**
+- [ ] **Technical Purity Audit:** Run `node .gemini/skills/heritage-auditor/scripts/project_audit.cjs` to confirm zero imperative leakage.
 - [ ] **OWASP 2025 Audit:** Manual/Static scan for Supply Chain and Integrity vulnerabilities.
 
 ### 3. Distribution & Archival

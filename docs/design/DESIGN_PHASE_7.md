@@ -16,11 +16,11 @@
 ## 🛠️ Tactical Components
 
 ### 7.1: Universal Command Center (`docker-compose.yml`)
-- **Service: `ci`** - The Quality Gate (Testing, Linting, Artifacts).
-- **Service: `docs`** - The Staging Hub (Jekyll Hub with p5.js flare).
-- **Service: `phantom`** - The Virtual Shack (Interactive Dev Mirror + Hardware).
-    - **Base OS:** Debian-slim (Raspbian Parity).
+- **Service: `phantom`** - **The Phantom Guard** (Quality Gate + Hardware Simulation).
+    - **Function:** Mirrors the GitHub Actions environment while adding hardware spoofing.
     - **Resource Hardening:** Enforce memory limits (e.g., 1GB) and CPU capping to simulate Raspberry Pi 4/5 hardware envelopes.
+- **Service: `docs`** - The Staging Hub (Jekyll Hub with p5.js flare).
+- **Service: `stress-test`** - ARM64/RPi Parity Verification.
 
 ### 7.2: The Hardware Discovery Probe
 - **Utility:** A standalone CLI tool built into the `serial` package.
@@ -66,7 +66,7 @@ flowchart TD
 ### 7.6: Infrastructure Decommissioning
 - **Protocol:** Enforce a "Stateless Lifecycle" for all virtualization services.
 - **Cleanup Strategy:**
-    -   **Ephemeral CI:** All Quality Gate runs must utilize the `--rm` flag to ensure containers are purged upon task completion.
+    -   **Ephemeral Gates:** All Quality Gate runs must utilize the `--rm` flag to ensure containers are purged upon task completion.
     -   **The 'Scrub' Routine:** Implement a standard `docker-compose down` sequence to neutralize the Phantom Shack and reclaim host ports/memory.
     -   **Orphan Mitigation:** Utilize `--remove-orphans` during startup to clear any lingering ghosts from previous failed sessions.
 ### 7.7: Runtime Resilience & State-Lock Architecture
@@ -106,7 +106,6 @@ flowchart TD
 ## 📂 Repository Reorganization
 ```text
 /docker
-  ├── ci/           # Quality Gate Assets
   ├── docs/         # Staging Hub Assets
   └── phantom/      # Mini-Lab Assets & Entrypoints
 ```
