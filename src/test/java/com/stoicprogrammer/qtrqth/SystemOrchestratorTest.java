@@ -41,7 +41,13 @@ class SystemOrchestratorTest extends BddTest {
         org.mockito.BDDMockito.given(emptyProvider.getAvailablePorts()).willReturn(List.of());
 
         final InstantSource frozenClock = InstantSource.fixed(MOCK_TIME);
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(new ConfigManager(configPath), emptyProvider, null, frozenClock);
+        final SystemOrchestrator orchestrator = new SystemOrchestrator(
+            new ConfigManager(configPath), 
+            emptyProvider, 
+            null, 
+            frozenClock,
+            new com.stoicprogrammer.qtrqth.sentinel.NoOpSentinel()
+        );
         final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
 
         // WHEN: The system boots

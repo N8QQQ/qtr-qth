@@ -1,6 +1,5 @@
 package com.stoicprogrammer.qtrqth.benchmarks;
 
-import io.vavr.control.Try;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -27,47 +26,17 @@ public class MonadicBenchmark {
     private final String invalid = "not_a_number";
 
     @Benchmark
-    @SuppressWarnings("java:S1166") // Raw JDK benchmark baseline
-    public Optional<Integer> imperativeSuccess() {
-        try {
-            return Optional.of(Integer.parseInt(validInt));
-        } catch (final NumberFormatException e) {
-            return Optional.empty();
-        }
+    public Optional<Integer> functionalIntSuccess() {
+        return com.stoicprogrammer.qtrqth.util.Functional.tryParseInt(validInt);
     }
 
     @Benchmark
-    public Optional<Integer> vavrSuccess() {
-        return Try.of(() -> Integer.parseInt(validInt)).toJavaOptional();
+    public Optional<Double> functionalDoubleSuccess() {
+        return com.stoicprogrammer.qtrqth.util.Functional.tryParseDouble(validDouble);
     }
 
     @Benchmark
-    @SuppressWarnings("java:S1166") // Raw JDK benchmark baseline
-    public Optional<Double> imperativeDoubleSuccess() {
-        try {
-            return Optional.of(Double.parseDouble(validDouble));
-        } catch (final NumberFormatException e) {
-            return Optional.empty();
-        }
-    }
-
-    @Benchmark
-    public Optional<Double> vavrDoubleSuccess() {
-        return Try.of(() -> Double.parseDouble(validDouble)).toJavaOptional();
-    }
-
-    @Benchmark
-    @SuppressWarnings("java:S1166") // Raw JDK benchmark baseline
-    public Optional<Integer> imperativeFailure() {
-        try {
-            return Optional.of(Integer.parseInt(invalid));
-        } catch (final NumberFormatException e) {
-            return Optional.empty();
-        }
-    }
-
-    @Benchmark
-    public Optional<Integer> vavrFailureHandling() {
-        return Try.of(() -> Integer.parseInt(invalid)).toJavaOptional();
+    public Optional<Integer> functionalIntFailure() {
+        return com.stoicprogrammer.qtrqth.util.Functional.tryParseInt(invalid);
     }
 }

@@ -40,6 +40,23 @@ public record GpsData(
      */
     public static final GpsData EMPTY = new GpsData(null, null, 0, 0, 0, 0, 0.0, 0.0, DEFAULT_DOP, DEFAULT_DOP, DEFAULT_DOP, "SYSTEM_READY", List.of(), PrecisionStats.EMPTY);
 
+    /**
+     * Consolidates signal intelligence metrics for the current view.
+     */
+    public SignalQuality signalQuality() {
+        final double avgSnr = satellitesInView.stream()
+            .mapToInt(SatelliteFix::snr)
+            .filter(snr -> snr > 0)
+            .average()
+            .orElse(0.0);
+
+        final long trackedSats = satellitesInView.stream()
+            .filter(s -> s.snr() > 0)
+            .count();
+
+        return new SignalQuality(avgSnr, (int) trackedSats, satellitesInView.size());
+    }
+
     @Override
     public String toString() {
         final String timeStr = Optional.ofNullable(utcTime)
@@ -60,5 +77,17 @@ public record GpsData(
      */
     public record PrecisionStats(double latStdDev, double lonStdDev, double altStdDev) {
         public static final PrecisionStats EMPTY = new PrecisionStats(0, 0, 0);
+    }
+
+    /**
+     * Consolidated Signal Intelligence record.
+     */
+    public record SignalQuality(double averageSnr, int trackedCount, int visibleCount) {
+        public static final SignalQuality EMPTY = new SignalQuality(0.0, 0, 0);
+        
+        @Override
+        public String toString() {
+            return String.format("SNR: %.1f dB | Tracked: %d/%d", averageSnr, trackedCount, visibleCount);
+        }
     }
 }

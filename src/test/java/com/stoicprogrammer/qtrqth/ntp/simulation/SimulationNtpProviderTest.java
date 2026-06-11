@@ -24,9 +24,9 @@ class SimulationNtpProviderTest extends BddTest {
         final Optional<NtpResponse> response = provider.getTime("sim.ntp.org", TEST_TIMEOUT);
 
         assertThat(response).isPresent();
-        assertThat(response.get().rttMs()).isEqualTo(EXPECTED_RTT);
+        assertThat(response.get().rttMilliseconds()).isEqualTo(EXPECTED_RTT);
         assertThat(response.get().stratum()).isEqualTo(EXPECTED_STRATUM);
-        assertThat(response.get().rootDispersionMs()).isEqualTo(EXPECTED_DISPERSION);
+        assertThat(response.get().rootDispersionMilliseconds()).isEqualTo(EXPECTED_DISPERSION);
         assertThat(response.get().time()).isNotNull();
     }
 }

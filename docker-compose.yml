@@ -2,17 +2,7 @@
 # Supports Windows, Linux, Mac, and RPi via Docker Compose.
 
 services:
-  # 1. The Quality Gate: Stateless Testing & Linting
-  ci:
-    build:
-      context: .
-      dockerfile: docker/ci/Dockerfile
-    container_name: ${CI_CONTAINER_NAME:-qtr-qth-ci}
-    volumes:
-      - .:/workspace
-    working_dir: /workspace
-
-  # 2. The Documentation Hub: Staging & Flare Iteration
+  # 1. The Documentation Hub: Staging & Flare Iteration
   docs:
     build:
       context: .

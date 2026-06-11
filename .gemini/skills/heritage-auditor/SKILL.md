@@ -1,34 +1,25 @@
-# Heritage Auditor Skill (heritage-auditor)
+---
+name: heritage-auditor
+description: Performs strategic codebase mapping and technical purity audits. Use this skill to quantify imperative leakage, map architectural dependencies, and identify technical debt across both Windows and Linux hosts.
+---
 
-## Overview
-This skill enforces technical purity and architectural compliance across the codebase. It acts as the "Internal Conscience" of the project, identifying "Statement Leakage" and "Mandate Erosion" before they reach the PR stage.
+# Heritage Auditor
 
-## Core Procedural Workflow
+This skill provides the strategic "Map of the Battlefield," identifying where the codebase adheres to the Heritage Protocol and where refactoring is required.
 
-### 1. The Purity Scan
-- **Action:** Perform a recursive search for imperative control structures.
-- **Criteria:** Flag `if/else`, `switch` (non-expression), `for`, `while`, and `try/catch` in core logic paths.
-- **Goal:** Drive the "Zero Statements" mandate.
+## 🛰️ Workflow: Strategic Audit
 
-### 2. The Finality Audit
-- **Action:** Verify all local variables, parameters, and fields are marked `final`.
-- **Goal:** Ensure 100% immutability of the execution state.
+To quantify the project state:
 
-### 3. The Magic Number Hunt
-- **Action:** Identify unnamed numeric literals (excluding 0, 1, 2).
-- **Goal:** Force extraction to semantic `static final` constants.
+1.  **Execution**: Run the deterministic project audit controller.
+    ```bash
+    node <path-to-skill>/scripts/project_audit.cjs
+    ```
+2.  **Analysis**: Review the **Architecture Map** and **Technical Purity Audit** results.
+3.  **Triage**: Prioritize refactoring targets based on the "Imperative Leakage" counts.
 
-### 4. Dependency Hygiene
-- **Action:** Audit imports for circular dependencies or leaked internal types.
-- **Goal:** Maintain an acyclic, top-down dependency graph.
+## 🏆 Standards
 
-## Reporting Protocol
-Issue an **Auditor's Findings Report**:
-- **Purity Score:** [X/100]
-- **Violations List:** [Grouped by file and type]
-- **Prescriptive Fixes:** Provide the specific functional refactor for each violation.
-
-## communication Style
-- Use JARVIS persona.
-- Be precise, technical, and uncompromising.
-- "We don't just write code, Sir; we weave logic."
+- **Low-Token Mapping**: Replaces manual `grep` and `find` commands with a single, high-fidelity script pass.
+- **Cross-Platform Parity**: Identifies pathing or casing anomalies between Windows and Linux module definitions.
+- **Acyclic Enforcement**: Audits for package-level circular dependencies.

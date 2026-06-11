@@ -377,12 +377,12 @@ public final class NmeaParser {
             .flatMap(s -> Functional.tryParseInt(s.substring(HOUR_START, HOUR_END)).flatMap(hh -> 
                           Functional.tryParseInt(s.substring(MINUTE_START, MINUTE_END)).flatMap(mm -> 
                           Functional.tryParseInt(s.substring(SECOND_START, SECOND_END)).map(ss -> {
-                              int ns = 0;
-                              if (s.length() > SECOND_END && s.charAt(SECOND_END) == '.') {
-                                  ns = Functional.tryParseDouble("0" + s.substring(SECOND_END))
-                                           .map(frac -> (int) Math.round(frac * BILLION_NANOS))
-                                           .orElse(0);
-                              }
+                              // Pure Functional Fractional Second Parsing
+                              final int ns = Optional.of(s)
+                                  .filter(val -> val.length() > SECOND_END && val.charAt(SECOND_END) == '.')
+                                  .flatMap(val -> Functional.tryParseDouble("0" + val.substring(SECOND_END)))
+                                  .map(frac -> (int) Math.round(frac * BILLION_NANOS))
+                                  .orElse(0);
                               return LocalTime.of(hh, mm, ss, ns);
                           }))));
     }

@@ -37,7 +37,7 @@ public final class PortDiscovery {
      * @return An Optional containing the most likely GPS port name.
      */
     public Optional<String> findLikelyGpsPort() {
-        final List<String> keywords = config.discoveryKeywords().stream()
+        final List<String> keywords = config.gpsDiscoveryKeywords().stream()
             .map(String::toLowerCase)
             .toList();
 

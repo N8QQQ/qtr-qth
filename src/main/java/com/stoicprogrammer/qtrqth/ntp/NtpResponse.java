@@ -8,7 +8,7 @@ import java.time.Instant;
  */
 public record NtpResponse(
     Instant time, 
-    long rttMs, 
+    long rttMilliseconds, 
     int stratum, 
-    double rootDispersionMs
+    double rootDispersionMilliseconds
 ) {}

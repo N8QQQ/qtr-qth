@@ -24,21 +24,21 @@ public final class SimulationSerialPort implements ISerialPort {
     private static final Logger logger = LoggerFactory.getLogger(SimulationSerialPort.class);
     
     // Operational Constants
-    private static final int INITIAL_DELAY_MS = 100;
+    private static final int INITIAL_DELAY_MILLISECONDS = 100;
     private static final int BYTES_AVAILABLE_SIM = 256;
 
     private final String name;
     private final List<String> dataStream;
-    private final int intervalMs;
+    private final int intervalMilliseconds;
     private final AtomicInteger lineIndex = new AtomicInteger(0);
     private boolean open = false;
     private SerialPortDataListener listener;
     private Timer timer;
 
-    public SimulationSerialPort(final String name, final String dataFile, final int intervalMs) {
+    public SimulationSerialPort(final String name, final String dataFile, final int intervalMilliseconds) {
         this.name = name;
         this.dataStream = loadSimulatedData(dataFile);
-        this.intervalMs = intervalMs;
+        this.intervalMilliseconds = intervalMilliseconds;
     }
 
     private List<String> loadSimulatedData(final String dataFile) {
@@ -80,7 +80,7 @@ public final class SimulationSerialPort implements ISerialPort {
                 Optional.ofNullable(listener).ifPresent(l -> 
                     l.serialEvent(new SerialPortEvent(proxy, SerialPort.LISTENING_EVENT_DATA_AVAILABLE)));
             }
-        }, INITIAL_DELAY_MS, intervalMs);
+        }, INITIAL_DELAY_MILLISECONDS, intervalMilliseconds);
         return true;
     }
 

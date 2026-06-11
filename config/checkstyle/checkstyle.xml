@@ -63,6 +63,27 @@
             <property name="max" value="1"/>
         </module>
 
+        <!-- Temporal Naming Convention Enforcement -->
+        <module name="RegexpSinglelineJava">
+            <property name="id" value="BanAbbreviatedTimeUnits"/>
+            <property name="format" value="\b[a-z][a-zA-Z0-9]*(Us|Ms|Ns)\b"/>
+            <property name="message" value="Abbreviated time units (Us, Ms, Ns) are forbidden. Use Microseconds, Milliseconds, or Nanoseconds."/>
+            <property name="ignoreComments" value="true"/>
+        </module>
+
+        <!-- Grounded Parsing Mandate Enforcement -->
+        <module name="RegexpSinglelineJava">
+            <property name="id" value="BanRawJDKParsing"/>
+            <property name="format" value="\b(Integer|Long|Double|Float|Short|Byte)(\.|::)(parse[a-zA-Z]+|valueOf)\b"/>
+            <property name="message" value="Direct use of raw JDK parsing methods is forbidden. Use monadic wrappers in com.stoicprogrammer.qtrqth.util.Functional instead."/>
+            <property name="ignoreComments" value="true"/>
+        </module>
+
+        <module name="SuppressionXpathSingleFilter">
+            <property name="id" value="BanRawJDKParsing"/>
+            <property name="files" value="Functional\.java"/>
+        </module>
+
         <!-- Pure Functional Enforcement -->
         <module name="DescendantToken">
             <property name="id" value="BanReturnNull"/>

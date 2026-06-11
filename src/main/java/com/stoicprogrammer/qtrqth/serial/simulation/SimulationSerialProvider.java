@@ -10,26 +10,26 @@ import java.util.List;
  * Adheres to strict finality and unmodifiable collection mandates.
  */
 public final class SimulationSerialProvider implements ISerialProvider {
-    private static final int DEFAULT_INTERVAL_MS = 1000;
+    private static final int DEFAULT_INTERVAL_MILLISECONDS = 1000;
     private final String dataFile;
-    private final int intervalMs;
+    private final int intervalMilliseconds;
 
     public SimulationSerialProvider() {
-        this("simulation/gps_sim.nmea", DEFAULT_INTERVAL_MS);
+        this("simulation/gps_sim.nmea", DEFAULT_INTERVAL_MILLISECONDS);
     }
 
-    public SimulationSerialProvider(final String dataFile, final int intervalMs) {
+    public SimulationSerialProvider(final String dataFile, final int intervalMilliseconds) {
         this.dataFile = dataFile;
-        this.intervalMs = intervalMs;
+        this.intervalMilliseconds = intervalMilliseconds;
     }
 
     @Override
     public List<ISerialPort> getAvailablePorts() {
-        return List.of(new SimulationSerialPort("SIM1", dataFile, intervalMs));
+        return List.of(new SimulationSerialPort("SIM1", dataFile, intervalMilliseconds));
     }
 
     @Override
     public ISerialPort getPort(final String portName) {
-        return new SimulationSerialPort(portName, dataFile, intervalMs);
+        return new SimulationSerialPort(portName, dataFile, intervalMilliseconds);
     }
 }

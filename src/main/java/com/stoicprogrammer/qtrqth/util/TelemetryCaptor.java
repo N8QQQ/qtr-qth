@@ -8,6 +8,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
 public final class TelemetryCaptor implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TelemetryCaptor.class);
     private static final int QUEUE_CAPACITY = 10000; // Large buffer for high-rate data
-    private static final int POLL_TIMEOUT_MS = 100;
+    private static final int POLL_TIMEOUT_MILLISECONDS = 100;
     private static final int SHUTDOWN_AWAIT_SECONDS = 5;
     
     private final Path capturePath;
@@ -46,16 +47,18 @@ public final class TelemetryCaptor implements AutoCloseable {
      * Enqueues an event for capture.
      */
     public void capture(final TelemetryEvent event) {
-        if (!writeQueue.offer(event)) {
-            logger.warn("Capture buffer overflow! Dropping telemetry event.");
-        }
+        // Pure Functional Offer
+        Map.<Boolean, Runnable>of(
+            false, () -> logger.warn("Capture buffer overflow! Dropping telemetry event."),
+            true, () -> {}
+        ).get(writeQueue.offer(event)).run();
     }
 
     private void processQueue() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(capturePath.toFile(), true))) {
             logger.info("Telemetry capture initiated at: {}", capturePath.toAbsolutePath());
             
-            Stream.generate(() -> pollSafe(POLL_TIMEOUT_MS))
+            Stream.generate(() -> pollSafe(POLL_TIMEOUT_MILLISECONDS))
                 .takeWhile(eventOpt -> running.get() || !writeQueue.isEmpty())
                 .forEach(eventOpt -> eventOpt.ifPresent(event -> safeWriteEvent(writer, event)));
             
@@ -75,9 +78,9 @@ public final class TelemetryCaptor implements AutoCloseable {
         }
     }
 
-    private Optional<TelemetryEvent> pollSafe(final int timeoutMs) {
+    private Optional<TelemetryEvent> pollSafe(final int timeoutMilliseconds) {
         try {
-            return Optional.ofNullable(writeQueue.poll(timeoutMs, TimeUnit.MILLISECONDS));
+            return Optional.ofNullable(writeQueue.poll(timeoutMilliseconds, TimeUnit.MILLISECONDS));
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             return Optional.empty();
@@ -95,10 +98,13 @@ public final class TelemetryCaptor implements AutoCloseable {
     public void close() {
         running.set(false);
         writerExecutor.shutdown();
+        
         try {
-            if (!writerExecutor.awaitTermination(SHUTDOWN_AWAIT_SECONDS, TimeUnit.SECONDS)) {
-                writerExecutor.shutdownNow();
-            }
+            // Pure Functional Shutdown
+            Map.<Boolean, Runnable>of(
+                false, () -> writerExecutor.shutdownNow(),
+                true, () -> {}
+            ).get(writerExecutor.awaitTermination(SHUTDOWN_AWAIT_SECONDS, TimeUnit.SECONDS)).run();
         } catch (final InterruptedException e) {
             writerExecutor.shutdownNow();
             Thread.currentThread().interrupt();

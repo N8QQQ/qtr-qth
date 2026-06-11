@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.InstantSource;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +42,6 @@ public final class SerialConnector {
     private final LinkedBlockingQueue<TelemetryEvent> queue;
 
     private record ConnectionRule(boolean condition, Supplier<Stream<TelemetryEvent>> action) {}
-    private record QueueRule(boolean condition, Runnable action) {}
 
     public SerialConnector(final ConfigManager config, final NmeaSentenceAccumulator accumulator, final ISerialProvider provider, final InstantSource clock) {
         this.config = config;
@@ -117,10 +117,12 @@ public final class SerialConnector {
                         .forEach(s -> {
                             // T1: Edge Stamp captured immediately upon line reconstruction
                             final TelemetryEvent te = new TelemetryEvent(s, clock.instant());
-                            final boolean success = queue.offer(te);
-                            if (!success) {
-                                logger.warn("Telemetry buffer full. Dropping sentence: {}", s);
-                            }
+                            
+                            // Pure Functional Queue Handling
+                            Map.<Boolean, Runnable>of(
+                                false, () -> logger.warn("Telemetry buffer full. Dropping sentence: {}", s),
+                                true, () -> {}
+                            ).get(queue.offer(te)).run();
                         }));
             }
         });

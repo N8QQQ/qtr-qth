@@ -15,5 +15,5 @@ public interface INtpProvider {
      * @param timeoutMs The network timeout in milliseconds.
      * @return An Optional containing the NtpResponse, or empty if the operation failed.
      */
-    Optional<NtpResponse> getTime(String hostname, int timeoutMs);
+    Optional<NtpResponse> getTime(String hostname, int timeoutMilliseconds);
 }

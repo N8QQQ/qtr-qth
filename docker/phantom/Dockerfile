@@ -1,11 +1,15 @@
 # Phantom Shack: Resource-Constrained Virtual Pi
-# High-fidelity development mirror (Built on top of local CI baseline)
+# High-fidelity development mirror (Ubuntu 24.04 + JDK 21)
 
-FROM qtr-qth-ci:latest
+FROM ubuntu:24.04
 
-# 1. Install Additional System Dependencies (socat for hardware spoofing)
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 1. Install System Dependencies
 RUN apt-get update && apt-get install -y \
+    openjdk-21-jdk-headless \
+    curl \
+    git \
     socat \
     usbutils \
     minicom \

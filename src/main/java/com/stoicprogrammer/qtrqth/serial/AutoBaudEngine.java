@@ -6,7 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -19,9 +21,9 @@ public final class AutoBaudEngine {
 
     // Operational Constants
     private static final List<Integer> BAUD_RATES = List.of(115200, 9600, 38400, 230400, 460800, 4800);
-    private static final int SCAN_TIMEOUT_MS = 1500;
+    private static final int SCAN_TIMEOUT_MILLISECONDS = 1500;
     private static final int BUFFER_SIZE = 1024;
-    private static final int SLEEP_MS = 50;
+    private static final int SLEEP_MILLISECONDS = 50;
     private static final int MIN_SENTENCE_LEN = 6;
 
     private AutoBaudEngine() {
@@ -53,20 +55,19 @@ public final class AutoBaudEngine {
     private static boolean performReadAudit(final ISerialPort port) {
         try {
             final byte[] buffer = new byte[BUFFER_SIZE];
-            final long deadline = System.currentTimeMillis() + SCAN_TIMEOUT_MS;
+            final long deadline = System.currentTimeMillis() + SCAN_TIMEOUT_MILLISECONDS;
             final StringBuilder lineBuilder = new StringBuilder();
             final NmeaParser validator = new NmeaParser();
 
             return Stream.generate(() -> System.currentTimeMillis() < deadline)
                 .takeWhile(Boolean::booleanValue)
-                .map(active -> {
-                    if (port.bytesAvailable() > 0) {
-                        final int read = port.readBytes(buffer, buffer.length);
-                        return processChunk(buffer, read, lineBuilder, validator);
+                .map(active -> Map.<Boolean, Supplier<Boolean>>of(
+                    true, () -> processChunk(buffer, port.readBytes(buffer, buffer.length), lineBuilder, validator),
+                    false, () -> {
+                        sleep(SLEEP_MILLISECONDS);
+                        return false;
                     }
-                    sleep(SLEEP_MS);
-                    return false;
-                })
+                ).get(port.bytesAvailable() > 0).get())
                 .anyMatch(Boolean::booleanValue);
         } finally {
             port.closePort();
@@ -82,16 +83,21 @@ public final class AutoBaudEngine {
     }
 
     private static Optional<Boolean> processChar(final char c, final StringBuilder lineBuilder, final NmeaParser validator) {
-        if (c == '$') {
-            lineBuilder.setLength(0);
-        }
+        // Pure Functional Reset Logic
+        Map.<Boolean, Runnable>of(
+            true, () -> lineBuilder.setLength(0),
+            false, () -> {}
+        ).get(c == '$').run();
+
         lineBuilder.append(c);
-        if (c == '\n' || c == '\r') {
-            final String sentence = lineBuilder.toString().trim();
-            lineBuilder.setLength(0);
-            return Optional.of(sentence.length() >= MIN_SENTENCE_LEN && sentence.startsWith("$") && validator.isSupported(sentence));
-        }
-        return Optional.empty();
+
+        return Optional.of(c == '\n' || c == '\r')
+            .filter(Boolean::booleanValue)
+            .map(eol -> {
+                final String sentence = lineBuilder.toString().trim();
+                lineBuilder.setLength(0);
+                return sentence.length() >= MIN_SENTENCE_LEN && sentence.startsWith("$") && validator.isSupported(sentence);
+            });
     }
 
     private static void sleep(final int ms) {

@@ -186,6 +186,11 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 - **Standard:** All string-to-number conversions must utilize the monadic wrappers in `com.stoicprogrammer.qtrqth.util.Functional` (e.g., `Functional.tryParseInt`).
 - **Reason:** Enforce null-safety and exception-safe pipelines at the architectural level, ensuring no `NumberFormatException` can ever destabilize a stream.
 
+### 13.7 Temporal Naming Convention
+- **Rule:** The use of ambiguous abbreviations for temporal units (e.g., `Us`, `Ms`, `Ns`) in method names, fields, or variables is strictly forbidden.
+- **Standard:** All temporal identifiers must use the full descriptive suffix: `Microseconds`, `Milliseconds`, or `Nanoseconds`.
+- **Reason:** Maintain architectural clarity and prevent regression to imperative-style shorthand, ensuring that the precision of the telemetry stream is explicitly documented in the code.
+
 ---
 
 ## 14. Task Safety & Timeouts
@@ -205,16 +210,20 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 ## 16. Git Standards
 - **Rule:** The deletion or overwriting of existing git tags is strictly forbidden.
 - **Enforcement:** If a release artifact or tag is found to be incorrect, the issue must be resolved by issuing a new incremental version (e.g., v0.4.2) rather than mutating the history of an existing tag.
-## 17. Heritage Release Protocol
-- **Rule:** Every GitHub release must be a "High-Fidelity" event.
-- **Mandatory Checklist:**
+## 17. Heritage Release Protocol (Manual Override)
+- **Rule:** Every GitHub release must be a "High-Fidelity" event. 
+- **Authority Restriction:** JARVIS is strictly **FORBIDDEN** from performing automated Pull Request merges or GitHub Release creations. 
+- **Mandatory User-Driven Workflow:**
+    1.  **Preparation:** JARVIS prepares the branch, technical summaries, and release notes.
+    2.  **Scripting:** JARVIS provides the necessary parameters for the `scripts/merge-pr.ps1` and `scripts/publish-release.ps1` tools.
+    3.  **Execution:** The user executes the scripts to finalize the lifecycle.
+- **Checklist:**
     1.  **Metadata Sync:** Bump `build.gradle.kts` and `CITATION.cff` (version and date).
     2.  **Certification:** Run `./gradlew clean test` to ensure green status.
     3.  **Artifact Generation:** Run `./gradlew distZip` to produce the distribution binary.
     4.  **Verification:** Confirm the existence of `build/distributions/qtr-qth-[version].zip`.
-    5.  **Tagging (Cryptographic Seal):** Create an annotated, signed git tag using `git tag -s v[version] -m "[message]"`. This environment is configured for **SSH-based signing** (Ed25519). Ensure your SSH agent is active.
-    6.  **Archival:** Push the signed tag to origin (`git push origin v[version]`), then use `gh release create` and **MANDATORILY** attach the generated `.zip` as a release asset.
-- **Reference:** For detailed environment setup and security audit steps, always refer to `docs/DEVELOPER.md`.
+    5.  **Tagging:** Create an annotated, signed git tag.
+    6.  **Archival:** Use `gh release create` and **MANDATORILY** attach the generated `.zip` as a release asset.
 
 ---
 
@@ -244,11 +253,13 @@ Always favor **Expressions** (which yield data directly) over **Statements** (wh
 
 ## 21. Verification & PR Integrity (The "Heritage Pre-Flight")
 - **Rule:** The "One Phase, One PR" mandate must be protected by explicit payload verification and platform-agnostic execution.
-- **Protocol:**
-    1.  **Platform-Agnostic Execution:** Never use shell-level chaining operators (e.g., `&&` or `||`) for multi-step commands. Execute each command as a discrete, sequential tool call to ensure compatibility across PowerShell (Windows) and Bash (Linux).
-    2.  **Pre-Flight Audit:** Before PR creation, verify local state via `git status` and `git diff --staged`.
-    3.  **Payload Certification:** After PR creation, use `gh pr view --json files` to confirm the remote diff matches the tactical scope.
-    4.  **Final Seal:** Never request a merge until the automated Quality Gate is green AND the payload has been certified.
+- **Protocol (HERITAGE-VERIFIER):** JARVIS must utilize the `heritage-verifier` skill for all quality gate operations.
+- **Mandatory Quality Gates:**
+    1.  **Technical Purity Audit:** Elimination of all imperative control structures.
+    2.  **Sunday Best Suite:** Local `./gradlew clean check jacocoTestReport`.
+    3.  **Phantom Guard:** Linux parity certification via `docker-compose run phantom`.
+    4.  **Galvanic Stress:** 50Hz endurance and data integrity verification.
+- **Final Seal:** Never request a merge or hand off a release script until a **Technical Readiness Certificate** has been issued and approved by the user.
 
 ## 22. Command Submission Awareness
 - **Rule:** AI contributors must be aware of the host OS shell syntax.

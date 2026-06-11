@@ -17,15 +17,15 @@ import java.util.Optional;
 public final class NtpClient {
     private static final Logger logger = LoggerFactory.getLogger(NtpClient.class);
     private final INtpProvider provider;
-    private final int timeoutMs;
+    private final int timeoutMilliseconds;
 
-    public NtpClient(final int timeoutMs) {
-        this(new NetworkNtpProvider(), timeoutMs);
+    public NtpClient(final int timeoutMilliseconds) {
+        this(new NetworkNtpProvider(), timeoutMilliseconds);
     }
 
-    public NtpClient(final INtpProvider provider, final int timeoutMs) {
+    public NtpClient(final INtpProvider provider, final int timeoutMilliseconds) {
         this.provider = provider;
-        this.timeoutMs = timeoutMs;
+        this.timeoutMilliseconds = timeoutMilliseconds;
     }
 
     /**
@@ -38,7 +38,7 @@ public final class NtpClient {
         return Optional.ofNullable(hostnames)
             .stream()
             .flatMap(List::stream)
-            .map(host -> provider.getTime(host, timeoutMs))
+            .map(host -> provider.getTime(host, timeoutMilliseconds))
             .flatMap(Optional::stream)
             .findFirst()
             .or(() -> {

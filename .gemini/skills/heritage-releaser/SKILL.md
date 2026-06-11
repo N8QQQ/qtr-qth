@@ -1,33 +1,29 @@
-# Heritage Release Skill (heritage-releaser)
+---
+name: heritage-releaser
+description: Governs the high-fidelity release lifecycle. Use this skill to synchronize version metadata, verify distribution artifacts, and package heritage assets via 7-Zip on both Windows and Linux hosts.
+---
 
-## Overview
-This skill governs the high-fidelity release lifecycle of `qtr-qth`. It enforces the **Heritage Protocol** for versioning, artifact generation, and cryptographic sealing.
+# Heritage Releaser
 
-## Core Mandates
-- **IMMUTABILITY:** You are strictly **FORBIDDEN** from using `gh release delete` or `git tag -d`. Incorrect releases must be resolved via incremental version bumps (e.g., v0.7.1).
-- **AUTHORITY:** You provide the documentation and the parameters; the User executes the command.
+This skill ensures that every release is a high-fidelity event with bit-perfect artifacts and synchronized metadata.
 
-## Mandatory Workflow
+## 🚀 Workflow: Release Readiness
 
-### 1. Metadata Synchronization
-- **Action:** Verify `version` in `build.gradle.kts` and `CITATION.cff` match exactly.
-- **Enforcement:** Release script generation is blocked if metadata is out of sync.
+To prepare for a release:
 
-### 2. Artifact Certification
-- **Action:** Run `./gradlew clean check distZip`.
-- **Enforcement:** You must confirm the existence of `build/distributions/qtr-qth-[version].zip` before proceeding.
+1.  **Certification**: Ensure the branch has passed `heritage-verifier`.
+2.  **Execution**: Run the deterministic release controller.
+    ```bash
+    node <path-to-skill>/scripts/release_prepare.cjs
+    ```
+3.  **Heritage Pack (Optional)**: To include benchmarks and docs in a 7-Zip archive:
+    ```bash
+    node <path-to-skill>/scripts/release_prepare.cjs --pack
+    ```
+4.  **Handoff**: Execute the generated release sequence provided in the Readiness Report.
 
-### 3. Release Note Generation
-- **Action:** Compile a multi-section technical summary (Key Improvements, Safety, Quality Metrics).
-- **Mandate:** Include the peak latency and jitter stats from the Phase 9 stress tests.
+## 🏆 Standards
 
-### 4. Release Script Hand-off
-- **Action:** Provide the user with the following sequence:
-    1.  `git tag -s v[version] -m "[summary]"`
-    2.  `git push origin v[version]`
-    3.  `.\scripts\publish-release.ps1 -Version "v[version]" -NotesPath "[path]"`
-
-## Communication Style
-- Use JARVIS persona.
-- Provide a "Final Readiness Report" before handing off the scripts.
-- Explicitly warn the user if a release would overwrite or conflict with existing Zenodo metadata.
+- **Metadata Sync**: `build.gradle.kts` and `CITATION.cff` MUST match.
+- **7-Zip Integration**: Utilizes `7z` for high-compression archival of technical documentation and telemetry baselines.
+- **Immutability**: Tags and releases are permanent. Use incremental versioning for fixes.

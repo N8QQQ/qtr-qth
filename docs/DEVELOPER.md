@@ -47,6 +47,20 @@ sequenceDiagram
 ## 🤖 AI-Integrated Development
 This project follows an **AI-first workflow** (Nicholas R. Ustick + JARVIS). All refactoring must follow the **"Heritage Grade"** standard: Zero mutable logic in core components and strictly decoupled hardware abstractions as defined in the project's root `GEMINI.md` mandates.
 
+### 🛰️ Heritage AI Protocol
+To ensure high-fidelity automation and token-efficient execution, this project utilizes a fleet of specialized **Gemini Skills**. These skills encapsulate complex multi-step workflows into deterministic scripts, ensuring consistent behavior across **Athena** (Windows), **Gandalf** (Linux), and **Mechanar** (WSL2).
+
+| Skill | Role | Deterministic Controller |
+| :--- | :--- | :--- |
+| `heritage-benchmarker` | Hardware Performance | `bench_record.cjs` |
+| `heritage-verifier` | Integrity & Purity | `verify_health.cjs` |
+| `heritage-releaser` | Artifact & Metadata | `release_prepare.cjs` |
+| `heritage-merger` | Atomic PR Handoff | `merge_certified.cjs` |
+| `heritage-auditor` | Strategic Mapping | `project_audit.cjs` |
+
+**Usage Standard:**
+Future AI agents should always check for the presence of these skills and prioritize their bundled controllers over manual shell commands. This minimizes token consumption and guarantees that quality gates (e.g., Technical Purity) are enforced identically regardless of the host OS.
+
 ---
 ## 🛰️ Infrastructure Ecosystem (Docker)
 To ensure high-fidelity development and cross-platform parity, `qtr-qth` utilizes a multi-container orchestration strategy. This eliminates platform-specific "crutch" scripts and ensures deterministic hardware testing across Windows, Linux, and macOS.
