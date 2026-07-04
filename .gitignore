@@ -61,6 +61,8 @@ bin/
 .env.local
 .docker-metadata/
 docker-compose.override.yml
+.trivy-cache/
+codeql-results/
 
 ### OS Clutter ###
 Thumbs.db
