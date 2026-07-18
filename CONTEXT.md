@@ -10,6 +10,7 @@
 *   **QTH**: The location domain. Refers to latitude, longitude, and the calculated 6-character Maidenhead Grid Square locator (e.g., `FN20is`).
 *   **Sentinel**: The self-healing connection monitor. An active background thread that detects serial stream interrupts and automatically cycles virtual or physical TTY connections.
 *   **Baud Discovery**: The auto-negotiation engine. Scans serial ports across standard baud frequencies to identify and latch onto active NMEA streams.
+*   **Static Channel Lock**: Explicit configuration mapping (e.g., `serial.port` in the configuration properties) that bypasses keyword-based Port Discovery and binds the system directly to a declared physical or virtual serial interface.
 *   **Precision Metrics**: Statistical window analyzer. Accumulates time offsets between local GPS readings and NTP servers to discipline the system clock.
 *   **Telemetry Pulse**: Immutable domain record of a parsed NMEA sentence containing timestamp, coordinates, sat count, and calculated time offset.
 
@@ -49,3 +50,6 @@ graph TD
     ./scripts/local-ci.sh --all
     ```
     This invokes Gitleaks, Trivy, Super-Linter, and CodeQL inside Docker containers.
+*   **WSL2 Hardware Bridging & Testing**: For WSL2 workspaces, the `./scripts/wsl-usb-bridge.sh` utility is the standard automation script for attaching/releasing host serial devices.
+    *   **AI Agent Mandate:** AI agents performing hardware connection tests or simulating physical disconnections during the SDLC lifecycle **MUST** invoke this script (e.g., via `release`, `simulate-disconnect` commands) rather than writing custom `usbipd` command wrappers or socket/process hooks. This maintains state consistency on the host machine.
+
