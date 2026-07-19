@@ -58,18 +58,19 @@ services:
   # --- Code Quality & Security Scan Profile ---
   # 5. Core Semantic & Security Analysis (CodeQL)
   codeql:
-    image: mcr.microsoft.com/cstsectools/codeql-container:latest
-    entrypoint: ""
+    build: codeql
     user: root
     profiles:
       - quality
     volumes:
       - ../:/src
       - ./codeql-results:/results
+      - ~/.gradle:/root/.gradle
     working_dir: /src
-    command: >
-      bash -c "codeql database create /results/qtr-qth-db --language=java --source-root=/src --overwrite && 
-               codeql database analyze /results/qtr-qth-db java-code-scanning.qls --format=sarif-latest --output=/results/scan.sarif"
+    command:
+      - bash
+      - -c
+      - "codeql database create /results/qtr-qth-db --language=java --source-root=/src --overwrite && codeql database analyze /results/qtr-qth-db java-code-scanning.qls --format=sarif-latest --output=/results/scan.sarif"
 
   # 6. Style, Syntax & Formatting (Super-Linter)
   super-linter:

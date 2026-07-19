@@ -67,3 +67,7 @@ codeql-results/
 ### OS Clutter ###
 Thumbs.db
 .DS_Store
+.nvimlog
+
+### Agents ###
+.agents/reports/
