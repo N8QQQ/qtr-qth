@@ -59,6 +59,8 @@ services:
   # 5. Core Semantic & Security Analysis (CodeQL)
   codeql:
     image: mcr.microsoft.com/cstsectools/codeql-container:latest
+    entrypoint: ""
+    user: root
     profiles:
       - quality
     volumes:
