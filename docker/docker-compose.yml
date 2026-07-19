@@ -79,6 +79,8 @@ services:
       - VALIDATE_ALL_CODEBASE=true
       - DEFAULT_BRANCH=main
       - VALIDATE_JAVA=true
+      - LINTER_RULES_PATH=config/checkstyle
+      - JAVA_FILE_NAME=checkstyle.xml
     volumes:
       - ../:/tmp/lint
 
