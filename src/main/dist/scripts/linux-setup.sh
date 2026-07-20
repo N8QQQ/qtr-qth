@@ -9,7 +9,7 @@ echo "=========================================="
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Check for common serial groups
     REQUIRED_GROUPS=("dialout" "uucp")
-    USER_GROUPS=$(groups $USER)
+    USER_GROUPS=$(groups "$USER")
     
     NEEDS_FIX=true
     for group in "${REQUIRED_GROUPS[@]}"; do
@@ -27,7 +27,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         read -p "Would you like to add '$USER' to the 'dialout' group now? (y/n): " -n 1 -r
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            sudo usermod -a -G dialout $USER
+            sudo usermod -a -G dialout "$USER"
             echo "------------------------------------------"
             echo "[SUCCESS] Permissions updated."
             echo "IMPORTANT: You MUST log out and log back in (or reboot) for this to take effect."
