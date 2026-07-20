@@ -11,3 +11,7 @@ Using standard triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `
 ### Domain docs
 
 Single-context documentation layout at the repository root (`CONTEXT.md` + `docs/adr/`). See `docs/agents/domain.md`.
+
+### CI/CD & Pre-Flight Checks
+
+**CRITICAL RULE:** Agents must *always* execute the full local CI suite (`./scripts/local-ci.sh`) before pushing any commits to GitHub. We must catch our own errors locally to ensure the repository remains strictly stable. Do not push unverified code.

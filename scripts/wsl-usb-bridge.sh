@@ -25,13 +25,16 @@ select_device() {
                 fi
             fi
             
-            local busid=$(echo "$line" | awk '{print $1}')
-            local vid_pid=$(echo "$line" | awk '{print $2}')
-            local remainder=$(echo "$line" | sed -E "s/^$busid[[:space:]]+$vid_pid[[:space:]]+//" | sed 's/  */ /g')
+            local busid
+            busid=$(echo "$line" | awk '{print $1}')
+            local vid_pid
+            vid_pid=$(echo "$line" | awk '{print $2}')
+            local remainder
+            remainder=$(echo "$line" | sed -E "s/^${busid}[[:space:]]+${vid_pid}[[:space:]]+//" | sed 's/  */ /g')
             
             echo "[$idx] BUSID: $busid | VID:PID: $vid_pid | $remainder"
-            MATCHING_BUSIDS[$idx]=$busid
-            MATCHING_DESCRIPTIONS[$idx]=$remainder
+            MATCHING_BUSIDS[idx]=$busid
+            MATCHING_DESCRIPTIONS[idx]=$remainder
             idx=$((idx+1))
         fi
     done < <(usbipd.exe list 2>/dev/null | tr -d '\r')
@@ -42,7 +45,7 @@ select_device() {
     fi
     
     echo ""
-    read -p "Select a device number (or 'q' to quit): " sel
+    read -r -p "Select a device number (or 'q' to quit): " sel
     if [[ "$sel" == "q" || "$sel" == "Q" ]]; then
         echo "Exiting..."
         exit 0
@@ -135,7 +138,7 @@ echo "🎉 Device attachment sequence completed."
 echo "⏳ Waiting for Linux block device enumeration..."
 sleep 1.5
 
-NEW_TTY=$(ls -1 /dev/ttyUSB* /dev/ttyACM* 2>/dev/null | head -n 1 || true)
+NEW_TTY=$(find /dev -maxdepth 1 \( -name "ttyUSB*" -o -name "ttyACM*" \) 2>/dev/null | head -n 1 || true)
 
 if [ -n "$NEW_TTY" ]; then
     echo -e "\n✅ Success! Device is ready."
