@@ -29,7 +29,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 1G
     volumes:
       - ../:/workspace
@@ -52,7 +52,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5' # Mimic an older Pi or heavy load
+          cpus: "0.5" # Mimic an older Pi or heavy load
           memory: 512M
 
   # --- Code Quality & Security Scan Profile ---
@@ -70,7 +70,7 @@ services:
     command:
       - bash
       - -c
-      - "codeql database create /results/qtr-qth-db --language=java --source-root=/src --overwrite && codeql database analyze /results/qtr-qth-db java-code-scanning.qls --format=sarif-latest --output=/results/scan.sarif"
+      - "codeql database create /results/qtr-qth-db --threads=0 --ram=16384 --language=java --source-root=/src --overwrite && codeql database analyze /results/qtr-qth-db java-code-scanning.qls --threads=0 --ram=16384 --format=sarif-latest --output=/results/scan.sarif"
 
   # 6. Style, Syntax & Formatting (Super-Linter)
   super-linter:
@@ -81,9 +81,13 @@ services:
       - RUN_LOCAL=true
       - VALIDATE_ALL_CODEBASE=true
       - DEFAULT_BRANCH=main
-      - VALIDATE_JAVA=true
-      - VALIDATE_BASH=true
       - LINTER_RULES_PATH=config/checkstyle
+      - YAML_CONFIG_FILE=.yamllint.yaml
+      - FILTER_REGEX_EXCLUDE=.*(gradlew.*|gradle/.*)
+      - VALIDATE_YAML=true
+      - VALIDATE_BASH=true
+      - VALIDATE_JAVA=true
+      - VALIDATE_XML=true
       - JAVA_FILE_NAME=checkstyle.xml
     volumes:
       - ../:/tmp/lint
