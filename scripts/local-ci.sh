@@ -127,10 +127,26 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         --all)
-            run_gitleaks
-            run_trivy
-            run_super_linter
-            run_codeql
+            log_info "\n🚀 Launching ALL checks in parallel..."
+            run_gitleaks &
+            PID_GL=$!
+            run_trivy &
+            PID_TR=$!
+            run_super_linter &
+            PID_SL=$!
+            run_codeql &
+            PID_CQ=$!
+            
+            FAIL=0
+            wait $PID_GL || FAIL=1
+            wait $PID_TR || FAIL=1
+            wait $PID_SL || FAIL=1
+            wait $PID_CQ || FAIL=1
+            
+            if [ $FAIL -ne 0 ]; then
+                echo -e "\n${RED}❌ One or more tests failed.${NC}"
+                exit 1
+            fi
             shift
             ;;
         --help)
