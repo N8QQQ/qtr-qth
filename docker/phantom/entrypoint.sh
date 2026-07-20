@@ -13,9 +13,12 @@ echo "✅ TCP Coordinator listening on port 9999 -> /dev/ttyUSB99"
 
 # Optional: Seed with initial telemetry if requested
 if [ "$SIM_MODE" = "true" ]; then
-    echo "📡 Seeding with static telemetry: gps_sim.nmea (Looping)"
-    # Continuous stream using a subshell to keep the PTY fed
-    (while true; do cat /workspace/src/main/resources/simulation/gps_sim.nmea; sleep 1; done) | socat -  /dev/ttyUSB99,raw,echo=0 &
+	echo "📡 Seeding with static telemetry: gps_sim.nmea (Looping)"
+	# Continuous stream using a subshell to keep the PTY fed
+	(while true; do
+		cat /workspace/src/main/resources/simulation/gps_sim.nmea
+		sleep 1
+	done) | socat - /dev/ttyUSB99,raw,echo=0 &
 fi
 
 # 2. Hardware Audit
@@ -29,8 +32,8 @@ find /dev -maxdepth 1 -name "ttyUSB*" -exec ls -l {} + 2>/dev/null || echo "⚠�
 
 echo "--- 🚀 Launching Phantom Shack ---"
 if [ $# -gt 0 ]; then
-    exec "$@"
+	exec "$@"
 else
-    # Fallback to interactive hang if no command provided
-    tail -f /dev/null
+	# Fallback to interactive hang if no command provided
+	tail -f /dev/null
 fi

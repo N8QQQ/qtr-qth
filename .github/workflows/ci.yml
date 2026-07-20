@@ -2,9 +2,9 @@ name: Java FP Architecture CI
 
 on:
   push:
-    branches: [ "main", "feat/**" ]
+    branches: ["main", "feat/**"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -16,38 +16,38 @@ jobs:
   verify-fp-standards:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Codebase
-      uses: actions/checkout@v7
-    
-    - name: Set Up JDK 21
-      uses: actions/setup-java@v5
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: gradle
+      - name: Checkout Codebase
+        uses: actions/checkout@v7
 
-    - name: Validate Gradle Wrapper
-      uses: gradle/actions/wrapper-validation@v6
+      - name: Set Up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v6
 
-    - name: Run Quality Gate (Checkstyle Rules)
-      run: ./gradlew checkstyleMain checkstyleTest
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-    - name: Run Functional BDD Tests
-      run: ./gradlew test jacocoTestReport
+      - name: Run Quality Gate (Checkstyle Rules)
+        run: ./gradlew checkstyleMain checkstyleTest
 
-    - name: Upload Test Report
-      if: always()
-      uses: actions/upload-artifact@v7
-      with:
-        name: test-report
-        path: build/reports/tests/test/
+      - name: Run Functional BDD Tests
+        run: ./gradlew test jacocoTestReport
 
-    - name: Upload Coverage Report
-      if: always()
-      uses: actions/upload-artifact@v7
-      with:
-        name: jacoco-report
-        path: build/reports/jacoco/test/html/
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: build/reports/tests/test/
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: jacoco-report
+          path: build/reports/jacoco/test/html/
