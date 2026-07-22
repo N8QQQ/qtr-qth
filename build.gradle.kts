@@ -28,7 +28,7 @@ checkstyle {
 dependencies {
     // Logging Facade & Engine
     implementation("org.slf4j:slf4j-api:2.0.18")
-    runtimeOnly("ch.qos.logback:logback-classic:1.5.37")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.38")
 
     // Serial Communication
     implementation("com.fazecast:jSerialComm:2.11.4")
@@ -39,7 +39,7 @@ dependencies {
     implementation("io.vavr:vavr:1.0.1")
 
     // Testing
-    testImplementation(platform("org.junit:junit-bom:6.1.1"))
+    testImplementation(platform("org.junit:junit-bom:6.1.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:3.27.7")
     testImplementation("org.mockito:mockito-core:5.23.0")
