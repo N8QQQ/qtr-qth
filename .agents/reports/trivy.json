@@ -1,0 +1,19 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.72.0"
+  },
+  "ReportID": "019f7d03-b29c-785e-aaa6-357f592f5896",
+  "CreatedAt": "2026-07-20T00:53:42.172551669Z",
+  "ArtifactID": "sha256:ae5b774f0a87ca37cf5291b5e43cb44b545ce0fb83154b0da6fac75c9ee9278a",
+  "ArtifactName": "/rootfs",
+  "ArtifactType": "repository",
+  "Metadata": {
+    "RepoURL": "git@github.com:n8qqq/qtr-qth.git",
+    "Branch": "planning/zulu-cadence",
+    "Commit": "3bfce7d1fbe0685c9c24a5c54a9c46a57c1bc668",
+    "CommitMsg": "perf(ci): parallelize pre-flight checks for orchestrator speed\n\n- Refactored `local-ci.sh --all` to dispatch Gitleaks, Trivy, Super-Linter, and CodeQL as background daemon threads.\n- Added parallel exit code collection for fail-fast reporting.",
+    "Author": "Nicholas R. Ustick \u003c925434+Nicholas-Ustick@users.noreply.github.com\u003e",
+    "Committer": "Nicholas R. Ustick \u003c925434+Nicholas-Ustick@users.noreply.github.com\u003e"
+  }
+}
