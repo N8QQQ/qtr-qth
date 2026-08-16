@@ -28,7 +28,7 @@ checkstyle {
 dependencies {
     // Logging Facade & Engine
     implementation("org.slf4j:slf4j-api:2.0.18")
-    runtimeOnly("ch.qos.logback:logback-classic:1.6.1")
+    runtimeOnly("ch.qos.logback:logback-classic:1.6.2")
 
     // Serial Communication
     implementation("com.fazecast:jSerialComm:2.11.4")
