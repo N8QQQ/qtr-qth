@@ -1,0 +1,12 @@
+# qtr-qth.properties.example
+# Copy this file to qtr-qth.properties and modify as needed.
+
+display.raw.telemetry=false
+gps.discovery.keywords=gps,u-blox,prolific,silicon labs,gnss,receiver,ttyusb
+ntp.server=pool.ntp.org,time.google.com,time.windows.com
+serial.baud=9600
+simulation.data.file=simulation/gps_sim.nmea
+simulation.interval.ms=1000
+simulation.mode=false
+sync.threshold.ms=1000
+telemetry.queue.capacity=500
