@@ -1,5 +1,7 @@
 # qtr-qth
 
+[![ORCID](https://img.shields.io/badge/ORCID-0009--0001--9211--8000-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0001-9211-8000)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20257593.svg)](https://doi.org/10.5281/zenodo.20257593)
 ![qtr-qth Banner](docs/images/social-preview.png)
 
 `qtr-qth` is a high-fidelity, GPS-disciplined time and location synchronization hub designed specifically for amateur radio applications. The engine provides Stratum 0 time precision (**QTR**) and high-accuracy Maidenhead Grid Square (**QTH**) calculations.
