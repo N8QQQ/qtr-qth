@@ -8,19 +8,22 @@ echo "--- 🛰️ Phantom Shack: Initializing Virtual Hardware ---"
 # Mode B: Live Coordinator (listens on TCP port 9999)
 echo "--- 🛰️ Starting Virtual Hardware Bridge ---"
 socat -d -d PTY,link=/dev/ttyUSB99,raw,echo=0 TCP-LISTEN:9999,reuseaddr,fork &
-SOCAT_TCP_PID=$!
+export SOCAT_TCP_PID=$!
 echo "✅ TCP Coordinator listening on port 9999 -> /dev/ttyUSB99"
 
 # Optional: Seed with initial telemetry if requested
 if [ "$SIM_MODE" = "true" ]; then
-    echo "📡 Seeding with static telemetry: gps_sim.nmea (Looping)"
-    # Continuous stream using a subshell to keep the PTY fed
-    (while true; do cat /workspace/src/main/resources/simulation/gps_sim.nmea; sleep 1; done) | socat -  /dev/ttyUSB99,raw,echo=0 &
+	echo "📡 Seeding with static telemetry: gps_sim.nmea (Looping)"
+	# Continuous stream using a subshell to keep the PTY fed
+	(while true; do
+		cat /workspace/src/main/resources/simulation/gps_sim.nmea
+		sleep 1
+	done) | socat - /dev/ttyUSB99,raw,echo=0 &
 fi
 
 # 2. Hardware Audit
 echo "--- 🔍 Hardware Audit: Enumerating Serial Devices ---"
-ls -l /dev/tty* | grep "USB" || echo "⚠️ No physical USB/Serial devices detected."
+find /dev -maxdepth 1 -name "ttyUSB*" -exec ls -l {} + 2>/dev/null || echo "⚠️ No physical USB/Serial devices detected."
 
 # 3. Execution
 # We run a build and then execute the hardware discovery probe
@@ -29,8 +32,8 @@ ls -l /dev/tty* | grep "USB" || echo "⚠️ No physical USB/Serial devices dete
 
 echo "--- 🚀 Launching Phantom Shack ---"
 if [ $# -gt 0 ]; then
-    exec "$@"
+	exec "$@"
 else
-    # Fallback to interactive hang if no command provided
-    tail -f /dev/null
+	# Fallback to interactive hang if no command provided
+	tail -f /dev/null
 fi
