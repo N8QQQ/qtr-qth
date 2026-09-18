@@ -43,3 +43,18 @@ For hardware testing, use the WSL USB bridge script:
 ```bash
 ./scripts/wsl-usb-bridge.sh release
 ```
+
+### GitHub Rules & Branching Strategy
+**CRITICAL RULE:** The `main` branch is strictly protected.
+- **NEVER** attempt to push directly to `main`.
+- All changes **MUST** be made on a feature branch and submitted via Pull Request (`gh pr create`).
+- The repository only allows **Squash Merges**.
+- Do not force push to `main` (non-fast-forward updates are blocked by the `main-standards` ruleset).
+
+### Release Process & Identity Tracking
+The project uses academic/scientific identity tracking via **ORCID** (`0009-0001-9211-8000`).
+When preparing a release, the agent **MUST** synchronize the version number across all tracking files simultaneously to avoid burning a point release on metadata fixes. A release MUST update:
+1. `build.gradle.kts` (or `gradle.properties`)
+2. `CITATION.cff`
+3. `.zenodo.json`
+Do not tag or release until all three identity and version artifacts are perfectly aligned.
