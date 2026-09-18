@@ -72,3 +72,4 @@ Thumbs.db
 ### Agents ###
 .agents/reports/
 .nvimlog
+.agents/reports/
