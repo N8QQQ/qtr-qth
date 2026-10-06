@@ -30,7 +30,7 @@
     }
   },
   "spec_path": ".flow/specs/fn-2-standardize-legacy-tests-on-given-when.md",
-  "status": "open",
+  "status": "done",
   "title": "Standardize legacy tests on Given-When-Then BDD fixture pattern",
   "tracker": {
     "baseHashFlow": null,
@@ -43,5 +43,5 @@
     "mergeBaseTracker": null,
     "url": null
   },
-  "updated_at": "2026-10-06T01:51:22.864771Z"
+  "updated_at": "2026-10-06T02:45:22.618504Z"
 }
