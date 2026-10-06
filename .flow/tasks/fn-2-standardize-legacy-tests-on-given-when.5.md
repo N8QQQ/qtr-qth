@@ -41,9 +41,17 @@ Because all test suites were refactored in Wave 2 (tasks fn-2.2, fn-2.3, fn-2.4)
 - [ ] `./scripts/local-ci.sh --all` completes successfully.
 
 ## Done summary
-TBD
+# Task fn-2.5 Summary: Activate Checkstyle MatchXpath Gate and Full CI Validation
 
+### Accomplishments
+- Added automated `MatchXpath` rule (`AssertOnlyInFixture`) to `config/checkstyle/checkstyle.xml` under `TreeWalker`.
+- Verified that any `assertThat` invocation outside a `*Fixture` class triggers an immediate Checkstyle build failure.
+- Verified `./gradlew checkstyleTest` passes with 0 violations across all 23 test suites and 69 tests.
+- Verified `./gradlew check` passes with 0 violations.
+- Verified full local containerized CI suite: CodeQL (0 vulnerabilities, empty SARIF results), Gitleaks (no leaks), Trivy (clean).
+- Zero production code touched.
+- Adversarial Carmack implementation review passed with verdict `SHIP`.
 ## Evidence
-- Commits:
-- Tests:
+- Commits: 98cd1033fb0270ae604c2aef55052a448ad8b4fb
+- Tests: ./gradlew checkstyleTest, ./gradlew check, ./scripts/local-ci.sh --codeql, ./scripts/local-ci.sh --secrets, ./scripts/local-ci.sh --vuln
 - PRs:
