@@ -37,9 +37,18 @@ Thread.sleep must never be used for timing synchronization. All asynchronous syn
 - [ ] All refactored tests pass with `./gradlew test`.
 
 ## Done summary
-TBD
+# Task fn-2.3 Summary: Refactor NTP, Sentinel, and Reactive Unit Tests
 
+### Accomplishments
+- Refactored `NtpClientTest` to inner `NtpFixture`, encapsulating mock NTP stubs and verification.
+- Refactored `SimulationNtpProviderTest` to inner `SimulationFixture`, encapsulating simulated response assertions.
+- Refactored `ExecutorSentinelTest` to inner `SentinelFixture`, coordinating background task execution via `CountDownLatch` bounded by 3-second timeout and clean stop lifecycle.
+- Refactored `ReactiveInversionTest` to inner `ReactiveFixture` coordinating asynchronous stream emission via `CountDownLatch` with 3-second timeout.
+- Encapsulated all 5 remaining loose `assertThat` calls in `NmeaParserTest` (satellite count, null time, trigger evaluation) into `ParserFixture`.
+- Zero production code touched.
+- Checkstyle and all 69 unit tests pass cleanly.
+- Adversarial Carmack implementation review passed with verdict `SHIP`.
 ## Evidence
-- Commits:
-- Tests:
+- Commits: 36b74ee511cf74092497672ec1d4f2913e6144e5
+- Tests: ./gradlew test --tests '*NtpClientTest*' --tests '*SimulationNtpProviderTest*' --tests '*ExecutorSentinelTest*' --tests '*ReactiveInversionTest*' --tests '*NmeaParserTest*', ./gradlew checkstyleTest, ./gradlew test
 - PRs:
