@@ -30,9 +30,18 @@ The Checkstyle assertion boundary gate will be activated in Wave 3 (task fn-2.5)
 - [ ] `./gradlew test` passes.
 
 ## Done summary
-TBD
+# Handover Summary: fn-2-standardize-legacy-tests-on-given-when.1
 
+### What was built
+- Removed obsolete scratch mock test files `MockitoCheckTest.java` and `SimpleMockTest.java`.
+- Documented the repository Given-When-Then BDD Fixture Pattern, method naming conventions, zero-loose-assertion rule, and deterministic concurrency timeout guidelines in `docs/DEVELOPER.md`.
+- Executed `./gradlew test` with 100% test pass rate and full JaCoCo report generation.
+
+### Key Changes
+- Deleted: `src/test/java/com/stoicprogrammer/qtrqth/serial/MockitoCheckTest.java`
+- Deleted: `src/test/java/com/stoicprogrammer/qtrqth/serial/SimpleMockTest.java`
+- Modified: `docs/DEVELOPER.md`
 ## Evidence
-- Commits:
-- Tests:
+- Commits: bbe2c665fbbdc838fc1e039a96d885b5bc6faae3
+- Tests: ./gradlew test
 - PRs:

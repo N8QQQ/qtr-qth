@@ -1,13 +1,47 @@
 {
   "branch_name": "fn-2-standardize-legacy-tests-on-given-when",
+  "completion_review_status": "unknown",
+  "completion_reviewed_at": null,
   "created_at": "2026-10-05T22:30:19.774726Z",
+  "default_impl": null,
+  "default_review": null,
+  "default_sync": null,
   "depends_on_epics": [],
   "id": "fn-2-standardize-legacy-tests-on-given-when",
+  "impl_review_rounds": {
+    "fn-2-standardize-legacy-tests-on-given-when.1": 1
+  },
   "next_task": 1,
+  "plan_review_rounds": 0,
   "plan_review_status": "unknown",
   "plan_reviewed_at": null,
+  "review_hash_epoch": {},
+  "review_pending_rounds": {
+    "impl:fn-2-standardize-legacy-tests-on-given-when.1": 1
+  },
+  "review_reservations": {
+    "117778f8796d4350888a80ea8332c9bb": {
+      "artifact_sha256": "f8615fc2a910c3c4e3a8424c5861d77c2a1f68b21af8558b03079468e3065abc",
+      "counter_scope": "impl:fn-2-standardize-legacy-tests-on-given-when.1",
+      "epoch": 0,
+      "exclusive": true,
+      "forced": false,
+      "review_type": "impl"
+    }
+  },
   "spec_path": ".flow/specs/fn-2-standardize-legacy-tests-on-given-when.md",
   "status": "open",
   "title": "Standardize legacy tests on Given-When-Then BDD fixture pattern",
-  "updated_at": "2026-10-06T01:30:39.520334Z"
+  "tracker": {
+    "baseHashFlow": null,
+    "baseHashTracker": null,
+    "depRelations": [],
+    "id": null,
+    "identifier": null,
+    "lastSyncedAt": null,
+    "mergeBaseFlow": null,
+    "mergeBaseTracker": null,
+    "url": null
+  },
+  "updated_at": "2026-10-06T01:51:22.864771Z"
 }

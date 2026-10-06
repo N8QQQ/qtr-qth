@@ -22,7 +22,21 @@ The project requires **JDK 21** or higher. It is built using Gradle.
 
 ## 🧪 Behavior-Driven Testing (BDD)
 
-The test suite uses JUnit 5, AssertJ, and Mockito. All tests follow a strict **Given-When-Then** specification syntax matching the domain rules.
+The test suite uses JUnit 5, AssertJ, and Mockito. All tests follow a strict **Given-When-Then BDD Fixture Pattern** matching domain specifications:
+
+### The Fixture Model Pattern
+1. **Fixture Encapsulation**: All test state, mock configuration, inputs, and AssertJ assertions (`assertThat`) must reside strictly inside structured `*Fixture` classes (either inner `private final class FooFixture` for unit suites, or dedicated shared fixtures like `OrchestratorFixture`).
+2. **Method Conventions**: Fixture methods must adhere to strict snake_case naming conventions:
+   - Preconditions: `void given_<precondition>([parameters])`
+   - Actions / Executions: `void when_<action>([parameters])`
+   - Assertions: `void then_<assertion>([parameters])`
+3. **Zero Loose Assertions**: `@Test` methods must contain zero direct `assertThat` calls. All assertions must be delegated through `fixture.then_...()`. Checkstyle enforces this boundary via AST inspection.
+4. **Deterministic Concurrency Discipline**: Tests must never use `Thread.sleep` for synchronization. All asynchronous coordination must employ `CountDownLatch` with tiered bounded timeouts:
+   - Standard unit & sentinel fixtures: strict 3-second timeout (`3, TimeUnit.SECONDS`)
+   - Watchdog recovery integration fixtures: 10-second timeout (`10, TimeUnit.SECONDS`)
+   - High-throughput stress fixtures: 30-second timeout (`30, TimeUnit.SECONDS`)
+   All latch awaits must use descriptive AssertJ assertions:
+   `assertThat(latch.await(timeout, unit)).as("Timed out waiting for %s after %d %s", event, timeout, unit).isTrue();`
 
 *   **Run All Tests**:
     ```bash
