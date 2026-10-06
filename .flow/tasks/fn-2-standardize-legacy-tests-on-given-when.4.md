@@ -38,9 +38,19 @@ Create a shared `OrchestratorFixture` in package `com.stoicprogrammer.qtrqth` at
 - [ ] All refactored integration tests pass with `./gradlew test`.
 
 ## Done summary
-TBD
+# Task fn-2.4 Summary: Extract OrchestratorFixture and Refactor Integration/Stress Tests
 
+### Accomplishments
+- Created `OrchestratorFixture` in package `com.stoicprogrammer.qtrqth` at `src/test/java/com/stoicprogrammer/qtrqth/OrchestratorFixture.java` leveraging package-private access to `SystemOrchestrator` without modifying production code.
+- Refactored `SystemOrchestratorTest` to use `OrchestratorFixture`, eliminating busy thread sleeps and encapsulating assertions into fixture methods.
+- Refactored `SystemIntegrationTest` to inner `IntegrationFixture`, eliminating loose assertions.
+- Refactored `SystemRecoveryIntegrationTest` to use `OrchestratorFixture` with deterministic 10-second `CountDownLatch` timeouts for watchdog neutralization and hardware reacquisition.
+- Refactored `ReactiveStressTest` to inner `StressFixture` with a 30-second `CountDownLatch` timeout, verified math integrity across 25Hz and 50Hz bursts, and eliminated all loose assertions.
+- Refactored `MainDoctorIntegrationTest`, `MainIntegrationTest`, and `MainProbeIntegrationTest` to inner `CliFixture` classes, replacing arbitrary thread sleeps with bounded latch coordination.
+- Zero production files in `src/main/java` modified.
+- Full test suite (69/69) and `checkstyleTest` pass with zero violations.
+- Adversarial Carmack implementation review passed with verdict `SHIP`.
 ## Evidence
-- Commits:
-- Tests:
+- Commits: fd95be3e7f41584cbaabce2c67ba5b9b77d6ee37
+- Tests: ./gradlew test --tests '*System*' --tests '*Main*IntegrationTest*' --tests '*ReactiveStressTest*', ./gradlew checkstyleTest, ./gradlew test
 - PRs:
