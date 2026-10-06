@@ -36,9 +36,18 @@ Tests must strictly use `given_<state>()`, `when_<action>()`, and `then_<asserti
 - [ ] All refactored tests pass with `./gradlew test`.
 
 ## Done summary
-TBD
+# Task fn-2.2 Summary: Refactor Analysis, Config, and Functional Unit Tests
 
+### Accomplishments
+- Refactored `OffsetAnalyzerTest` to inner `AnalyzerFixture` with snake_case given-when-then methods. Replaced magic numbers with `LocalTime.NOON`.
+- Refactored `StatisticalWindowTest` to inner `WindowFixture`. Replaced imperative loops with functional stream reductions (`Arrays.stream(...).reduce(...)`).
+- Refactored `ConfigManagerTest` to inner `ManagerFixture` with `Optional<ConfigManager.FileAction>` monadic composition, eliminating null checks.
+- Refactored `FunctionalTest` to inner `FunctionalFixture` supporting both standard `@Test` and `@ParameterizedTest` methods.
+- Eliminated 100% of direct assertions in `@Test` methods across all 4 files.
+- Zero production files touched.
+- All 69 tests pass cleanly; `checkstyleTest` passes with 0 violations.
+- Adversarial Carmack implementation review completed with verdict `SHIP`.
 ## Evidence
-- Commits:
-- Tests:
+- Commits: d11a0f911a37cce147817db445a9ba014c24baaa
+- Tests: ./gradlew test --tests '*OffsetAnalyzerTest*' --tests '*StatisticalWindowTest*' --tests '*ConfigManagerTest*' --tests '*FunctionalTest*', ./gradlew checkstyleTest, ./gradlew test
 - PRs:
