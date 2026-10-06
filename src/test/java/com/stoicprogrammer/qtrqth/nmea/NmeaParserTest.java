@@ -80,7 +80,7 @@ class NmeaParserTest extends BddTest {
         fixture.when_parsed();
         fixture.then_time_is(MOCK_HOUR, MOCK_MIN, MOCK_SEC);
         fixture.then_latitude_is(TEST_LAT);
-        assertThat(fixture.result.satelliteCount()).isEqualTo(MOCK_SATS);
+        fixture.then_satellite_count_is(MOCK_SATS);
     }
 
     @Test
@@ -104,15 +104,14 @@ class NmeaParserTest extends BddTest {
         fixture.given_sentence("$GPRMC,,A,,,,,,,230526,,,A");
         fixture.when_parsed();
         fixture.then_date_is(MOCK_YEAR, MOCK_MONTH, MOCK_DAY);
-        assertThat(fixture.result.utcTime()).isNull();
+        fixture.then_time_is_null();
     }
 
     @Test
     void should_identify_trigger_sentences() {
-        final NmeaParser parser = new NmeaParser();
-        assertThat(parser.isTrigger("$GPZDA,123456.00,23,05,2026,00,00")).isTrue();
-        assertThat(parser.isTrigger("$GPRMC,123456,A")).isTrue();
-        assertThat(parser.isTrigger("$GPGGA,123456,...")).isFalse();
+        fixture.then_sentence_is_trigger("$GPZDA,123456.00,23,05,2026,00,00");
+        fixture.then_sentence_is_trigger("$GPRMC,123456,A");
+        fixture.then_sentence_is_not_trigger("$GPGGA,123456,...");
     }
 
     private static final class ParserFixture {
@@ -135,6 +134,22 @@ class NmeaParserTest extends BddTest {
 
         void then_time_is(final int h, final int m, final int s) {
             assertThat(result.utcTime()).isEqualTo(LocalTime.of(h, m, s));
+        }
+
+        void then_time_is_null() {
+            assertThat(result.utcTime()).isNull();
+        }
+
+        void then_sentence_is_trigger(final String s) {
+            assertThat(parser.isTrigger(s)).isTrue();
+        }
+
+        void then_sentence_is_not_trigger(final String s) {
+            assertThat(parser.isTrigger(s)).isFalse();
+        }
+
+        void then_satellite_count_is(final int count) {
+            assertThat(result.satelliteCount()).isEqualTo(count);
         }
 
         void then_date_is(final int y, final int m, final int d) {
