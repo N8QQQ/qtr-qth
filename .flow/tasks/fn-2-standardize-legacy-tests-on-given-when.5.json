@@ -1,0 +1,18 @@
+{
+  "assignee": null,
+  "claim_note": "",
+  "claimed_at": null,
+  "created_at": "2026-10-06T01:23:13.931264Z",
+  "depends_on": [
+    "fn-2-standardize-legacy-tests-on-given-when.2",
+    "fn-2-standardize-legacy-tests-on-given-when.3",
+    "fn-2-standardize-legacy-tests-on-given-when.4"
+  ],
+  "id": "fn-2-standardize-legacy-tests-on-given-when.5",
+  "priority": null,
+  "spec": "fn-2-standardize-legacy-tests-on-given-when",
+  "spec_path": ".flow/tasks/fn-2-standardize-legacy-tests-on-given-when.5.md",
+  "status": "todo",
+  "title": "Activate Checkstyle MatchXPath gate, execute full test verification, and validate local CI",
+  "updated_at": "2026-10-06T01:31:30.913520Z"
+}

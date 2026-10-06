@@ -99,5 +99,12 @@
             <property name="maximumNumber" value="0"/>
             <property name="maximumMessage" value="Null checks are forbidden. Use .isPresent(), .isEmpty(), or Monadic mapping."/>
         </module>
+
+        <!-- Strict BDD Fixture Assertion Boundary Enforcement -->
+        <module name="MatchXpath">
+            <property name="id" value="AssertOnlyInFixture"/>
+            <property name="query" value="//METHOD_CALL[.//IDENT[@text='assertThat']][not(ancestor::CLASS_DEF[IDENT[contains(@text, 'Fixture')]])]"/>
+            <message key="matchxpath.match" value="assertThat() is restricted to *Fixture classes."/>
+        </module>
     </module>
 </module>

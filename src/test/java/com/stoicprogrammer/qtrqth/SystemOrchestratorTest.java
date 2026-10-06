@@ -1,8 +1,6 @@
 package com.stoicprogrammer.qtrqth;
 
 import com.stoicprogrammer.qtrqth.base.BddTest;
-import com.stoicprogrammer.qtrqth.config.ConfigManager;
-import com.stoicprogrammer.qtrqth.model.TelemetryPulse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
@@ -10,72 +8,42 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.time.InstantSource;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 class SystemOrchestratorTest extends BddTest {
     private static final Logger logger = LoggerFactory.getLogger(SystemOrchestratorTest.class);
     private static final Instant MOCK_TIME = Instant.parse("2026-05-21T12:34:56.00Z");
-    private static final int POLL_INTERVAL_MS = 100;
-    private static final int MAX_POLL_ATTEMPTS = 50;
-    private static final int SHUTDOWN_WAIT_MS = 5000;
+    private static final long LATCH_TIMEOUT_SECONDS = 5L;
 
     @TempDir
     private Path tempDir;
 
+    private final OrchestratorFixture fixture = new OrchestratorFixture();
+
     @Test
     void should_automatically_fallback_to_simulation_when_hardware_missing() throws Exception {
         logger.info("Starting BDD Test: should_automatically_fallback_to_simulation_when_hardware_missing");
-        
-        // GIVEN: A config path that does not exist, forcing default discovery behavior
         final Path configPath = tempDir.resolve("missing-hardware.properties");
-        java.nio.file.Files.writeString(configPath, "simulation.mode=false\nsync.threshold.ms=5000");
-        
-        // Mock an empty serial provider to force discovery failure regardless of host hardware
-        final com.stoicprogrammer.qtrqth.serial.api.ISerialProvider emptyProvider = 
-            org.mockito.Mockito.mock(com.stoicprogrammer.qtrqth.serial.api.ISerialProvider.class);
-        org.mockito.BDDMockito.given(emptyProvider.getAvailablePorts()).willReturn(List.of());
+        fixture.given_config(configPath, "simulation.mode=false\nsync.threshold.ms=5000");
+        fixture.given_empty_serial_provider();
+        fixture.given_frozen_clock(MOCK_TIME);
+        fixture.given_noop_sentinel();
+        fixture.when_building_orchestrator();
 
-        final InstantSource frozenClock = InstantSource.fixed(MOCK_TIME);
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(
-            new ConfigManager(configPath), 
-            emptyProvider, 
-            null, 
-            frozenClock,
-            new com.stoicprogrammer.qtrqth.sentinel.NoOpSentinel()
-        );
-        final List<TelemetryPulse> capturedPulses = new CopyOnWriteArrayList<>();
+        final CountDownLatch pulseLatch = new CountDownLatch(1);
+        fixture.when_starting(pulseLatch);
 
-        // WHEN: The system boots
-        final Thread engineThread = new Thread(() -> orchestrator.start(capturedPulses::add));
-        engineThread.setDaemon(true);
-        engineThread.start();
+        fixture.then_latch_completes_within(pulseLatch, LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS, "simulation fallback pulses");
+        fixture.when_shutting_down();
 
-        // THEN: Adaptive Fallback should engage and produce pulses from the simulation provider
-        Stream.generate(() -> {
-            try { 
-                Thread.sleep(POLL_INTERVAL_MS); 
-            } catch (final InterruptedException e) { 
-                Thread.currentThread().interrupt(); 
-            }
-            return capturedPulses.isEmpty();
-        }).limit(MAX_POLL_ATTEMPTS).takeWhile(empty -> empty).count();
-
-        orchestrator.shutdown();
-        engineThread.join(SHUTDOWN_WAIT_MS);
-
-        assertThat(capturedPulses).as("System should have failed over to simulation and produced pulses").isNotEmpty();
-        assertThat(capturedPulses.get(0).ingressTime()).isEqualTo(MOCK_TIME);
+        fixture.then_pulses_captured_is_not_empty();
+        fixture.then_first_pulse_ingress_time_is(MOCK_TIME);
     }
 
     @Test
-    void should_handle_shutdown_gracefully_even_if_not_started() {
-        final SystemOrchestrator orchestrator = new SystemOrchestrator(tempDir.resolve("empty.properties"));
-        orchestrator.shutdown();
-        // Should not throw NPE or block
+    void should_handle_shutdown_gracefully_even_if_not_started() throws InterruptedException {
+        fixture.when_building_orchestrator(tempDir.resolve("empty.properties"));
+        fixture.when_shutting_down();
     }
 }

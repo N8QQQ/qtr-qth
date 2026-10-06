@@ -6,17 +6,22 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for functional utility methods.
- * Adheres to strict AssertJ fluent assertion standards.
+ * Adheres to strict AssertJ fluent assertion standards and Given-When-Then fixtures.
  */
 class FunctionalTest extends BddTest {
 
     private static final int TEST_INT = 123;
+    private static final int DEFAULT_RADIX = 10;
+
+    private final FunctionalFixture fixture = new FunctionalFixture();
 
     @ParameterizedTest
     @CsvSource({
@@ -26,15 +31,29 @@ class FunctionalTest extends BddTest {
         " 0, 10, 0"
     })
     void should_parse_valid_integers(final String input, final int radix, final int expected) {
-        assertThat(Functional.tryParseInt(input, radix)).contains(expected);
+        fixture.given_input_string(input);
+        fixture.given_radix(radix);
+        fixture.when_parsing_integer();
+        fixture.then_parsed_integer_contains(expected);
     }
 
     @Test
     void should_return_empty_for_malformed_integers() {
-        assertThat(Functional.tryParseInt("not_a_number")).isEmpty();
-        assertThat(Functional.tryParseInt("")).isEmpty();
-        assertThat(Functional.tryParseInt(null)).isEmpty();
-        assertThat(Functional.tryParseInt(" 12 3 ")).isEmpty();
+        fixture.given_input_string("not_a_number");
+        fixture.when_parsing_integer();
+        fixture.then_parsed_integer_is_empty();
+
+        fixture.given_input_string("");
+        fixture.when_parsing_integer();
+        fixture.then_parsed_integer_is_empty();
+
+        fixture.given_input_string(null);
+        fixture.when_parsing_integer();
+        fixture.then_parsed_integer_is_empty();
+
+        fixture.given_input_string(" 12 3 ");
+        fixture.when_parsing_integer();
+        fixture.then_parsed_integer_is_empty();
     }
 
     @ParameterizedTest
@@ -45,39 +64,103 @@ class FunctionalTest extends BddTest {
         " 42 , 42.0"
     })
     void should_parse_valid_doubles(final String input, final double expected) {
-        assertThat(Functional.tryParseDouble(input)).contains(expected);
+        fixture.given_input_string(input);
+        fixture.when_parsing_double();
+        fixture.then_parsed_double_contains(expected);
     }
 
     @Test
     void should_return_empty_for_malformed_doubles() {
-        assertThat(Functional.tryParseDouble("invalid")).isEmpty();
-        assertThat(Functional.tryParseDouble(null)).isEmpty();
+        fixture.given_input_string("invalid");
+        fixture.when_parsing_double();
+        fixture.then_parsed_double_is_empty();
+
+        fixture.given_input_string(null);
+        fixture.when_parsing_double();
+        fixture.then_parsed_double_is_empty();
     }
 
     @Test
     void should_wrap_throwing_function() {
-        // Testing the wrapper logic with a checked exception scenario
-        final java.util.function.Function<String, Integer> mapper = 
-            Functional.wrap(s -> {
-                if (s.equals("io-fail")) {
-                    throw new IOException("Checked Error");
-                }
-                return Functional.tryParseInt(s).orElse(0);
-            });
-            
-        assertThat(mapper.apply("123")).isEqualTo(TEST_INT);
+        fixture.given_throwing_mapper(s -> {
+            if ("io-fail".equals(s)) {
+                throw new IOException("Checked Error");
+            }
+            return Functional.tryParseInt(s).orElse(0);
+        });
+        fixture.when_applying_mapper("123");
+        fixture.then_mapper_result_is(TEST_INT);
     }
 
     @Test
     void should_throw_runtime_exception_on_wrapped_failure() {
-        // Verifying that checked exceptions are pivoted to RuntimeException
-        final java.util.function.Function<String, Integer> mapper =
-            Functional.wrap(s -> {
-                throw new IOException("Checked Error");
-            });
+        fixture.given_throwing_mapper(s -> {
+            throw new IOException("Checked Error");
+        });
+        fixture.then_applying_mapper_throws_runtime_exception("any", IOException.class);
+    }
 
-        assertThatThrownBy(() -> mapper.apply("any"))
-            .isInstanceOf(RuntimeException.class)
-            .hasCauseInstanceOf(IOException.class);
+    private final class FunctionalFixture {
+        private String input;
+        private int radix = DEFAULT_RADIX;
+        private Optional<Integer> parsedInt;
+        private Optional<Double> parsedDouble;
+        private Function<String, Integer> mapper;
+        private int mappedResult;
+
+        void given_input_string(final String str) {
+            this.input = str;
+        }
+
+        void given_radix(final int r) {
+            this.radix = r;
+        }
+
+        void given_throwing_mapper(final CheckedFunction<String, Integer> checkedFn) {
+            this.mapper = Functional.wrap(checkedFn::apply);
+        }
+
+        void when_parsing_integer() {
+            this.parsedInt = Functional.tryParseInt(input, radix);
+        }
+
+        void when_parsing_double() {
+            this.parsedDouble = Functional.tryParseDouble(input);
+        }
+
+        void when_applying_mapper(final String arg) {
+            this.mappedResult = mapper.apply(arg);
+        }
+
+        void then_parsed_integer_contains(final int expected) {
+            assertThat(parsedInt).contains(expected);
+        }
+
+        void then_parsed_integer_is_empty() {
+            assertThat(parsedInt).isEmpty();
+        }
+
+        void then_parsed_double_contains(final double expected) {
+            assertThat(parsedDouble).contains(expected);
+        }
+
+        void then_parsed_double_is_empty() {
+            assertThat(parsedDouble).isEmpty();
+        }
+
+        void then_mapper_result_is(final int expected) {
+            assertThat(mappedResult).isEqualTo(expected);
+        }
+
+        void then_applying_mapper_throws_runtime_exception(final String arg, final Class<? extends Throwable> causeClass) {
+            assertThatThrownBy(() -> mapper.apply(arg))
+                .isInstanceOf(RuntimeException.class)
+                .hasCauseInstanceOf(causeClass);
+        }
+    }
+
+    @FunctionalInterface
+    private interface CheckedFunction<T, R> {
+        R apply(T t) throws Exception;
     }
 }

@@ -53,3 +53,16 @@ graph TD
 *   **WSL2 Hardware Bridging & Testing**: For WSL2 workspaces, the `./scripts/wsl-usb-bridge.sh` utility is the standard automation script for attaching/releasing host serial devices.
     *   **AI Agent Mandate:** AI agents performing hardware connection tests or simulating physical disconnections during the SDLC lifecycle **MUST** invoke this script (e.g., via `release`, `simulate-disconnect` commands) rather than writing custom `usbipd` command wrappers or socket/process hooks. This maintains state consistency on the host machine.
 
+---
+
+## 4. Current State & Next Session Roadmap
+
+*   **Forgejo Infrastructure:** Seeded and active at `nicholas/qtr-qth` on `athena-forge` (`http://athena.hive.stoicbee.com:3000/nicholas/qtr-qth`). All commit history, tags (`v0.1.0` - `v0.8.0`), and 12 tracked issues are synchronized.
+*   **Design & Issue Review Strategy:** The upcoming session will use the 12 logged Forgejo issues as practical filters to harden the architectural design before implementing new features.
+    1.  **DAG Decoupling (#1):** Relocate `EnvironmentDoctor` to `cli`, leafify `model`.
+    2.  **Security Boundaries (#2, #3):** Parameterize `ProcessBuilder`, enforce canonical path containment.
+    3.  **Temporal Precision (#4, #5):** Remediate the midnight UTC boundary offset explosion in `OffsetAnalyzer` and handle leap seconds.
+    4.  **Functional Purity & Throughput (#6, #9):** Eliminate hot-path `Map.of` allocations in byte streams and standardize on Vavr monadic types (`Try`, `Option`).
+    5.  **BDD Fixture Standardization (#7):** Eliminate loose assertions and migrate test suites to strict Given-When-Then fixtures.
+
+

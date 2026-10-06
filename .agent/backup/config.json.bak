@@ -1,0 +1,10 @@
+{
+  "plugins": {
+    "caveman": {
+      "enabled": true
+    }
+  },
+  "userSettings": {
+    "remoteControlHostname": "mechanar-fiery-ion"
+  }
+}

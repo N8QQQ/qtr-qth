@@ -1,0 +1,16 @@
+{
+  "assignee": null,
+  "claim_note": "",
+  "claimed_at": null,
+  "created_at": "2026-10-06T01:23:13.931200Z",
+  "depends_on": [
+    "fn-2-standardize-legacy-tests-on-given-when.1"
+  ],
+  "id": "fn-2-standardize-legacy-tests-on-given-when.2",
+  "priority": null,
+  "spec": "fn-2-standardize-legacy-tests-on-given-when",
+  "spec_path": ".flow/tasks/fn-2-standardize-legacy-tests-on-given-when.2.md",
+  "status": "todo",
+  "title": "Refactor Analysis, Config, and Functional unit tests to inner Fixtures",
+  "updated_at": "2026-10-06T01:23:13.931200Z"
+}
