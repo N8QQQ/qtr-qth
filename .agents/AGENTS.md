@@ -2,19 +2,19 @@
 
 ### Issue tracker
 
-Issues and PRDs live in this repository's GitHub Issues, accessed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Internal engineering issues, tasks, and refactoring PRDs live in Athena Forgejo, accessed via the `tea` CLI (`tea issues --login athena-forge --repo nicholas/qtr-qth`). Public issues and milestone releases are mirrored/accessed via GitHub (`gh` CLI).
 
 ### Triage labels
 
-Using standard triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+Using standard triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`).
 
 ### Domain docs
 
-Single-context documentation layout at the repository root (`CONTEXT.md` + `docs/adr/`). See `docs/agents/domain.md`.
+Single-context documentation layout at the repository root (`CONTEXT.md` + `docs/adr/`).
 
 ### CI/CD & Pre-Flight Checks
 
-**CRITICAL RULE:** Agents must *always* execute the full local CI suite (`./scripts/local-ci.sh`) before pushing any commits to GitHub. We must catch our own errors locally to ensure the repository remains strictly stable. Do not push unverified code.
+**CRITICAL RULE:** Agents must *always* verify tests and builds locally (`./gradlew check`) or via Athena Forgejo Actions (`.forgejo/workflows/ci.yaml`) before pushing commits, and run the full local CI suite (`./scripts/local-ci.sh`) before tagging or delivering releases downstream to GitHub. Do not push unverified code.
 
 ### Git Commit Signing
 

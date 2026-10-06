@@ -16,12 +16,10 @@ This project uses Flow-Next for ALL task tracking. `flowctl` comes from the flow
 
 This is a CLI/Library built with Java and Gradle.
 
-### CI / CD
-**Note on CI:** We run CI entirely on local Docker containers using the provided script to avoid GitHub runner costs. Do not attempt to configure or run GitHub Actions for CI.
-To run the local CI suite:
-```bash
-./scripts/local-ci.sh --all
-```
+### Repository Topology (Sovereign Development Model)
+This repository follows the **Sovereign Inner Loop / Curated Delivery** pattern:
+- **`origin` (Athena Forgejo):** The canonical working and development repository (`ssh://git@athena.hive.stoicbee.com:2223/nicholas/qtr-qth.git`). All day-to-day feature branches, PRs, internal issues (managed via `tea`), and local CI occur here.
+- **`github` (GitHub):** The public delivery, release, and showcase mirror (`git@github.com:n8qqq/qtr-qth.git`). Public releases and milestone deliverables are synced downstream here.
 
 ### Common Commands
 To build the project:
@@ -44,12 +42,21 @@ For hardware testing, use the WSL USB bridge script:
 ./scripts/wsl-usb-bridge.sh release
 ```
 
-### GitHub Rules & Branching Strategy
-**CRITICAL RULE:** The `main` branch is strictly protected.
-- **NEVER** attempt to push directly to `main`.
-- All changes **MUST** be made on a feature branch and submitted via Pull Request (`gh pr create`).
-- The repository only allows **Squash Merges**.
-- Do not force push to `main` (non-fast-forward updates are blocked by the `main-standards` ruleset).
+### CI / CD
+- **Forgejo Actions:** Automated CI runs natively on Athena hardware via `.forgejo/workflows/ci.yaml` at zero cloud runner cost.
+- **Local Container CI:** Run the full containerized scan suite (Super-Linter, CodeQL, Gitleaks, Trivy) on demand:
+```bash
+./scripts/local-ci.sh --all
+```
+- **Cloud CI:** Do not configure GitHub Actions for continuous iteration builds to avoid GitHub runner charges.
+
+### Branching & Delivery Strategy
+1. **Inner Loop (Forgejo):**
+   - Active feature and refactoring branches (`fn-*`, `feat/*`, `fix/*`) are developed and merged against Forgejo `origin/main`.
+   - Forgejo Actions automatically verify all commits and PRs.
+2. **Outer Loop (GitHub Delivery):**
+   - When a milestone or release is finalized on `origin/main`, verified changes and tags are delivered downstream to `github/main` (`git push github main --tags`).
+   - The GitHub `main` branch rules enforce signed commits and release consistency. Non-fast-forward updates to `github/main` remain blocked.
 
 ### Release Process & Identity Tracking
 The project uses academic/scientific identity tracking via **ORCID** (`0009-0001-9211-8000`).

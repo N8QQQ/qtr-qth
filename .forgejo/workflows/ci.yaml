@@ -1,0 +1,34 @@
+name: Forgejo CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+      - 'fix/**'
+      - 'fn-**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Gradle Check & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
+      - name: Execute Checkstyle, Verification & Tests
+        run: |
+          chmod +x gradlew
+          ./gradlew check --no-daemon --stacktrace

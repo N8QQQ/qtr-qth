@@ -55,14 +55,14 @@ graph TD
 
 ---
 
-## 4. Current State & Next Session Roadmap
-
-*   **Forgejo Infrastructure:** Seeded and active at `nicholas/qtr-qth` on `athena-forge` (`http://athena.hive.stoicbee.com:3000/nicholas/qtr-qth`). All commit history, tags (`v0.1.0` - `v0.8.0`), and 12 tracked issues are synchronized.
-*   **Design & Issue Review Strategy:** The upcoming session will use the 12 logged Forgejo issues as practical filters to harden the architectural design before implementing new features.
-    1.  **DAG Decoupling (#1):** Relocate `EnvironmentDoctor` to `cli`, leafify `model`.
-    2.  **Security Boundaries (#2, #3):** Parameterize `ProcessBuilder`, enforce canonical path containment.
-    3.  **Temporal Precision (#4, #5):** Remediate the midnight UTC boundary offset explosion in `OffsetAnalyzer` and handle leap seconds.
-    4.  **Functional Purity & Throughput (#6, #9):** Eliminate hot-path `Map.of` allocations in byte streams and standardize on Vavr monadic types (`Try`, `Option`).
-    5.  **BDD Fixture Standardization (#7):** Eliminate loose assertions and migrate test suites to strict Given-When-Then fixtures.
+*   **Repository Topology:** Operates on the **Sovereign Inner Loop / Curated Delivery** pattern. Athena Forgejo (`ssh://git@athena.hive.stoicbee.com:2223/nicholas/qtr-qth.git`) is `origin` (primary development and issue tracking). GitHub (`git@github.com:n8qqq/qtr-qth.git`) is `github` (public delivery and milestone release mirror).
+*   **Forgejo CI/CD Infrastructure:** `athena-runner` (`code.forgejo.org/forgejo/runner:6.2.2`) is registered, online, and polling. CI pipeline is configured at `.forgejo/workflows/ci.yaml` for zero-cost automated builds.
+*   **Backlog Execution:**
+    1.  **BDD Fixture Standardization (#7):** [COMPLETED] Migrated all 15 legacy test suites to inner `*Fixture` BDD pattern, deleted scratch tests, enforced Checkstyle `MatchXpath` assertion gate, merged via PR #85 (`268eb34`).
+    2.  **DAG Decoupling (#1):** Relocate `EnvironmentDoctor` to `cli`, leafify `model`.
+    3.  **Security Boundaries (#2, #3):** Parameterize `ProcessBuilder`, enforce canonical path containment.
+    4.  **Temporal Precision (#4, #5):** Remediate midnight UTC boundary offset explosion in `OffsetAnalyzer` and handle leap seconds.
+    5.  **Functional Purity & Throughput (#6, #9):** Eliminate hot-path `Map.of` allocations in byte streams and standardize on Vavr monadic types (`Try`, `Option`).
+    6.  **Tooling & CI Robustness (#8, #10, #11, #12):** Hardened shell strict mode, Super-Linter Checkstyle integration, container permissions, and nru-expert-review compliance.
 
 
