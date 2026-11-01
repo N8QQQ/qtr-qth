@@ -36,7 +36,7 @@ dependencies {
     implementation("commons-net:commons-net:3.13.0")
 
     // Functional Ecosystem (The Hybrid Weaver)
-    implementation("io.vavr:vavr:1.0.1")
+    implementation("io.vavr:vavr:1.1.0")
 
     // Testing
     testImplementation(platform("org.junit:junit-bom:6.1.3"))
